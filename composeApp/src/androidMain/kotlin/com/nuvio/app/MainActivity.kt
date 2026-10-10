@@ -1,10 +1,15 @@
+
 package com.nuvio.app
 
 import android.content.Intent
 import android.content.res.Configuration
+import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
+import android.view.ViewGroup
+import android.widget.FrameLayout
+import android.widget.VideoView
 import androidx.activity.compose.setContent
-
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.SystemBarStyle
 import androidx.appcompat.app.AppCompatActivity
@@ -73,22 +78,32 @@ import com.nuvio.app.features.watchprogress.ResumePromptStorage
 import com.nuvio.app.features.watchprogress.WatchProgressStorage
 
 open class MainActivity : AppCompatActivity() {
+
     private var pipRemoteActionReceiver: PipRemoteActionReceiver? = null
+
+    private var introOverlay: FrameLayout? = null
+    private var introVideoView: VideoView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
+
         enableEdgeToEdge(
             navigationBarStyle = SystemBarStyle.dark(
                 scrim = 0xFF020404.toInt(),
             ),
         )
+
         ThemeSettingsStorage.initialize(applicationContext)
         AppIconPlatform.initialize(applicationContext)
         SentrySettingsStorage.initialize(applicationContext)
         SentryInitializer.start(application)
+
         super.onCreate(savedInstanceState)
+
         window.setBackgroundDrawableResource(R.color.nuvio_background)
+
         pipRemoteActionReceiver = PipRemoteActionReceiver.register(this)
+
         SyncClientIdentityStorage.initialize(applicationContext)
         AddonHttpClientProvider.initialize(applicationContext)
         AddonStorage.initialize(applicationContext)
@@ -97,7 +112,10 @@ open class MainActivity : AppCompatActivity() {
         LibraryStorage.initialize(applicationContext)
         WatchedStorage.initialize(applicationContext)
         MetaScreenSettingsStorage.initialize(applicationContext)
-        com.nuvio.app.features.shuffle.EpisodeShuffleStorage.initialize(applicationContext)
+
+        com.nuvio.app.features.shuffle.EpisodeShuffleStorage
+            .initialize(applicationContext)
+
         HomeCatalogSettingsStorage.initialize(applicationContext)
         PlayerSettingsStorage.initialize(applicationContext)
         PlayerTrackPreferenceStorage.initialize(applicationContext)
@@ -146,16 +164,100 @@ open class MainActivity : AppCompatActivity() {
         PlatformLocalAccountDataCleaner.initialize(applicationContext)
         EpisodeReleaseNotificationPlatform.initialize(applicationContext)
         EpisodeReleaseNotificationPlatform.bindActivity(this)
+
         handleIncomingAppIntent(intent)
 
         setContent {
             App()
+        }
+
+        if (savedInstanceState == null && intent?.data == null) {
+            playKableKillersIntro()
+        }
+    }
+
+    private fun playKableKillersIntro() {
+        val videoId = resources.getIdentifier(
+            "kable_killers_intro",
+            "raw",
+            packageName
+        )
+
+        if (videoId == 0) return
+
+        val overlay = FrameLayout(this).apply {
+            setBackgroundColor(Color.BLACK)
+            isClickable = true
+            isFocusable = true
+        }
+
+        val videoView = VideoView(this).apply {
+            setBackgroundColor(Color.BLACK)
+        }
+
+        introOverlay = overlay
+        introVideoView = videoView
+
+        overlay.addView(
+            videoView,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+        )
+
+        addContentView(
+            overlay,
+            ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        )
+
+        videoView.setOnCompletionListener {
+            finishKableKillersIntro()
+        }
+
+        videoView.setOnErrorListener { _, _, _ ->
+            finishKableKillersIntro()
+            true
+        }
+
+        try {
+            val videoUri = Uri.parse(
+                "android.resource://$packageName/$videoId"
+            )
+
+            videoView.setVideoURI(videoUri)
+
+            videoView.setOnPreparedListener { player ->
+                player.isLooping = false
+                videoView.setBackgroundColor(Color.TRANSPARENT)
+                videoView.start()
+            }
+        } catch (_: Exception) {
+            finishKableKillersIntro()
+        }
+    }
+
+    private fun finishKableKillersIntro() {
+        val videoView = introVideoView
+        val overlay = introOverlay
+
+        introVideoView = null
+        introOverlay = null
+
+        videoView?.stopPlayback()
+
+        if (overlay != null) {
+            (overlay.parent as? ViewGroup)?.removeView(overlay)
         }
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        finishKableKillersIntro()
         handleIncomingAppIntent(intent)
     }
 
@@ -168,17 +270,31 @@ open class MainActivity : AppCompatActivity() {
         isInPictureInPictureMode: Boolean,
         newConfig: Configuration,
     ) {
-        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
-        PlayerPictureInPictureManager.onPictureInPictureModeChanged(this, isInPictureInPictureMode)
+        super.onPictureInPictureModeChanged(
+            isInPictureInPictureMode,
+            newConfig
+        )
+
+        PlayerPictureInPictureManager.onPictureInPictureModeChanged(
+            this,
+            isInPictureInPictureMode
+        )
     }
 
     override fun onDestroy() {
+        finishKableKillersIntro()
+
         EpisodeReleaseNotificationPlatform.unbindActivity(this)
+
         val receiver = pipRemoteActionReceiver
+
         if (receiver != null) {
-            runCatching { unregisterReceiver(receiver) }
+            runCatching {
+                unregisterReceiver(receiver)
+            }
             pipRemoteActionReceiver = null
         }
+
         super.onDestroy()
     }
 
@@ -187,15 +303,28 @@ open class MainActivity : AppCompatActivity() {
         permissions: Array<String>,
         grantResults: IntArray,
     ) {
-        if (EpisodeReleaseNotificationPlatform.handlePermissionRequestResult(requestCode, grantResults)) {
+        if (
+            EpisodeReleaseNotificationPlatform
+                .handlePermissionRequestResult(
+                    requestCode,
+                    grantResults
+                )
+        ) {
             return
         }
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        super.onRequestPermissionsResult(
+            requestCode,
+            permissions,
+            grantResults
+        )
     }
 
     private fun handleIncomingAppIntent(intent: Intent?) {
         val appUrl = intent?.dataString?.trim().orEmpty()
+
         if (appUrl.isBlank()) return
+
         handleAppUrl(appUrl)
     }
 }

@@ -1,37 +1,40 @@
-name: PR Full Debug Build
+name: Kable Killers Mobile - Build APK
 
 on:
+  push:
+    branches:
+      - cmp-rewrite
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
-    branches: [cmp-rewrite]
+    branches:
+      - cmp-rewrite
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: pr-full-debug-build-${{ github.event.pull_request.number || github.ref }}
+  group: kable-killers-mobile-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  full-debug-build:
-    name: Build fullDebug APK
+  build:
+    name: Build Kable Killers Mobile
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Set up Java
-        uses: actions/setup-java@v5
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: '17'
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v6
+        uses: gradle/actions/setup-gradle@v4
 
-      - name: Prepare runtime properties
+      - name: Prepare configuration
         env:
           LOCAL_PROPERTIES_BASE64: ${{ secrets.NUVIO_LOCAL_PROPERTIES_BASE64 }}
         run: |
@@ -42,13 +45,18 @@ jobs:
             touch local.properties
           fi
 
-      - name: Build fullDebug APK
-        run: ./gradlew :androidApp:assembleFullDebug -Pnuvio.android.distribution=full -Pnuvio.ios.distribution=appstore --stacktrace
+      - name: Build Mobile APK
+        run: |
+          chmod +x gradlew
+          ./gradlew :androidApp:assembleFullDebug \
+            -Pnuvio.android.distribution=full \
+            -Pnuvio.ios.distribution=appstore \
+            --stacktrace
 
-      - name: Upload fullDebug APK
-        uses: actions/upload-artifact@v7
+      - name: Upload Kable Killers Mobile APK
+        uses: actions/upload-artifact@v4
         with:
+          name: Kable-Killers-Mobile-Test-APK
           path: androidApp/build/outputs/apk/full/debug/androidApp-full-debug.apk
-          archive: false
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 14

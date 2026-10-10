@@ -1,4 +1,5 @@
-name: Kable Killers Mobile - Build APK Test
+
+name: Kable Killers Mobile - Build APK
 
 on:
   push:
@@ -34,16 +35,19 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Prepare configuration
+      - name: Prepare Nuvio configuration
         env:
           LOCAL_PROPERTIES_BASE64: ${{ secrets.NUVIO_LOCAL_PROPERTIES_BASE64 }}
         run: |
           if [ -n "$LOCAL_PROPERTIES_BASE64" ]; then
             printf '%s' "$LOCAL_PROPERTIES_BASE64" | base64 --decode > local.properties
-            sed -i -E '/^[[:space:]]*(sdk\.dir|NUVIO_RELEASE_STORE_FILE)[[:space:]]*=/d' local.properties
+            sed -i -E '/^[[:space:]]*(sdk\.dir|NUVIO_RELEASE_STORE_FILE|NUVIO_SUPABASE_URL|NUVIO_SUPABASE_ANON_KEY)[[:space:]]*=/d' local.properties
           else
             touch local.properties
           fi
+
+          printf '\nNUVIO_SUPABASE_URL=https://api.nuvio.tv\n' >> local.properties
+          printf 'NUVIO_SUPABASE_ANON_KEY=sb_publishable_1Clq8rlTVACkdcZuqr6_AD__xUUC_EN\n' >> local.properties
 
       - name: Build Mobile APK
         run: |
@@ -60,3 +64,4 @@ jobs:
           path: androidApp/build/outputs/apk/full/debug/androidApp-full-debug.apk
           if-no-files-found: error
           retention-days: 14
+          

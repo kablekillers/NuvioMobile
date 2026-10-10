@@ -1,0 +1,98 @@
+
+name: Kable Killers Mobile - Signed Release
+
+on:
+  push:
+    branches:
+      - cmp-rewrite
+    paths:
+      - ".github/workflows/kable-killers-mobile-release.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Build Signed Mobile APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Prepare signing and app configuration
+        shell: bash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KABLE_KILLERS_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.KABLE_KILLERS_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KABLE_KILLERS_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KABLE_KILLERS_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          for variable in KEYSTORE_BASE64 STORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            if [ -z "${!variable}" ]; then
+              echo "::error::Missing signing secret: $variable"
+              exit 1
+            fi
+          done
+
+          umask 077
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > kable-killers-mobile.jks
+
+          cat > local.properties <<'EOF'
+          NUVIO_RELEASE_STORE_FILE=kable-killers-mobile.jks
+          NUVIO_SUPABASE_URL=https://api.nuvio.tv
+          NUVIO_SUPABASE_ANON_KEY=sb_publishable_1Clq8rlTVACkdcZuqr6_AD__xUUC_EN
+          EOF
+
+          printf 'NUVIO_RELEASE_STORE_PASSWORD=%s\n' "$STORE_PASSWORD" >> local.properties
+          printf 'NUVIO_RELEASE_KEY_ALIAS=%s\n' "$KEY_ALIAS" >> local.properties
+          printf 'NUVIO_RELEASE_KEY_PASSWORD=%s\n' "$KEY_PASSWORD" >> local.properties
+
+      - name: Build signed universal release APK
+        run: |
+          chmod +x gradlew
+          ./gradlew :androidApp:assembleFullRelease \
+            -Pnuvio.android.distribution=full \
+            -Pnuvio.ios.distribution=appstore \
+            -PreleaseMinifyEnabled=false \
+            --stacktrace
+
+      - name: Verify universal APK exists
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          APK="androidApp/build/outputs/apk/full/release/androidApp-full-universal-release.apk"
+
+          if [ ! -f "$APK" ]; then
+            echo "::error::Universal release APK not found"
+            ls -lah androidApp/build/outputs/apk/full/release/ || true
+            exit 1
+          fi
+
+          echo "Universal release APK generated successfully."
+
+      - name: Upload signed APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Kable-Killers-Mobile-Signed-Release
+          path: androidApp/build/outputs/apk/full/release/androidApp-full-universal-release.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Remove temporary signing files
+        if: always()
+        run: |
+          rm -f kable-killers-mobile.jks local.properties

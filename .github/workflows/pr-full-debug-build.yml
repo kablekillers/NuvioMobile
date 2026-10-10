@@ -1,4 +1,4 @@
-name: Kable Killers Mobile - Build APK
+name: Kable Killers Mobile - Build APK Test
 
 on:
   push:

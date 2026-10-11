@@ -202,7 +202,8 @@ open class MainActivity : AppCompatActivity() {
             videoView,
             FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                android.view.Gravity.CENTER
             )
         )
 
@@ -219,6 +220,116 @@ open class MainActivity : AppCompatActivity() {
         }
 
         videoView.setOnErrorListener { _, _, _ ->
+            finishKableKillersIntro()
+            true
+        }
+
+        try {
+            val videoUri = Uri.parse(
+                "android.resource://$packageName/$videoId"
+            )
+
+            videoView.setVideoURI(videoUri)
+
+            videoView.setOnPreparedListener { player ->
+                player.isLooping = false
+                videoView.setBackgroundColor(Color.TRANSPARENT)
+                videoView.start()
+            }
+        } catch (_: Exception) {
+            finishKableKillersIntro()
+        }
+    }
+
+    private fun finishKableKillersIntro() {
+        val videoView = introVideoView
+        val overlay = introOverlay
+
+        introVideoView = null
+        introOverlay = null
+
+        videoView?.stopPlayback()
+
+        if (overlay != null) {
+            (overlay.parent as? ViewGroup)?.removeView(overlay)
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        finishKableKillersIntro()
+        handleIncomingAppIntent(intent)
+    }
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        PlayerPictureInPictureManager.onUserLeaveHint(this)
+    }
+
+    override fun onPictureInPictureModeChanged(
+        isInPictureInPictureMode: Boolean,
+        newConfig: Configuration,
+    ) {
+        super.onPictureInPictureModeChanged(
+            isInPictureInPictureMode,
+            newConfig
+        )
+
+        PlayerPictureInPictureManager.onPictureInPictureModeChanged(
+            this,
+            isInPictureInPictureMode
+        )
+    }
+
+    override fun onDestroy() {
+        finishKableKillersIntro()
+
+        EpisodeReleaseNotificationPlatform.unbindActivity(this)
+
+        val receiver = pipRemoteActionReceiver
+
+        if (receiver != null) {
+            runCatching {
+                unregisterReceiver(receiver)
+            }
+            pipRemoteActionReceiver = null
+        }
+
+        super.onDestroy()
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray,
+    ) {
+        if (
+            EpisodeReleaseNotificationPlatform
+                .handlePermissionRequestResult(
+                    requestCode,
+                    grantResults
+                )
+        ) {
+            return
+        }
+
+        super.onRequestPermissionsResult(
+            requestCode,
+            permissions,
+            grantResults
+        )
+    }
+
+    private fun handleIncomingAppIntent(intent: Intent?) {
+        val appUrl = intent?.dataString?.trim().orEmpty()
+
+        if (appUrl.isBlank()) return
+
+        handleAppUrl(appUrl)
+    }
+}
+{ _, _, _ ->
             finishKableKillersIntro()
             true
         }

@@ -44,6 +44,18 @@ jobs:
             touch local.properties
           fi
 
+      - name: Validate authentication build configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          for key in NUVIO_SUPABASE_URL NUVIO_SUPABASE_ANON_KEY; do
+            if ! grep -Eq "^[[:space:]]*${key}[[:space:]]*=[[:space:]]*[^[:space:]#]+" local.properties && [ -z "${!key:-}" ]; then
+              echo "::error title=Missing auth configuration::${key} is absent from local.properties and environment. Cannot create a login-capable APK."
+              exit 1
+            fi
+          done
+          echo "Required auth configuration present (values hidden)."
+
       - name: Build fullDebug APK
         run: ./gradlew :androidApp:assembleFullDebug -Pnuvio.android.distribution=full -Pnuvio.ios.distribution=appstore --stacktrace
 

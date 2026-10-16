@@ -5,6 +5,8 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
     branches: [cmp-rewrite]
   workflow_dispatch:
+  push:
+    branches: [nuvio-beta-2026-10-16-test]
 
 permissions:
   contents: read

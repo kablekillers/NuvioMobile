@@ -44,6 +44,19 @@ jobs:
             touch local.properties
           fi
 
+      - name: Supply public Nuvio authentication defaults
+        shell: bash
+        run: |
+          set -euo pipefail
+          # These are public client configuration values from the previously released
+          # Kable Killers Mobile APK; never put private service-role keys here.
+          if ! grep -Eq '^[[:space:]]*NUVIO_SUPABASE_URL[[:space:]]*=[[:space:]]*[^[:space:]#]+' local.properties; then
+            printf '\nNUVIO_SUPABASE_URL=https://api.nuvio.tv\n' >> local.properties
+          fi
+          if ! grep -Eq '^[[:space:]]*NUVIO_SUPABASE_ANON_KEY[[:space:]]*=[[:space:]]*[^[:space:]#]+' local.properties; then
+            printf 'NUVIO_SUPABASE_ANON_KEY=sb_publishable_1Clq8rlTVACkdcZuqr6_AD__xUUC_EN\n' >> local.properties
+          fi
+
       - name: Validate authentication build configuration
         shell: bash
         run: |

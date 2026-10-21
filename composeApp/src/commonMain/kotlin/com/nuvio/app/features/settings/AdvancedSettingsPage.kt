@@ -21,6 +21,7 @@ import com.nuvio.app.core.ui.DialogButtonStyle
 import com.nuvio.app.core.ui.DialogSurface
 import com.nuvio.app.core.ui.NuvioTokens
 import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.core.cache.KableKillersCacheSettings
 import com.nuvio.app.features.profiles.ProfileRepository
 import com.nuvio.app.features.watchprogress.ContinueWatchingEnrichmentCache
 import com.nuvio.app.features.watchprogress.WatchProgressRepository
@@ -115,6 +116,38 @@ internal fun LazyListScope.advancedSettingsContent(
             isTablet = isTablet,
         ) {
             SettingsGroup(isTablet = isTablet) {
+                var autoClear by remember { mutableStateOf(KableKillersCacheSettings.autoClearOnStartup()) }
+                var smartCleanup by remember { mutableStateOf(KableKillersCacheSettings.smartCleanupEnabled()) }
+                var disposableCleared by remember { mutableStateOf(false) }
+                SettingsSwitchRow(
+                    title = "Auto-Clear Cache on Startup",
+                    description = "Remove disposable temporary files when opening Kable Killers; posters and saved settings are preserved.",
+                    checked = autoClear,
+                    isTablet = isTablet,
+                    onCheckedChange = {
+                        autoClear = it
+                        KableKillersCacheSettings.setAutoClearOnStartup(it)
+                    },
+                )
+                SettingsSwitchRow(
+                    title = "Smart Cache Cleanup",
+                    description = "Remove disposable files older than seven days; keep posters, downloads, and watch history.",
+                    checked = smartCleanup,
+                    isTablet = isTablet,
+                    onCheckedChange = {
+                        smartCleanup = it
+                        KableKillersCacheSettings.setSmartCleanupEnabled(it)
+                    },
+                )
+                SettingsNavigationRow(
+                    title = "Clear Temporary Cache Now",
+                    description = if (disposableCleared) "Temporary cleanup completed" else "Clear disposable files only; posters and personal data are kept.",
+                    isTablet = isTablet,
+                    onClick = {
+                        KableKillersCacheSettings.clearDisposableFiles()
+                        disposableCleared = true
+                    },
+                )
                 val scope = rememberCoroutineScope()
                 var cleared by rememberSaveable { mutableStateOf(false) }
                 SettingsNavigationRow(

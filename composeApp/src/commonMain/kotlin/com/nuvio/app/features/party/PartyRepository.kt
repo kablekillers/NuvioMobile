@@ -645,7 +645,7 @@ object PartyRepository {
         return PartyIdentity(
             deviceId = deviceId(),
             displayName = profile?.name?.trim()?.takeIf { it.isNotEmpty() }?.take(40) ?: DEFAULT_NAME,
-            avatarUrl = null // Do not publish a profile image until a shareable HTTPS URL API is available,
+            avatarUrl = null, // Shareable HTTPS avatar URLs are not supported in this fork yet
             avatarColor = profile?.avatarColorHex?.takeIf { COLOR_PATTERN.matches(it) },
             profileIndex = profile?.profileIndex,
         )

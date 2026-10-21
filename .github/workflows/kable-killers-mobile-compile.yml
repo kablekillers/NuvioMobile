@@ -28,11 +28,20 @@ jobs:
             exit 1
           }
           echo "Android API 37.0 available; keeping project's compileSdk 37.0."
-      - name: Create local build properties
+      - name: Configure authentication for test APK
         shell: bash
+        env:
+          NUVIO_SUPABASE_URL: ${{ secrets.NUVIO_SUPABASE_URL }}
+          NUVIO_SUPABASE_ANON_KEY: ${{ secrets.NUVIO_SUPABASE_ANON_KEY }}
+          NUVIO_SUPABASE_FALLBACK_URL: ${{ secrets.NUVIO_SUPABASE_FALLBACK_URL }}
         run: |
+          set -euo pipefail
           touch local.properties
-          echo "Created local.properties for Gradle task input validation."
+          if [ -z "$NUVIO_SUPABASE_URL" ] || [ -z "$NUVIO_SUPABASE_ANON_KEY" ]; then
+            echo "::error::Missing NUVIO_SUPABASE_URL or NUVIO_SUPABASE_ANON_KEY GitHub Actions secrets. Refusing to publish an APK that cannot sign in."
+            exit 1
+          fi
+          echo "Authentication configuration available (values withheld)."
       - name: Verify Watch Party Kotlin compilation independently
         shell: bash
         run: |

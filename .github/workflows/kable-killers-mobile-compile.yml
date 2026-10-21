@@ -31,8 +31,8 @@ jobs:
       - name: Configure authentication for test APK
         shell: bash
         env:
-          NUVIO_SUPABASE_URL: ${{ secrets.NUVIO_SUPABASE_URL }}
-          NUVIO_SUPABASE_ANON_KEY: ${{ secrets.NUVIO_SUPABASE_ANON_KEY }}
+          NUVIO_SUPABASE_URL: https://api.nuvio.tv
+          NUVIO_SUPABASE_ANON_KEY: sb_publishable_1Clq8rlTVACkdcZuqr6_AD__xUUC_EN
           NUVIO_SUPABASE_FALLBACK_URL: ${{ secrets.NUVIO_SUPABASE_FALLBACK_URL }}
         run: |
           set -euo pipefail

@@ -12,6 +12,7 @@ import coil3.request.CachePolicy
 import coil3.request.crossfade
 import coil3.svg.SvgDecoder
 import com.nuvio.app.core.poster.CustomPosterFallbackInterceptor
+import com.nuvio.app.core.cache.KableKillersCacheManager
 
 /**
  * Custom Application class that implements [SingletonImageLoader.Factory] to guarantee
@@ -20,6 +21,17 @@ import com.nuvio.app.core.poster.CustomPosterFallbackInterceptor
  * before MainActivity.onCreate, and interceptors registered later are ignored.
  */
 class NuvioApplication : Application(), SingletonImageLoader.Factory {
+
+    override fun onCreate() {
+        super.onCreate()
+        val cacheManager = KableKillersCacheManager(this)
+        // Only clean our own disposable temp directory; never Coil's poster cache.
+        if (cacheManager.autoClearOnStartup) {
+            cacheManager.clearDisposableFiles()
+        } else if (cacheManager.smartCleanupEnabled) {
+            cacheManager.cleanOldTemporaryFiles()
+        }
+    }
 
     override fun newImageLoader(context: android.content.Context): ImageLoader {
         return ImageLoader.Builder(context)

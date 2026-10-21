@@ -13,6 +13,7 @@ import coil3.request.crossfade
 import coil3.svg.SvgDecoder
 import com.nuvio.app.core.poster.CustomPosterFallbackInterceptor
 import com.nuvio.app.core.cache.KableKillersCacheManager
+import com.nuvio.app.core.cache.KableKillersCacheSettings
 
 /**
  * Custom Application class that implements [SingletonImageLoader.Factory] to guarantee
@@ -24,6 +25,7 @@ class NuvioApplication : Application(), SingletonImageLoader.Factory {
 
     override fun onCreate() {
         super.onCreate()
+        KableKillersCacheSettings.initialize(this)
         val cacheManager = KableKillersCacheManager(this)
         // Only clean our own disposable temp directory; never Coil's poster cache.
         if (cacheManager.autoClearOnStartup) {

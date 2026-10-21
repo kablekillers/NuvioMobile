@@ -63,6 +63,10 @@ jobs:
             {
               echo "## Build failure summary"
               echo '~~~text'
+              sed -n '/^\* What went wrong:/,/^\* Try:/p' "$LOG" | head -n 110
+              echo '--- AAR metadata requirements ---'
+              grep -n -A 7 -B 2 -E 'requires (libraries|dependencies|Android API|compileSdk)|requires.*compile against|compileSdk|AAR metadata|checkFullDebugAarMetadata' "$LOG" | tail -n 100 || true
+              echo '--- Compiler errors ---'
               grep -m 35 -E '(^e: |^error:|^FAILURE:|^\* What went wrong:|^Execution failed|^> Task .* FAILED|Unresolved reference|Compilation error|Could not resolve|Caused by:)' "$LOG" || true
               echo '~~~'
             } >> "$GITHUB_STEP_SUMMARY"

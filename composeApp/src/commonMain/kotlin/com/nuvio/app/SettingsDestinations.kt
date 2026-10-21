@@ -19,6 +19,7 @@ import com.nuvio.app.navigation.CollectionEditorRoute
 import com.nuvio.app.navigation.CollectionsRoute
 import com.nuvio.app.navigation.FolderDetailRoute
 import com.nuvio.app.navigation.NuvioNavigator
+import com.nuvio.app.navigation.PartyRoute
 import com.nuvio.app.navigation.SettingsPageRoute
 
 @Composable
@@ -53,6 +54,7 @@ internal fun SettingsRootDestination(
         onCollectionsClick = {
             navController.navigate(CollectionsRoute(collectionsTitle))
         },
+        onWatchPartyClick = { navController.navigate(PartyRoute(title = "Watch Party")) },
         onCheckForUpdatesClick = onCheckForUpdates,
         onTestUpdateBannerClick = onTestUpdateBanner,
     )

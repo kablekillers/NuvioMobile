@@ -29,7 +29,6 @@ import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material.icons.rounded.Flag
-import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.Forward10
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.LockOpen
@@ -74,10 +73,8 @@ import com.nuvio.app.core.ui.accentBrush
 import com.nuvio.app.core.ui.appIconPainter
 import com.nuvio.app.core.ui.gradientMask
 import com.nuvio.app.core.ui.nuvioTypeScale
-import com.nuvio.app.features.streams.StreamBadge
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
-import com.nuvio.app.core.i18n.localizedEpisodeTitle
 
 @Composable
 internal fun PlayerControlsShell(
@@ -96,15 +93,12 @@ internal fun PlayerControlsShell(
     showRemainingTime: Boolean = false,
     onRuntimeClick: () -> Unit = {},
     releaseInfo: String? = null,
-    badges: List<StreamBadge> = emptyList(),
     hideDetails: Boolean = false,
     onNextEpisodeClick: (() -> Unit)? = null,
     onInteraction: () -> Unit = {},
     showPlaybackControls: Boolean = true,
     onLockToggle: () -> Unit,
     onBack: () -> Unit,
-    onPartyClick: (() -> Unit)? = null,
-    partyActive: Boolean = false,
     onTogglePlayback: () -> Unit,
     onSeekBack: () -> Unit,
     onSeekForward: () -> Unit,
@@ -129,12 +123,11 @@ internal fun PlayerControlsShell(
 ) {
     val density = LocalDensity.current
     var timelineHeight by remember { mutableStateOf(0.dp) }
-    var sourceLineHeight by remember { mutableStateOf(0.dp) }
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val centerControlHeight = metrics.playIconSize + maxOf(metrics.playButtonPadding, metrics.sideButtonPadding) * 2
         val centerBottomPadding = if (useLegacyLayout) metrics.centerLift else maxOf(
             metrics.centerLift,
-            (timelineHeight - sourceLineHeight) * 2 + centerControlHeight + 16.dp - maxHeight,
+            timelineHeight * 2 + centerControlHeight + 16.dp - maxHeight,
         )
         Box(
             modifier = Modifier
@@ -189,8 +182,6 @@ internal fun PlayerControlsShell(
                     onLockToggle = onLockToggle,
                     onVideoSettingsClick = onVideoSettingsClick,
                     onOpenInExternalPlayer = onOpenInExternalPlayer,
-                    onPartyClick = onPartyClick,
-                    partyActive = partyActive,
                     onBack = onBack,
                     modifier = Modifier
                         .align(Alignment.TopStart)
@@ -208,9 +199,6 @@ internal fun PlayerControlsShell(
                         isLocked = isLocked,
                         onLockToggle = onLockToggle,
                         onBack = onBack,
-                        onPartyClick = onPartyClick,
-                        partyActive = partyActive,
-                        onSwitchEngineClick = onSwitchEngineClick,
                         modifier = Modifier
                             .align(Alignment.TopEnd)
                             .windowInsetsPadding(WindowInsets.safeContent.only(WindowInsetsSides.Top))
@@ -293,10 +281,6 @@ internal fun PlayerControlsShell(
                             providerName = providerName,
                             isPlaying = playbackSnapshot.isPlaying,
                             metrics = metrics,
-                            badges = badges,
-                            onSourceLineHeightChanged = { height ->
-                                sourceLineHeight = with(density) { height.toDp() }
-                            },
                         )
                     }
                     PlayerTimeline(
@@ -320,6 +304,7 @@ internal fun PlayerControlsShell(
                         onSourcesClick = onSourcesClick,
                         onEpisodesClick = onEpisodesClick,
                         onNextEpisodeClick = onNextEpisodeClick,
+                        onSwitchEngineClick = onSwitchEngineClick,
                         onSpeedClick = onSpeedClick,
                         onResizeModeClick = onResizeModeClick,
                         onVideoSettingsClick = onVideoSettingsClick,
@@ -352,8 +337,6 @@ private fun PlayerHeader(
     onLockToggle: () -> Unit,
     onVideoSettingsClick: (() -> Unit)?,
     onOpenInExternalPlayer: (() -> Unit)?,
-    onPartyClick: (() -> Unit)?,
-    partyActive: Boolean,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -388,13 +371,12 @@ private fun PlayerHeader(
                         overflow = TextOverflow.Ellipsis,
                     )
                     if (seasonNumber != null && episodeNumber != null && !episodeTitle.isNullOrBlank()) {
-                        val displayEpisodeTitle = localizedEpisodeTitle(episodeTitle, episodeNumber) ?: episodeTitle
                         Text(
                             text = stringResource(
                                 Res.string.compose_player_episode_title_format,
                                 seasonNumber,
                                 episodeNumber,
-                                displayEpisodeTitle,
+                                episodeTitle,
                             ),
                             style = typeScale.bodyMd.copy(
                                 fontSize = metrics.episodeInfoSize,
@@ -463,16 +445,6 @@ private fun PlayerHeader(
                             onClick = onOpenInExternalPlayer,
                         )
                     }
-                    if (onPartyClick != null) {
-                        PlayerHeaderIconButton(
-                            icon = Icons.Rounded.Groups,
-                            contentDescription = stringResource(Res.string.party_title),
-                            buttonSize = metrics.headerIconSize + 16.dp,
-                            iconSize = metrics.headerIconSize,
-                            onClick = onPartyClick,
-                            tint = if (partyActive) MaterialTheme.colorScheme.primary else Color.White,
-                        )
-                    }
                     PlayerHeaderIconButton(
                         icon = if (isLocked) Icons.Rounded.LockOpen else Icons.Rounded.Lock,
                         contentDescription = if (isLocked) {
@@ -514,7 +486,6 @@ internal fun PlayerHeaderIconButton(
     buttonSize: androidx.compose.ui.unit.Dp,
     iconSize: androidx.compose.ui.unit.Dp,
     onClick: () -> Unit,
-    tint: Color = Color.White,
 ) {
     Box(
         modifier = Modifier
@@ -527,7 +498,7 @@ internal fun PlayerHeaderIconButton(
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
-            tint = tint,
+            tint = Color.White,
             modifier = Modifier.size(iconSize),
         )
     }

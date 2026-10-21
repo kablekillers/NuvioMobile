@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.asStateFlow
 data class ServerCapabilities(
     val emailPasswordAuth: Boolean,
     val tvLogin: Boolean,
+    // Keep disabled until the complete Watch Party feature is integrated.
+    val watchParty: Boolean = false,
 )
 
 data class ServerConfiguration(

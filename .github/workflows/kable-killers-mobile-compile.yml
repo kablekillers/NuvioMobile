@@ -17,12 +17,25 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
-      - name: Configure preinstalled Android SDK
+      - name: Configure Android SDK and diagnose API 37 availability
+        shell: bash
         run: |
-          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> "$GITHUB_ENV"
-          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses || true
-          "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --channel=3 --list | grep -E "platforms;android-37|build-tools;37" || true
-          "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --channel=3 "platforms;android-37" "build-tools;37.0.0"
+          set -euo pipefail
+          echo "ANDROID_HOME=${ANDROID_SDK_ROOT}" >> "$GITHUB_ENV"
+          SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          echo "SDK manager: $SDKMANAGER"
+          "$SDKMANAGER" --version
+          echo "Installed SDK platforms:"
+          ls -la "$ANDROID_SDK_ROOT/platforms" || true
+          echo "API 37 package availability (all channels):"
+          "$SDKMANAGER" --channel=3 --list > "$RUNNER_TEMP/sdk-packages.txt"
+          grep -E 'platforms;android-37|build-tools;37' "$RUNNER_TEMP/sdk-packages.txt" || true
+          if ! grep -q 'platforms;android-37' "$RUNNER_TEMP/sdk-packages.txt" && [ ! -d "$ANDROID_SDK_ROOT/platforms/android-37" ]; then
+            echo "::error::Android API 37 is not listed by sdkmanager. Cannot compile this project with its existing compileSdk=37 on this runner."
+            exit 1
+          fi
+          "$SDKMANAGER" --licenses < /dev/null || true
+          "$SDKMANAGER" --channel=3 "platforms;android-37" "build-tools;37.0.0"
       - name: Compile Android debug APK
         run: bash ./gradlew :androidApp:assembleFullDebug --stacktrace --no-daemon
       - name: Upload debug APK

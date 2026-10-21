@@ -17,29 +17,28 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
-      - name: Configure SDK for temporary CI compile check
+      - name: Install required Android API 37 SDK
         shell: bash
         run: |
           set -euo pipefail
           echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> "$GITHUB_ENV"
           echo "Installed SDK platforms:"
           ls -1 "$ANDROID_SDK_ROOT/platforms"
-          if [ -d "$ANDROID_SDK_ROOT/platforms/android-37" ]; then
-            echo "Android API 37 is installed; using project defaults."
-          else
-            echo "::warning::API 37 unavailable on this runner; using API 36 for CI compilation only. Repository compileSdk remains 37."
-            test -d "$ANDROID_SDK_ROOT/platforms/android-36"
-            python3 - <<'PY'
-          from pathlib import Path
-          p = Path("androidApp/build.gradle.kts")
-          s = p.read_text()
-          original = """    compileSdk =
-                  libs.versions.android.compileSdk.get().toInt()"""
-          assert original in s, "Expected compileSdk declaration not found"
-          s = s.replace(original, "    compileSdk = 36", 1)
-          p.write_text(s)
-          PY
+          if [ ! -f "$ANDROID_SDK_ROOT/platforms/android-37/android.jar" ]; then
+            SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+            if [ ! -x "$SDKMANAGER" ]; then
+              SDKMANAGER="$(command -v sdkmanager)"
+            fi
+            echo "Checking SDK package availability..."
+            "$SDKMANAGER" --list --channel=3 | grep -E 'platforms;android-37|build-tools;37' || true
+            yes | "$SDKMANAGER" --channel=3 --licenses >/dev/null || true
+            "$SDKMANAGER" --channel=3 "platforms;android-37"
           fi
+          test -f "$ANDROID_SDK_ROOT/platforms/android-37/android.jar" || {
+            echo "::error::Android API 37 SDK unavailable. Cannot compile dependencies requiring API 37 against API 36."
+            exit 1
+          }
+          echo "Android API 37 installed. Preserving repository compileSdk configuration."
       - name: Create local build properties
         shell: bash
         run: |

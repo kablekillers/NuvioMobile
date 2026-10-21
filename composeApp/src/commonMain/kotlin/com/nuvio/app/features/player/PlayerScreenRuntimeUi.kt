@@ -6,6 +6,24 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeContent
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Groups
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.nuvio.app.features.party.PartyRepository
+import com.nuvio.app.features.party.PartyMedia
+import com.nuvio.app.features.party.PartySource
+import com.nuvio.app.features.party.PartyPanel
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -237,6 +255,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
             p2pRebufferProgress = p2pRebufferProgress,
         )
         RenderPlayerModals(displayedPositionMs = displayedPositionMs)
+        RenderWatchPartyHosting()
     }
 }
 
@@ -671,5 +690,61 @@ private fun PlayerScreenRuntime.RenderPlayerModals(displayedPositionMs: Long) {
         subtitleTrack = subtitleTracks.firstOrNull { it.index == selectedSubtitleIndex }.takeIf { !useCustomSubtitles },
         addonSubtitle = selectedAddonSubtitle.takeIf { useCustomSubtitles },
         onDismiss = { showStreamInfo = false },
+    )
+}
+
+// Hosting entry point for the existing player. Playback synchronization is integrated separately.
+@Composable
+private fun PlayerScreenRuntime.RenderWatchPartyHosting() {
+    val partyState by PartyRepository.state.collectAsStateWithLifecycle()
+    val available by PartyRepository.available.collectAsStateWithLifecycle()
+    var panelOpen by remember { mutableStateOf(false) }
+    var showChat by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val media = PartyMedia(
+        type = contentType ?: parentMetaType,
+        metaId = parentMetaId,
+        metaType = parentMetaType,
+        videoId = activeVideoId,
+        season = activeSeasonNumber,
+        episode = activeEpisodeNumber,
+        title = title,
+        episodeTitle = activeEpisodeTitle,
+        poster = poster,
+        background = background,
+        logo = logo,
+        source = PartySource(infoHash = activeTorrentInfoHash, fileIdx = activeTorrentFileIdx, filename = activeTorrentFilename, bingeGroup = currentStreamBingeGroup, addonId = activeProviderAddonId, name = activeStreamTitle),
+    )
+    if (available && controlsVisible && !playerControlsLocked) {
+        androidx.compose.foundation.layout.Box(modifier = Modifier.align(Alignment.TopEnd).windowInsetsPadding(WindowInsets.safeContent).padding(top = 8.dp, end = 110.dp)) {
+            PlayerHeaderIconButton(
+                icon = Icons.Rounded.Groups,
+                contentDescription = "Host or manage Watch Party",
+                buttonSize = metrics.headerIconSize + 16.dp,
+                iconSize = metrics.headerIconSize,
+                onClick = { panelOpen = true; controlsVisible = false },
+            )
+        }
+    }
+    PartyPanel(
+        visible = panelOpen,
+        state = partyState,
+        showChat = showChat,
+        onShowChatChange = { showChat = it },
+        playerMedia = media,
+        isSupported = available,
+        canStart = available,
+        onStart = { scope.launch { PartyRepository.create(media) } },
+        onSwitchParty = { },
+        onWatchWithParty = { },
+        onLeave = { PartyRepository.leave() },
+        onEnd = { PartyRepository.end() },
+        onRemove = { PartyRepository.removeMember(it.id) },
+        onHostOnlyChange = { PartyRepository.setHostOnly(it) },
+        canShareStream = false,
+        onSharingChange = { PartyRepository.setSharing(it) },
+        behindMs = null,
+        onCatchUp = { },
+        onDismiss = { panelOpen = false },
     )
 }

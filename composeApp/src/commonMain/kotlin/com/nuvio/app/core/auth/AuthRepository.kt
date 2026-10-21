@@ -133,7 +133,10 @@ object AuthRepository {
     }.onFailure { e ->
         log.e(e) { "Email sign-in failed" }
         _error.value = e.safeAuthErrorDescription()
-            ?: getString(Res.string.auth_sign_in_failed)
+            ?: when (e) {
+                is io.ktor.client.plugins.ResponseException -> "Sign-in server returned HTTP ${e.response.status.value}"
+                else -> "Sign-in connection failed (${e::class.simpleName ?: "unknown error"}). Check network and server configuration."
+            }
     }
 
     suspend fun signOut(): Result<Unit> {

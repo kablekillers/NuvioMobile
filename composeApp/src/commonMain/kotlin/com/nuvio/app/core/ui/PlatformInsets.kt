@@ -34,3 +34,6 @@ internal fun nuvioSafeBottomPadding(extra: Dp = 0.dp): Dp {
 		LocalNuvioBottomNavigationOverlayPadding.current +
 		extra
 }
+
+@Composable
+internal expect fun ResizeForKeyboard()

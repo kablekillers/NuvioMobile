@@ -40,6 +40,11 @@ jobs:
           p.write_text(s)
           PY
           fi
+      - name: Create local build properties
+        shell: bash
+        run: |
+          touch local.properties
+          echo "Created local.properties for Gradle task input validation."
       - name: Compile Android debug APK
         run: bash ./gradlew :androidApp:assembleFullDebug --stacktrace --no-daemon
       - name: Upload debug APK

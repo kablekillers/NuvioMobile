@@ -1,5 +1,6 @@
 package com.nuvio.app.features.settings
 
+import com.nuvio.app.core.network.ServerConfigurationRepository
 import com.nuvio.app.core.build.AppFeaturePolicy
 
 import androidx.compose.foundation.background
@@ -713,6 +714,7 @@ private fun MobileSettingsScreen(
                             onTestUpdateBannerClick = onTestUpdateBannerClick,
                             onAccountClick = onAccountClick,
                             onSwitchProfileClick = onSwitchProfile,
+                            onWatchPartyClick = onWatchPartyClick.takeIf { ServerConfigurationRepository.active.value.capabilities.watchParty },
                             showSupportersContributorsPage = AppFeaturePolicy.supportersContributorsPageEnabled,
                         )
                     }

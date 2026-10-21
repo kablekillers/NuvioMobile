@@ -717,7 +717,7 @@ private fun MobileSettingsScreen(
                             onTestUpdateBannerClick = onTestUpdateBannerClick,
                             onAccountClick = onAccountClick,
                             onSwitchProfileClick = onSwitchProfile,
-                            onWatchPartyClick = onWatchPartyClick.takeIf { ServerConfigurationRepository.active.value.capabilities.watchParty },
+                            onWatchPartyClick = onWatchPartyClick,
                             showSupportersContributorsPage = AppFeaturePolicy.supportersContributorsPageEnabled,
                         )
                     }
@@ -1151,7 +1151,7 @@ private fun TabletSettingsScreen(
                                 onTestUpdateBannerClick = onTestUpdateBannerClick,
                                 onAccountClick = { openInlinePage(SettingsPage.Account) },
                                 onSwitchProfileClick = onSwitchProfile,
-                                onWatchPartyClick = onWatchPartyClick.takeIf { ServerConfigurationRepository.active.value.capabilities.watchParty },
+                                onWatchPartyClick = onWatchPartyClick,
                                 showAccountSection = activeCategory == SettingsCategory.Account,
                                 showGeneralSection = activeCategory == SettingsCategory.General,
                                 showAboutSection = activeCategory == SettingsCategory.About,

@@ -716,7 +716,8 @@ private fun PlayerScreenRuntime.RenderWatchPartyHosting() {
         source = PartySource(infoHash = activeTorrentInfoHash, fileIdx = activeTorrentFileIdx, filename = activeTorrentFilename, bingeGroup = currentStreamBingeGroup, addonId = activeProviderAddonId, name = activeStreamTitle),
     )
     if (available && controlsVisible && !playerControlsLocked) {
-        androidx.compose.foundation.layout.Box(modifier = Modifier.align(Alignment.TopEnd).windowInsetsPadding(WindowInsets.safeContent).padding(top = 8.dp, end = 110.dp)) {
+        androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeContent).padding(top = 8.dp, end = 110.dp)) {
+            androidx.compose.foundation.layout.Box(modifier = Modifier.align(Alignment.TopEnd)) {
             PlayerHeaderIconButton(
                 icon = Icons.Rounded.Groups,
                 contentDescription = "Host or manage Watch Party",
@@ -724,6 +725,7 @@ private fun PlayerScreenRuntime.RenderWatchPartyHosting() {
                 iconSize = metrics.headerIconSize,
                 onClick = { panelOpen = true; controlsVisible = false },
             )
+            }
         }
     }
     PartyPanel(

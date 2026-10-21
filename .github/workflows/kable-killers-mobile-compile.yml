@@ -45,6 +45,11 @@ jobs:
         run: |
           touch local.properties
           echo "Created local.properties for Gradle task input validation."
+      - name: Verify Watch Party Kotlin compilation independently
+        shell: bash
+        run: |
+          set -o pipefail
+          bash ./gradlew :composeApp:compileAndroidMain --no-daemon --console=plain 2>&1 | tee "$RUNNER_TEMP/kotlin-check.log"
       - name: Compile Android debug APK
         shell: bash
         run: |

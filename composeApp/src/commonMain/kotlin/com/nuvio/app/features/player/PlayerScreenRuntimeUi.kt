@@ -9,16 +9,12 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.nuvio.app.core.ui.NuvioStatusModal
 import com.nuvio.app.features.p2p.P2pStreamingState
-import com.nuvio.app.features.party.PartyRepository
 import com.nuvio.app.features.p2p.formatP2pMegabytes
 import com.nuvio.app.features.p2p.formatP2pSpeed
 import com.nuvio.app.features.player.skip.internalSkipAction
@@ -27,7 +23,6 @@ import com.nuvio.app.features.streams.streamAddonInstanceId
 import com.nuvio.app.isIos
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
-import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
@@ -118,8 +113,6 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
     }
     val gestureCallbacks = rememberSurfaceGestureCallbacks()
     val playbackGesturesEnabled = initialLoadCompleted && errorMessage == null
-
-    BindAutoSyncRuntimeEffects() // AutoSync hook
 
     Box(
         modifier = Modifier
@@ -244,7 +237,6 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
             p2pRebufferProgress = p2pRebufferProgress,
         )
         RenderPlayerModals(displayedPositionMs = displayedPositionMs)
-        RenderParty(runtime = runtime)
     }
 }
 
@@ -274,9 +266,6 @@ private fun PlayerScreenRuntime.currentInitialPositionRequestKey(): String? {
 @Composable
 private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, isEpisode: Boolean) {
     val isInPip = rememberIsInPictureInPicture()
-    val partyState by PartyRepository.state.collectAsStateWithLifecycle()
-    val partyActive = partyState.party != null
-    val playerBadges = rememberPlayerBadges()
     AnimatedVisibility(
         visible = (controlsVisible || showParentalGuide) && !playerControlsLocked && !isInPip,
         enter = fadeIn(),
@@ -298,11 +287,10 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
             showRemainingTime = showRemainingTime,
             onRuntimeClick = { showRemainingTime = !showRemainingTime },
             releaseInfo = metaUiState.meta?.takeIf { it.id == parentMetaId }?.releaseInfo,
-            badges = playerBadges,
             hideDetails = activeSkipInterval != null && !skipIntervalDismissed,
             onNextEpisodeClick = if (nextEpisodeInfo?.hasAired == true && !nextEpisodeAutoPlaySearching && nextEpisodeAutoPlayCountdown == null) {
                 {
-                    if (!partyBlocksControl()) playNextEpisode()
+                    playNextEpisode()
                 }
             } else null,
             onInteraction = { controlsActivityTick += 1 },
@@ -314,12 +302,6 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
                 flushWatchProgress()
                 args.onBack()
             },
-            onPartyClick = if (PartyRepository.available.collectAsStateWithLifecycle().value) {
-                { openPartyPanel() }
-            } else {
-                null
-            },
-            partyActive = partyActive,
             onTogglePlayback = { togglePlayback() },
             onSeekBack = { seekBy(-10_000L) },
             onSeekForward = { seekBy(10_000L) },
@@ -387,7 +369,7 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
                 null
             },
             onSwitchEngineClick = if (playerController?.playbackEngine != null) {
-                { showSwitchEngineConfirm = true }
+                { switchPlaybackEngine() }
             } else {
                 null
             },
@@ -400,16 +382,9 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
                 scrubbingPositionMs = positionMs
             },
             onScrubFinished = { positionMs ->
-                val targetMs = if (isPartyControlLocked) ownSeekTarget(positionMs) else positionMs
-                if (targetMs == null) {
-                    isScrubbingTimeline = false
-                    scrubbingPositionMs = null
-                } else {
-                    finishTimelineScrub(targetMs)
-                    playerController?.seekTo(targetMs)
-                    scheduleProgressSyncAfterSeek()
-                    publishPartyPlayback(positionMs = targetMs)
-                }
+                finishTimelineScrub(positionMs)
+                playerController?.seekTo(positionMs)
+                scheduleProgressSyncAfterSeek()
             },
             horizontalSafePadding = horizontalSafePadding,
             modifier = Modifier.fillMaxSize(),
@@ -469,14 +444,10 @@ private fun BoxScope.RenderPlaybackOverlays(
         onSkipInterval = { interval ->
             interval.internalSkipAction(skipIntervals, playbackSnapshot.durationMs)?.let { action ->
                 val durationMs = playbackSnapshot.durationMs
-                val requestedMs = if (durationMs > 0L) action.targetMs.coerceAtMost(durationMs - 1) else action.targetMs
-                val seekMs = if (isPartyControlLocked) ownSeekTarget(requestedMs) else requestedMs
-                if (seekMs != null) {
-                    playerController?.seekTo(seekMs)
-                    scheduleProgressSyncAfterSeek()
-                    publishPartyPlayback(positionMs = seekMs)
-                    skipIntervalDismissed = true
-                }
+                val seekMs = if (durationMs > 0L) action.targetMs.coerceAtMost(durationMs - 1) else action.targetMs
+                playerController?.seekTo(seekMs)
+                scheduleProgressSyncAfterSeek()
+                skipIntervalDismissed = true
             }
         },
         onDismissSkipInterval = { skipIntervalDismissed = true },
@@ -490,7 +461,7 @@ private fun BoxScope.RenderPlaybackOverlays(
         nextEpisodeAutoPlayCountdown = nextEpisodeAutoPlayCountdown,
         blurUnwatchedEpisodes = metaScreenSettingsUiState.blurUnwatchedEpisodes,
         onPlayNextEpisode = {
-            if (!partyBlocksControl()) playNextEpisode()
+            playNextEpisode()
         },
         onDismissNextEpisode = {
             cancelNextEpisodeAutoPlay()
@@ -575,7 +546,7 @@ private fun PlayerScreenRuntime.RenderPlayerModals(displayedPositionMs: Long) {
             useCustomSubtitles = true
             preferredSubtitleSelectionApplied = true
             persistAddonSubtitlePreference(addon)
-            attachSelectedAddonSubtitleWithAutoSync(addon.url) // AutoSync hook
+            playerController?.setSubtitleUri(addon.url)
             if (hasBurnedInServerSubtitle) clearServerSubtitleTrack()
         },
         onFetchAddonSubtitles = { fetchAddonSubtitlesForActiveItem() },
@@ -701,19 +672,4 @@ private fun PlayerScreenRuntime.RenderPlayerModals(displayedPositionMs: Long) {
         addonSubtitle = selectedAddonSubtitle.takeIf { useCustomSubtitles },
         onDismiss = { showStreamInfo = false },
     )
-    val switchEngineTarget = playerController?.playbackEngine?.switchTarget
-    if (switchEngineTarget != null) {
-        NuvioStatusModal(
-            isVisible = showSwitchEngineConfirm,
-            title = stringResource(Res.string.player_engine_switch_title, switchEngineTarget.label),
-            message = stringResource(Res.string.player_engine_switch_message),
-            confirmText = stringResource(Res.string.action_switch),
-            dismissText = stringResource(Res.string.action_cancel),
-            onConfirm = {
-                showSwitchEngineConfirm = false
-                switchPlaybackEngine()
-            },
-            onDismiss = { showSwitchEngineConfirm = false },
-        )
-    }
 }

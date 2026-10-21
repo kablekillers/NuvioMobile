@@ -19,7 +19,6 @@ import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.player_engine_switching_manual_message
 import kotlin.math.abs
-import kotlin.time.TimeSource
 
 internal fun PlayerScreenRuntime.finishTimelineScrub(positionMs: Long) {
     lastManualSkipSeekPositions = playbackSnapshot.positionMs to positionMs
@@ -32,14 +31,12 @@ internal fun PlayerScreenRuntime.updatePlaybackSnapshot(
     playbackKey: PlaybackKey = activePlaybackKey,
 ): Boolean {
     if (playbackKey != activePlaybackKey) return false
-    val reported = if (partyRateNudge != null) snapshot.copy(playbackSpeed = partyBaseRate()) else snapshot
-    playbackSnapshot = if (reported.durationMs <= 0L && playbackSnapshotKey == playbackKey) {
-        reported.copy(durationMs = playbackSnapshot.durationMs)
+    playbackSnapshot = if (snapshot.durationMs <= 0L && playbackSnapshotKey == playbackKey) {
+        snapshot.copy(durationMs = playbackSnapshot.durationMs)
     } else {
-        reported
+        snapshot
     }
     playbackSnapshotKey = playbackKey
-    playbackSnapshotMark = TimeSource.Monotonic.markNow()
     val targetPositionMs = scrubbingPositionMs ?: return true
     if (!isScrubbingTimeline && (
             !snapshot.isLoading || snapshot.isEnded ||
@@ -119,7 +116,6 @@ internal fun PlayerScreenRuntime.currentLaunch(launch: PlayerLaunch): PlayerLaun
         torrentFileIdx = activeTorrentFileIdx,
         torrentFilename = activeTorrentFilename,
         torrentTrackers = activeTorrentTrackers,
-        sourceFilename = activeSourceFilename,
         initialPositionMs = positionMs ?: activeInitialPositionMs,
         initialProgressFraction = activeInitialProgressFraction.takeIf { positionMs == null },
     )
@@ -427,11 +423,9 @@ internal fun PlayerScreenRuntime.persistPlaybackProgressTick() {
     )
 }
 
-internal val AndroidPlaybackEngine.switchTarget: AndroidPlaybackEngine
-    get() = if (this == AndroidPlaybackEngine.Libmpv) AndroidPlaybackEngine.ExoPlayer else AndroidPlaybackEngine.Libmpv
-
 internal fun PlayerScreenRuntime.switchPlaybackEngine() {
-    val target = playerController?.playbackEngine?.switchTarget ?: return
+    val engine = playerController?.playbackEngine ?: return
+    val target = if (engine == AndroidPlaybackEngine.Libmpv) AndroidPlaybackEngine.ExoPlayer else AndroidPlaybackEngine.Libmpv
     flushWatchProgress()
     if (initialSeekApplied) {
         activeInitialPositionMs = playbackSnapshot.positionMs.coerceAtLeast(0L)

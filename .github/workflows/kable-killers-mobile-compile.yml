@@ -42,6 +42,11 @@ jobs:
             exit 1
           fi
           echo "Authentication configuration available (values withheld)."
+          echo "NUVIO_SUPABASE_URL=$NUVIO_SUPABASE_URL" >> "$GITHUB_ENV"
+          echo "NUVIO_SUPABASE_ANON_KEY=$NUVIO_SUPABASE_ANON_KEY" >> "$GITHUB_ENV"
+          if [ -n "$NUVIO_SUPABASE_FALLBACK_URL" ]; then
+            echo "NUVIO_SUPABASE_FALLBACK_URL=$NUVIO_SUPABASE_FALLBACK_URL" >> "$GITHUB_ENV"
+          fi
       - name: Verify Watch Party Kotlin compilation independently
         shell: bash
         run: |

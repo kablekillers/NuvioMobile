@@ -81,6 +81,7 @@ internal fun LazyListScope.settingsRootContent(
     onTestUpdateBannerClick: (() -> Unit)? = null,
     onAccountClick: () -> Unit,
     onSwitchProfileClick: (() -> Unit)? = null,
+    onWatchPartyClick: (() -> Unit)? = null,
     showAccountSection: Boolean = true,
     showGeneralSection: Boolean = true,
     showAboutSection: Boolean = true,
@@ -111,6 +112,16 @@ internal fun LazyListScope.settingsRootContent(
                         isTablet = isTablet,
                         onClick = onAccountClick,
                     )
+                    if (onWatchPartyClick != null) {
+                        SettingsGroupDivider(isTablet = isTablet)
+                        SettingsNavigationRow(
+                            title = "Watch Party",
+                            description = "Watch together with friends",
+                            icon = Icons.Rounded.Groups,
+                            isTablet = isTablet,
+                            onClick = onWatchPartyClick,
+                        )
+                    }
                     SettingsGroupDivider(isTablet = isTablet)
                     SettingsNavigationRow(
                         title = stringResource(Res.string.compose_settings_page_tracking),

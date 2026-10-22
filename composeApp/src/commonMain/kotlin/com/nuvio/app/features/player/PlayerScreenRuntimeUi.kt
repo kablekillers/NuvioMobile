@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.safeContent
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Groups
-import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -761,38 +760,16 @@ private fun PlayerScreenRuntime.RenderWatchPartyHosting() {
             PartyRepository.publishPlayback(!shouldPlay, playbackSnapshot.positionMs, playbackSnapshot.playbackSpeed)
         }
     }
-    if (available && controlsVisible) {
-        androidx.compose.foundation.layout.Box(
-            modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeContent)
-                .padding(top = 8.dp, end = 110.dp),
-        ) {
-            androidx.compose.foundation.layout.Row(
-                modifier = Modifier.align(Alignment.TopEnd),
-                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
-            ) {
-                if (partyState.party != null) {
-                    PlayerHeaderIconButton(
-                        icon = Icons.Rounded.Sync,
-                        contentDescription = "Catch up to Watch Party host",
-                        buttonSize = metrics.headerIconSize + 16.dp,
-                        iconSize = metrics.headerIconSize,
-                        onClick = {
-                            val remote = PartyRepository.playback.value
-                            if (remote != null) {
-                                playerController?.seekTo(
-                                    PartySync.expectedPositionMs(remote, PartyRepository.nowMs(), playbackSnapshot.durationMs),
-                                )
-                            }
-                        },
-                    )
-                }
-                PlayerHeaderIconButton(
-                    icon = Icons.Rounded.Groups,
-                    contentDescription = "Host or manage Watch Party",
-                    buttonSize = metrics.headerIconSize + 16.dp,
-                    iconSize = metrics.headerIconSize,
-                    onClick = { panelOpen = true; controlsVisible = false },
-                )
+    if (available && controlsVisible && !playerControlsLocked) {
+        androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeContent).padding(top = 8.dp, end = 110.dp)) {
+            androidx.compose.foundation.layout.Box(modifier = Modifier.align(Alignment.TopEnd)) {
+            PlayerHeaderIconButton(
+                icon = Icons.Rounded.Groups,
+                contentDescription = "Host or manage Watch Party",
+                buttonSize = metrics.headerIconSize + 16.dp,
+                iconSize = metrics.headerIconSize,
+                onClick = { panelOpen = true; controlsVisible = false },
+            )
             }
         }
     }

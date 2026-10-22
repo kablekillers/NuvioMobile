@@ -26,6 +26,8 @@ import com.nuvio.app.features.party.PartySource
 import com.nuvio.app.features.party.PartyPanel
 import com.nuvio.app.features.party.PartySync
 import com.nuvio.app.features.party.PartyCorrection
+import com.nuvio.app.features.party.PartyStream
+import com.nuvio.app.features.party.isShareableStreamUrl
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -724,6 +726,30 @@ private fun PlayerScreenRuntime.RenderWatchPartyHosting() {
     val hosting = partyState.party?.isHost == true
     val joining = partyState.party != null && !hosting
     val syncedPlayback = partyPlayback
+    val shareableStream = if (
+        hosting && activeStream != null &&
+        isShareableStreamUrl(activeSourceUrl) && activeSourceAudioUrl == null
+    ) {
+        PartyStream(
+            mediaKey = media.key,
+            url = activeSourceUrl,
+            headers = activeSourceHeaders,
+            responseHeaders = activeSourceResponseHeaders,
+            name = activeStream?.name,
+            description = activeStream?.description,
+            addonName = activeStream?.addonName.orEmpty(),
+            addonId = activeStream?.addonId.orEmpty(),
+            addonLogo = activeStream?.addonLogo,
+            filename = activeSourceFilename,
+            streamType = activeStreamType,
+            badges = activeStream?.badges.orEmpty(),
+        )
+    } else null
+    val sharing = hosting && partyState.party?.sharing == true
+    LaunchedEffect(sharing, shareableStream) {
+        if (sharing) PartyRepository.shareStream(shareableStream)
+    }
+
     LaunchedEffect(joining, media.key) {
         if (!joining) return@LaunchedEffect
         val clock = kotlin.time.TimeSource.Monotonic
@@ -848,7 +874,7 @@ private fun PlayerScreenRuntime.RenderWatchPartyHosting() {
         onEnd = { PartyRepository.end() },
         onRemove = { PartyRepository.removeMember(it.id) },
         onHostOnlyChange = { PartyRepository.setHostOnly(it) },
-        canShareStream = false,
+        canShareStream = shareableStream != null,
         onSharingChange = { PartyRepository.setSharing(it) },
         behindMs = if (joining && syncedPlayback != null) {
             (PartySync.expectedPositionMs(syncedPlayback, PartyRepository.nowMs(), playbackSnapshot.durationMs) - playbackSnapshot.positionMs).coerceAtLeast(0L)

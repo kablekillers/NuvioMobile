@@ -724,31 +724,68 @@ private fun PlayerScreenRuntime.RenderWatchPartyHosting() {
     val hosting = partyState.party?.isHost == true
     val joining = partyState.party != null && !hosting
     val syncedPlayback = partyPlayback
-    LaunchedEffect(joining, syncedPlayback?.seq, syncedPlayback?.mediaKey, media.key) {
+    LaunchedEffect(joining, media.key) {
         if (!joining) return@LaunchedEffect
-        val remote = syncedPlayback ?: return@LaunchedEffect
-        if (remote.mediaKey != null && remote.mediaKey != media.key) return@LaunchedEffect
-        while (true) {
-            val expected = PartySync.expectedPositionMs(remote, PartyRepository.nowMs(), playbackSnapshot.durationMs)
-            // Wait for a playable frame before correcting drift: seeks issued during
-            // buffering can complete several seconds behind the host timeline.
-            if (!playbackSnapshot.isLoading && initialLoadCompleted) {
-                when (val correction = PartySync.correction(
-                    playbackSnapshot.positionMs, expected, remote, false
-                )) {
-                    is PartyCorrection.Seek -> playerController?.seekTo(correction.positionMs)
-                    is PartyCorrection.Nudge -> playerController?.setPlaybackSpeed(correction.rate)
-                    PartyCorrection.InSync -> playerController?.setPlaybackSpeed(remote.rate)
+        val clock = kotlin.time.TimeSource.Monotonic
+        var lastSeek = clock.markNow()
+        var lastCorrection = clock.markNow()
+        var nudgeRate: Float? = null
+        var seekLeadMs = 0L
+        var measureLead = false
+        var previousSeq: Long? = null
+        try {
+            while (true) {
+                delay(250L)
+                val remote = PartyRepository.playback.value ?: continue
+                if (remote.mediaKey != null && remote.mediaKey != media.key) continue
+                val snapshot = playbackSnapshot
+                if (!initialLoadCompleted || snapshot.isLoading || snapshot.isEnded) continue
+                val expected = PartySync.expectedPositionMs(remote, PartyRepository.nowMs(), snapshot.durationMs)
+                if (remote.paused != !shouldPlay) {
+                    shouldPlay = !remote.paused
+                    if (remote.paused) playerController?.pause() else playerController?.play()
+                }
+                if (previousSeq != remote.seq) {
+                    previousSeq = remote.seq
+                    if (kotlin.math.abs(snapshot.positionMs - expected) > PartySync.PAUSED_TOLERANCE_MS) {
+                        val target = if (remote.paused) expected else expected + seekLeadMs
+                        playerController?.seekTo(target.coerceAtMost(snapshot.durationMs.takeIf { it > 0L } ?: Long.MAX_VALUE))
+                        lastSeek = clock.markNow()
+                        measureLead = !remote.paused
+                    }
+                    continue
+                }
+                if (lastSeek.elapsedNow().inWholeMilliseconds < 1200L ||
+                    lastCorrection.elapsedNow().inWholeMilliseconds < 500L) continue
+                lastCorrection = clock.markNow()
+                val drift = snapshot.positionMs - expected
+                if (measureLead && !remote.paused) {
+                    measureLead = false
+                    if (kotlin.math.abs(drift) < 3000L) seekLeadMs = (seekLeadMs - drift).coerceIn(0L, 3000L)
+                }
+                when (val correction = PartySync.correction(snapshot.positionMs, expected, remote, nudgeRate != null)) {
+                    is PartyCorrection.Seek -> {
+                        if (nudgeRate != null) playerController?.setPlaybackSpeed(remote.rate)
+                        nudgeRate = null
+                        val target = if (remote.paused) correction.positionMs else correction.positionMs + seekLeadMs
+                        playerController?.seekTo(target.coerceAtMost(snapshot.durationMs.takeIf { it > 0L } ?: Long.MAX_VALUE))
+                        lastSeek = clock.markNow()
+                        measureLead = !remote.paused
+                    }
+                    is PartyCorrection.Nudge -> {
+                        if (nudgeRate != correction.rate) {
+                            nudgeRate = correction.rate
+                            playerController?.setPlaybackSpeed(correction.rate)
+                        }
+                    }
+                    PartyCorrection.InSync -> {
+                        if (nudgeRate != null) playerController?.setPlaybackSpeed(remote.rate)
+                        nudgeRate = null
+                    }
                 }
             }
-            if (remote.paused && shouldPlay) {
-                shouldPlay = false
-                playerController?.pause()
-            } else if (!remote.paused && !shouldPlay) {
-                shouldPlay = true
-                playerController?.play()
-            }
-            delay(500L)
+        } finally {
+            if (nudgeRate != null) playerController?.setPlaybackSpeed(PartyRepository.playback.value?.rate ?: 1f)
         }
     }
 

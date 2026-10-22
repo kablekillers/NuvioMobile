@@ -732,9 +732,14 @@ private fun PlayerScreenRuntime.RenderWatchPartyHosting() {
             val expected = PartySync.expectedPositionMs(remote, PartyRepository.nowMs(), playbackSnapshot.durationMs)
             // Wait for a playable frame before correcting drift: seeks issued during
             // buffering can complete several seconds behind the host timeline.
-            if (!playbackSnapshot.isLoading && initialLoadCompleted &&
-                kotlin.math.abs(playbackSnapshot.positionMs - expected) > PartySync.SEEK_THRESHOLD_MS) {
-                playerController?.seekTo(expected)
+            if (!playbackSnapshot.isLoading && initialLoadCompleted) {
+                when (val correction = PartySync.correction(
+                    playbackSnapshot.positionMs, expected, remote, false
+                )) {
+                    is PartyCorrection.Seek -> playerController?.seekTo(correction.positionMs)
+                    is PartyCorrection.Nudge -> playerController?.setPlaybackSpeed(correction.rate)
+                    PartyCorrection.InSync -> playerController?.setPlaybackSpeed(remote.rate)
+                }
             }
             if (remote.paused && shouldPlay) {
                 shouldPlay = false

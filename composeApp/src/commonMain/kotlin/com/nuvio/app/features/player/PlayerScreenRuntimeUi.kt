@@ -730,7 +730,10 @@ private fun PlayerScreenRuntime.RenderWatchPartyHosting() {
         if (remote.mediaKey != null && remote.mediaKey != media.key) return@LaunchedEffect
         while (true) {
             val expected = PartySync.expectedPositionMs(remote, PartyRepository.nowMs(), playbackSnapshot.durationMs)
-            if (kotlin.math.abs(playbackSnapshot.positionMs - expected) > PartySync.SEEK_THRESHOLD_MS) {
+            // Wait for a playable frame before correcting drift: seeks issued during
+            // buffering can complete several seconds behind the host timeline.
+            if (!playbackSnapshot.isLoading && initialLoadCompleted &&
+                kotlin.math.abs(playbackSnapshot.positionMs - expected) > PartySync.SEEK_THRESHOLD_MS) {
                 playerController?.seekTo(expected)
             }
             if (remote.paused && shouldPlay) {
@@ -740,7 +743,7 @@ private fun PlayerScreenRuntime.RenderWatchPartyHosting() {
                 shouldPlay = true
                 playerController?.play()
             }
-            delay(1_500L)
+            delay(500L)
         }
     }
 

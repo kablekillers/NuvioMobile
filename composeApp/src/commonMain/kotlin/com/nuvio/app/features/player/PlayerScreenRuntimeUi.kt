@@ -762,28 +762,32 @@ private fun PlayerScreenRuntime.RenderWatchPartyHosting() {
     }
     if (available && controlsVisible && !playerControlsLocked) {
         androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeContent).padding(top = 8.dp, end = 110.dp)) {
-            androidx.compose.foundation.layout.Box(modifier = Modifier.align(Alignment.TopEnd)) {
-            if (joining && syncedPlayback != null) {
-                androidx.compose.material3.TextButton(
-                    onClick = {
-                        val remote = PartyRepository.playback.value
-                        if (remote != null) {
-                            playerController?.seekTo(
-                                PartySync.expectedPositionMs(remote, PartyRepository.nowMs(), playbackSnapshot.durationMs)
-                            )
-                        }
-                    },
-                ) {
-                    androidx.compose.material3.Text("SYNC")
+            androidx.compose.foundation.layout.Row(
+                modifier = Modifier.align(Alignment.TopEnd),
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (partyState.party != null) {
+                    androidx.compose.material3.TextButton(
+                        onClick = {
+                            val remote = PartyRepository.playback.value
+                            if (remote != null) {
+                                playerController?.seekTo(
+                                    PartySync.expectedPositionMs(remote, PartyRepository.nowMs(), playbackSnapshot.durationMs)
+                                )
+                            }
+                        },
+                    ) {
+                        androidx.compose.material3.Text("SYNC")
+                    }
                 }
-            }
-            PlayerHeaderIconButton(
-                icon = Icons.Rounded.Groups,
-                contentDescription = "Host or manage Watch Party",
-                buttonSize = metrics.headerIconSize + 16.dp,
-                iconSize = metrics.headerIconSize,
-                onClick = { panelOpen = true; controlsVisible = false },
-            )
+                PlayerHeaderIconButton(
+                    icon = Icons.Rounded.Groups,
+                    contentDescription = "Host or manage Watch Party",
+                    buttonSize = metrics.headerIconSize + 16.dp,
+                    iconSize = metrics.headerIconSize,
+                    onClick = { panelOpen = true; controlsVisible = false },
+                )
             }
         }
     }

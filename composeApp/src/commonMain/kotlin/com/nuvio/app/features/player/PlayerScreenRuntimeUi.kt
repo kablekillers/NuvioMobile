@@ -767,7 +767,7 @@ private fun PlayerScreenRuntime.RenderWatchPartyHosting() {
                 horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                if (partyState.party != null) {
+                run {
                     androidx.compose.material3.TextButton(
                         onClick = {
                             val remote = PartyRepository.playback.value

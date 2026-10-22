@@ -770,7 +770,7 @@ private fun PlayerScreenRuntime.RenderWatchPartyHosting() {
                 modifier = Modifier.align(Alignment.TopEnd),
                 horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
             ) {
-                if (joining && syncedPlayback != null) {
+                if (partyState.party != null) {
                     PlayerHeaderIconButton(
                         icon = Icons.Rounded.Sync,
                         contentDescription = "Catch up to Watch Party host",

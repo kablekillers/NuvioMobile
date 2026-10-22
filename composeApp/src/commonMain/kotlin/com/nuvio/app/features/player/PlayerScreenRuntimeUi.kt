@@ -24,6 +24,8 @@ import com.nuvio.app.features.party.PartyRepository
 import com.nuvio.app.features.party.PartyMedia
 import com.nuvio.app.features.party.PartySource
 import com.nuvio.app.features.party.PartyPanel
+import com.nuvio.app.features.party.PartySync
+import com.nuvio.app.features.party.PartyCorrection
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -718,7 +720,30 @@ private fun PlayerScreenRuntime.RenderWatchPartyHosting() {
     )
     // Keep the hosted party's timeline current without changing the player's existing playback logic.
     // Publish only as host; guests must never overwrite the host's timeline.
+    val partyPlayback by PartyRepository.playback.collectAsStateWithLifecycle()
     val hosting = partyState.party?.isHost == true
+    val joining = partyState.party != null && !hosting
+    val syncedPlayback = partyPlayback
+    LaunchedEffect(joining, syncedPlayback?.seq, syncedPlayback?.mediaKey, media.key) {
+        if (!joining) return@LaunchedEffect
+        val remote = syncedPlayback ?: return@LaunchedEffect
+        if (remote.mediaKey != null && remote.mediaKey != media.key) return@LaunchedEffect
+        while (true) {
+            val expected = PartySync.expectedPositionMs(remote, PartyRepository.nowMs(), playbackSnapshot.durationMs)
+            if (kotlin.math.abs(playbackSnapshot.positionMs - expected) > PartySync.SEEK_THRESHOLD_MS) {
+                playerController?.seekTo(expected)
+            }
+            if (remote.paused && shouldPlay) {
+                shouldPlay = false
+                playerController?.pause()
+            } else if (!remote.paused && !shouldPlay) {
+                shouldPlay = true
+                playerController?.play()
+            }
+            delay(1_500L)
+        }
+    }
+
     val mediaKey = media.key
     val currentPosition = playbackSnapshot.positionMs
     val currentlyPaused = !shouldPlay
@@ -762,8 +787,13 @@ private fun PlayerScreenRuntime.RenderWatchPartyHosting() {
         onHostOnlyChange = { PartyRepository.setHostOnly(it) },
         canShareStream = false,
         onSharingChange = { PartyRepository.setSharing(it) },
-        behindMs = null,
-        onCatchUp = { },
+        behindMs = if (joining && syncedPlayback != null) {
+            (PartySync.expectedPositionMs(syncedPlayback, PartyRepository.nowMs(), playbackSnapshot.durationMs) - playbackSnapshot.positionMs).coerceAtLeast(0L)
+        } else null,
+        onCatchUp = {
+            val remote = PartyRepository.playback.value
+            if (remote != null) playerController?.seekTo(PartySync.expectedPositionMs(remote, PartyRepository.nowMs(), playbackSnapshot.durationMs))
+        },
         onDismiss = { panelOpen = false },
     )
 }

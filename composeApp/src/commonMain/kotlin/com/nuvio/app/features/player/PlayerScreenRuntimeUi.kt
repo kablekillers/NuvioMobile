@@ -726,6 +726,7 @@ private fun PlayerScreenRuntime.RenderWatchPartyHosting() {
     val hosting = partyState.party?.isHost == true
     val joining = partyState.party != null && !hosting
     val syncedPlayback = partyPlayback
+    var liveSportsMode by remember { mutableStateOf(false) }
     // The current player runtime exposes the resolved source URL and headers,
     // but not the upstream beta's activeStream metadata object.
     val shareableStream = if (
@@ -747,9 +748,10 @@ private fun PlayerScreenRuntime.RenderWatchPartyHosting() {
         if (sharing) PartyRepository.shareStream(shareableStream)
     }
 
-    LaunchedEffect(joining, media.key) {
+    LaunchedEffect(joining, media.key, liveSportsMode) {
         if (!joining) return@LaunchedEffect
         val clock = kotlin.time.TimeSource.Monotonic
+        val joinedAt = clock.markNow()
         var lastSeek = clock.markNow()
         var lastCorrection = clock.markNow()
         var nudgeRate: Float? = null
@@ -768,6 +770,15 @@ private fun PlayerScreenRuntime.RenderWatchPartyHosting() {
                 // Keep party/chat active but leave live playback uninterrupted.
                 val livePartyStream = snapshot.durationMs <= 0L ||
                     activeStreamType?.contains("live", ignoreCase = true) == true
+                // Optional live-sports mode allows a short initial synchronization
+                // window, then stops automatic seeks and rate changes altogether.
+                if (liveSportsMode && joinedAt.elapsedNow().inWholeMilliseconds >= 30_000L) {
+                    if (nudgeRate != null) {
+                        playerController?.setPlaybackSpeed(1f)
+                        nudgeRate = null
+                    }
+                    continue
+                }
                 if (livePartyStream) {
                     if (nudgeRate != null) {
                         playerController?.setPlaybackSpeed(1f)
@@ -844,6 +855,11 @@ private fun PlayerScreenRuntime.RenderWatchPartyHosting() {
                 horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                if (joining) {
+                    androidx.compose.material3.TextButton(onClick = { liveSportsMode = !liveSportsMode }) {
+                        androidx.compose.material3.Text(if (liveSportsMode) "LIVE ON" else "LIVE OFF")
+                    }
+                }
                 run {
                     androidx.compose.material3.TextButton(
                         onClick = {

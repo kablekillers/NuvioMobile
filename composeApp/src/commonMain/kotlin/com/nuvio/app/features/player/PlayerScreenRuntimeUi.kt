@@ -16,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -715,6 +716,22 @@ private fun PlayerScreenRuntime.RenderWatchPartyHosting() {
         logo = logo,
         source = PartySource(infoHash = activeTorrentInfoHash, fileIdx = activeTorrentFileIdx, filename = activeTorrentFilename, bingeGroup = currentStreamBingeGroup, addonId = activeProviderAddonId, name = activeStreamTitle),
     )
+    // Keep the hosted party's timeline current without changing the player's existing playback logic.
+    // Publish only as host; guests must never overwrite the host's timeline.
+    val hosting = partyState.party?.isHost == true
+    val mediaKey = media.key
+    val currentPosition = playbackSnapshot.positionMs
+    val currentlyPaused = !shouldPlay
+    val playbackRate = playbackSnapshot.playbackSpeed
+    LaunchedEffect(hosting, mediaKey, currentlyPaused, playbackRate) {
+        if (!hosting) return@LaunchedEffect
+        PartyRepository.publishMedia(media, currentPosition)
+        PartyRepository.publishPlayback(currentlyPaused, currentPosition, playbackRate)
+        while (true) {
+            delay(2_000L)
+            PartyRepository.publishPlayback(!shouldPlay, playbackSnapshot.positionMs, playbackSnapshot.playbackSpeed)
+        }
+    }
     if (available && controlsVisible && !playerControlsLocked) {
         androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeContent).padding(top = 8.dp, end = 110.dp)) {
             androidx.compose.foundation.layout.Box(modifier = Modifier.align(Alignment.TopEnd)) {

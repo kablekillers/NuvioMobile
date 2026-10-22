@@ -761,7 +761,7 @@ private fun PlayerScreenRuntime.RenderWatchPartyHosting() {
             PartyRepository.publishPlayback(!shouldPlay, playbackSnapshot.positionMs, playbackSnapshot.playbackSpeed)
         }
     }
-    if (available && controlsVisible && !playerControlsLocked) {
+    if (available && controlsVisible) {
         androidx.compose.foundation.layout.Box(
             modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeContent)
                 .padding(top = 8.dp, end = 110.dp),

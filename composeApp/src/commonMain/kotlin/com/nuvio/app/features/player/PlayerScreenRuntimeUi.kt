@@ -726,23 +726,20 @@ private fun PlayerScreenRuntime.RenderWatchPartyHosting() {
     val hosting = partyState.party?.isHost == true
     val joining = partyState.party != null && !hosting
     val syncedPlayback = partyPlayback
+    // The current player runtime exposes the resolved source URL and headers,
+    // but not the upstream beta's activeStream metadata object.
     val shareableStream = if (
-        hosting && activeStream != null &&
-        isShareableStreamUrl(activeSourceUrl) && activeSourceAudioUrl == null
+        hosting && isShareableStreamUrl(activeSourceUrl) && activeSourceAudioUrl == null
     ) {
         PartyStream(
             mediaKey = media.key,
             url = activeSourceUrl,
             headers = activeSourceHeaders,
             responseHeaders = activeSourceResponseHeaders,
-            name = activeStream?.name,
-            description = activeStream?.description,
-            addonName = activeStream?.addonName.orEmpty(),
-            addonId = activeStream?.addonId.orEmpty(),
-            addonLogo = activeStream?.addonLogo,
-            filename = activeSourceFilename,
+            name = activeStreamTitle,
+            addonId = activeProviderAddonId.orEmpty(),
+            filename = activeTorrentFilename,
             streamType = activeStreamType,
-            badges = activeStream?.badges.orEmpty(),
         )
     } else null
     val sharing = hosting && partyState.party?.sharing == true

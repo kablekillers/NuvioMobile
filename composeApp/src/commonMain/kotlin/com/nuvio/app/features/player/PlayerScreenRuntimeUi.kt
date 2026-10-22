@@ -766,6 +766,18 @@ private fun PlayerScreenRuntime.RenderWatchPartyHosting() {
                 if (remote.mediaKey != null && remote.mediaKey != media.key) continue
                 val snapshot = playbackSnapshot
                 if (!initialLoadCompleted || snapshot.isLoading || snapshot.isEnded) continue
+                // Live channels have no stable shared timeline. Seeking against the host's
+                // position makes playback jump repeatedly, especially with differing live latency.
+                // Keep party/chat active but leave live playback uninterrupted.
+                val livePartyStream = snapshot.durationMs <= 0L ||
+                    activeStreamType?.contains("live", ignoreCase = true) == true
+                if (livePartyStream) {
+                    if (nudgeRate != null) {
+                        playerController?.setPlaybackSpeed(1f)
+                        nudgeRate = null
+                    }
+                    continue
+                }
                 val expected = PartySync.expectedPositionMs(remote, PartyRepository.nowMs(), snapshot.durationMs)
                 if (remote.paused != !shouldPlay) {
                     shouldPlay = !remote.paused

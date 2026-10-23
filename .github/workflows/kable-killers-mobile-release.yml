@@ -126,6 +126,8 @@ jobs:
           "$APKSIGNER" verify "$APK"
           old_cert="$("$APKSIGNER" verify --print-certs "$OLD" | grep 'Signer #1 certificate SHA-256 digest:' | head -1 | awk '{print $NF}')"
           new_cert="$("$APKSIGNER" verify --print-certs "$APK" | grep 'Signer #1 certificate SHA-256 digest:' | head -1 | awk '{print $NF}')"
+          echo "Previous APK certificate SHA-256: $old_cert"
+          echo "Candidate APK certificate SHA-256: $new_cert"
           test -n "$old_cert" && test "$old_cert" = "$new_cert"
           echo "Verified package, increasing version code, and matching signing certificate."
 

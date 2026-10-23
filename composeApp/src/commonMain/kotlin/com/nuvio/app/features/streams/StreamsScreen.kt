@@ -754,6 +754,13 @@ internal fun StreamList(
         party != null && !party.isHost &&
             (stream.mediaKey == partyContentKey || stream.mediaKey == party.media.key)
     }?.toStreamItem()
+    val matchingPartySource = sharedSource?.let { host ->
+        filteredGroups.asSequence().flatMap { it.streams.asSequence() }.firstOrNull { candidate ->
+            (!host.url.isNullOrBlank() && candidate.url == host.url) ||
+                (!host.behaviorHints?.filename.isNullOrBlank() &&
+                    candidate.behaviorHints?.filename == host.behaviorHints?.filename)
+        }
+    }
     val formatStreamSize = rememberStreamSizeLabelFormat()
     val streamBadgeSettings by remember {
         StreamBadgeSettingsRepository.ensureLoaded()
@@ -769,7 +776,7 @@ internal fun StreamList(
         ),
         verticalArrangement = Arrangement.spacedBy(0.dp),
     ) {
-        if (sharedSource != null) {
+        if (sharedSource != null && matchingPartySource == null) {
             item(key = "watch_party_shared_source") {
                 Column {
                     StreamSectionHeader(
@@ -807,6 +814,7 @@ internal fun StreamList(
                 filteredGroups.forEachIndexed { groupIndex, group ->
                     streamSection(
                         sectionKey = streamSectionRenderKey(groupIndex = groupIndex, group = group),
+                        matchingPartySource = matchingPartySource,
                         group = group,
                         showHeader = uiState.selectedFilter == null,
                         debridEnabled = debridEnabled,
@@ -838,6 +846,7 @@ internal fun StreamList(
 
 private fun LazyListScope.streamSection(
     sectionKey: String,
+    matchingPartySource: StreamItem?,
     group: AddonStreamGroup,
     showHeader: Boolean,
     debridEnabled: Boolean,
@@ -894,6 +903,15 @@ private fun LazyListScope.streamSection(
                 stream.needsLocalDebridResolve &&
                     !AppFeaturePolicy.p2pEnabled &&
                     !(debridEnabled && stream.isAddonDebridCandidate)
+            if (matchingPartySource === stream) {
+                Text(
+                    text = "Party's source",
+                    modifier = Modifier.padding(start = 12.dp, top = 4.dp, bottom = 4.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
             StreamCard(
                 stream = stream,
                 enabled = isSelectable || isUnsupportedTorrentStream,

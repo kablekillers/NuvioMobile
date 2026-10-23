@@ -5,8 +5,10 @@ on:
   push:
     branches:
       - cmp-rewrite
+      - kable-killers-update-test
     paths:
       - ".github/workflows/kable-killers-mobile-release.yml"
+      - "iosApp/Configuration/Version.xcconfig"
   workflow_dispatch:
 
 permissions:

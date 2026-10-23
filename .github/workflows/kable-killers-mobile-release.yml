@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   release:
@@ -93,6 +93,57 @@ jobs:
           path: androidApp/build/outputs/apk/full/release/androidApp-full-universal-release.apk
           if-no-files-found: error
           retention-days: 30
+
+      - name: Verify compatibility with installed 0.5.9 release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          APK="androidApp/build/outputs/apk/full/release/androidApp-full-universal-release.apk"
+          gh release download v0.5.9 --pattern 'Kable.Killers.Mobile.apk' --dir /tmp/kable-previous
+          OLD="/tmp/kable-previous/Kable.Killers.Mobile.apk"
+          test -s "$OLD"
+          test -s "$APK"
+          BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
+          AAPT="$BUILD_TOOLS/aapt"
+          APKSIGNER="$BUILD_TOOLS/apksigner"
+          old_badging="$("$AAPT" dump badging "$OLD" | head -1)"
+          new_badging="$("$AAPT" dump badging "$APK" | head -1)"
+          echo "Previous: $old_badging"
+          echo "Candidate: $new_badging"
+          old_package="$(echo "$old_badging" | sed -n "s/.*name='\\([^']*\\)'.*/\\1/p")"
+          new_package="$(echo "$new_badging" | sed -n "s/.*name='\\([^']*\\)'.*/\\1/p")"
+          old_code="$(echo "$old_badging" | sed -n "s/.*versionCode='\\([0-9]*\\)'.*/\\1/p")"
+          new_code="$(echo "$new_badging" | sed -n "s/.*versionCode='\\([0-9]*\\)'.*/\\1/p")"
+          new_version="$(echo "$new_badging" | sed -n "s/.*versionName='\\([^']*\\)'.*/\\1/p")"
+          test -n "$old_package" && test "$old_package" = "$new_package"
+          test "$new_package" = "com.kablekillers.mobile"
+          test -n "$old_code" && test -n "$new_code"
+          test "$new_code" -gt "$old_code"
+          test "$new_version" = "0.5.10"
+          "$APKSIGNER" verify "$OLD"
+          "$APKSIGNER" verify "$APK"
+          old_cert="$("$APKSIGNER" verify --print-certs "$OLD" | grep 'Signer #1 certificate SHA-256 digest:' | head -1 | awk '{print $NF}')"
+          new_cert="$("$APKSIGNER" verify --print-certs "$APK" | grep 'Signer #1 certificate SHA-256 digest:' | head -1 | awk '{print $NF}')"
+          test -n "$old_cert" && test "$old_cert" = "$new_cert"
+          echo "Verified package, increasing version code, and matching signing certificate."
+
+      - name: Publish verified mobile update test release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view v0.5.10 >/dev/null 2>&1; then
+            echo "::error::Release v0.5.10 already exists; refusing to overwrite."
+            exit 1
+          fi
+          gh release create v0.5.10 \
+            androidApp/build/outputs/apk/full/release/androidApp-full-universal-release.apk#Kable.Killers.Mobile.apk \
+            --target "$GITHUB_SHA" \
+            --title "Kable Killers Mobile 0.5.10" \
+            --notes "Optional update notification test for Kable Killers Mobile. Watch Party features unchanged."
 
       - name: Remove temporary signing files
         if: always()

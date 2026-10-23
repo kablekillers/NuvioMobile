@@ -122,13 +122,24 @@ jobs:
           test -n "$old_code" && test -n "$new_code"
           test "$new_code" -gt "$old_code"
           test "$new_version" = "0.5.10"
-          "$APKSIGNER" verify "$OLD"
-          "$APKSIGNER" verify "$APK"
-          old_cert="$("$APKSIGNER" verify --print-certs "$OLD" | grep 'Signer #1 certificate SHA-256 digest:' | head -1 | awk '{print $NF}')"
-          new_cert="$("$APKSIGNER" verify --print-certs "$APK" | grep 'Signer #1 certificate SHA-256 digest:' | head -1 | awk '{print $NF}')"
-          echo "Previous APK certificate SHA-256: $old_cert"
-          echo "Candidate APK certificate SHA-256: $new_cert"
-          test -n "$old_cert" && test "$old_cert" = "$new_cert"
+          echo "Verifying previous APK signature..."
+          "$APKSIGNER" verify --verbose "$OLD" || { echo "::error::Previous APK signature verification failed"; exit 1; }
+          echo "Verifying candidate APK signature..."
+          "$APKSIGNER" verify --verbose "$APK" || { echo "::error::Candidate APK signature verification failed"; exit 1; }
+          old_certs="$("$APKSIGNER" verify --print-certs "$OLD")"
+          new_certs="$("$APKSIGNER" verify --print-certs "$APK")"
+          old_cert="$(printf '%s\\n' "$old_certs" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1)"
+          new_cert="$(printf '%s\\n' "$new_certs" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1)"
+          echo "Previous APK certificate SHA-256: ${old_cert:-unavailable}"
+          echo "Candidate APK certificate SHA-256: ${new_cert:-unavailable}"
+          if [ -z "$old_cert" ] || [ -z "$new_cert" ]; then
+            echo "::error::Could not read both APK signing certificates"
+            exit 1
+          fi
+          if [ "$old_cert" != "$new_cert" ]; then
+            echo "::error::APK signing certificates differ. In-place update is not safe."
+            exit 1
+          fi
           echo "Verified package, increasing version code, and matching signing certificate."
 
       - name: Publish verified mobile update test release

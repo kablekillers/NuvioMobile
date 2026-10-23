@@ -1,5 +1,8 @@
 package com.nuvio.app.features.streams
 
+import com.nuvio.app.features.party.PartyRepository
+import com.nuvio.app.features.party.partyMediaKey
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -496,6 +499,7 @@ private fun MobileStreamsLayout(
 
                     StreamList(
                         uiState = uiState,
+                        partyContentKey = partyMediaKey(parentMetaType, parentMetaId, seasonNumber, episodeNumber),
                         debridEnabled = debridEnabled,
                         appendInstantServiceToDefaultName = appendInstantServiceToDefaultName,
                         onStreamSelected = onStreamSelected,
@@ -721,6 +725,7 @@ private fun EpisodeHeroBlock(
 @Composable
 internal fun StreamList(
     uiState: StreamsUiState,
+    partyContentKey: String,
     debridEnabled: Boolean,
     appendInstantServiceToDefaultName: Boolean,
     onStreamSelected: (stream: StreamItem, resumePositionMs: Long?, resumeProgressFraction: Float?) -> Unit,
@@ -737,6 +742,11 @@ internal fun StreamList(
     val fetchingText = stringResource(Res.string.streams_fetching)
     val findingStreamsText = stringResource(Res.string.streams_finding_streams)
     val checkingMoreAddonsText = stringResource(Res.string.streams_checking_more_addons)
+    val partyState by PartyRepository.state.collectAsStateWithLifecycle()
+    val receivedPartyStream by PartyRepository.sharedStream.collectAsStateWithLifecycle()
+    val sharedSource = receivedPartyStream?.takeIf {
+        partyState.party?.isHost == false && it.mediaKey == partyContentKey
+    }?.toStreamItem()
     val formatStreamSize = rememberStreamSizeLabelFormat()
     val streamBadgeSettings by remember {
         StreamBadgeSettingsRepository.ensureLoaded()
@@ -752,6 +762,27 @@ internal fun StreamList(
         ),
         verticalArrangement = Arrangement.spacedBy(0.dp),
     ) {
+        if (sharedSource != null) {
+            item(key = "watch_party_shared_source") {
+                Column {
+                    StreamSectionHeader(
+                        addonName = "Watch Party · Host's shared stream",
+                        isLoading = false,
+                        fetchingText = fetchingText,
+                    )
+                    StreamCard(
+                        stream = sharedSource,
+                        enabled = true,
+                        appendInstantServiceToDefaultName = false,
+                        showFileSizeBadges = streamBadgeSettings.showFileSizeBadges,
+                        showAddonLogo = streamBadgeSettings.showAddonLogo,
+                        badgePlacement = streamBadgeSettings.badgePlacement,
+                        onClick = { onStreamSelected(sharedSource, resumePositionMs, resumeProgressFraction) },
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                }
+            }
+        }
         when {
             hasGroups && anyLoading && !hasAnyStreams -> {
                 item {

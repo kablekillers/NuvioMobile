@@ -80,6 +80,11 @@ object HomeRepository {
 
         activeJob?.cancel()
         _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+        // Show previously loaded catalog rows immediately while fresh requests run.
+        // This avoids waiting for the first network batch to complete on refresh.
+        if (cachedSections.isNotEmpty()) {
+            publishCurrentState(isLoading = true, requestKey = requestKey)
+        }
         activeJob = scope.launch {
             val prioritizedRequests = prioritizeDefinitions(
                 definitions = requests,

@@ -54,6 +54,7 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 internal fun TabletStreamsLayout(
     isEpisode: Boolean,
+    partyContentKey: String,
     title: String,
     logo: String?,
     poster: String?,
@@ -209,6 +210,7 @@ internal fun TabletStreamsLayout(
 
                         StreamList(
                             uiState = uiState,
+                            partyContentKey = partyContentKey,
                             debridEnabled = debridEnabled,
                             appendInstantServiceToDefaultName = appendInstantServiceToDefaultName,
                             onStreamSelected = onStreamSelected,

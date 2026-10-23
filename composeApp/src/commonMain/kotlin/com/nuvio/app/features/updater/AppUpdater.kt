@@ -136,6 +136,9 @@ class AppUpdaterController internal constructor(
                     NuvioToastController.show(noUpdateMessage(channel))
                 }
             }.onFailure { error ->
+                // A transient startup network failure must not permanently block
+                // future automatic checks when the updater banner is recreated.
+                if (!force) autoCheckStarted = false
                 _uiState.update { state ->
                     state.copy(
                         isChecking = false,

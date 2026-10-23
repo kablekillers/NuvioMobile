@@ -737,7 +737,11 @@ private fun PlayerScreenRuntime.RenderWatchPartyHosting() {
             url = activeSourceUrl,
             headers = activeSourceHeaders,
             responseHeaders = activeSourceResponseHeaders,
-            name = activeStreamTitle,
+            name = activeStreamTitle?.takeIf { it.isNotBlank() }
+                ?: activeTorrentFilename?.takeIf { it.isNotBlank() }
+                ?: "Host's selected stream",
+            description = activeTorrentFilename?.takeIf { it.isNotBlank() },
+            addonName = activeProviderAddonId?.takeIf { it.isNotBlank() } ?: "Host's source",
             addonId = activeProviderAddonId.orEmpty(),
             filename = activeTorrentFilename,
             streamType = activeStreamType,

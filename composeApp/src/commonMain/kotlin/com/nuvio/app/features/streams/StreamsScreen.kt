@@ -247,6 +247,7 @@ fun StreamsScreen(
                 episodeNumber = episodeNumber,
                 episodeTitle = episodeTitle,
                 uiState = uiState,
+                partyContentKey = partyMediaKey(parentMetaType, parentMetaId, seasonNumber, episodeNumber),
                 debridEnabled = debridSettings.canResolvePlayableLinks,
                 appendInstantServiceToDefaultName = debridSettings.canResolvePlayableLinks && !debridSettings.hasCustomStreamFormatting,
                 resumePositionMs = effectiveResumePositionMs,
@@ -269,6 +270,7 @@ fun StreamsScreen(
                 episodeTitle = episodeTitle,
                 blurEpisodeThumbnail = blurEpisodeThumbnail,
                 uiState = uiState,
+                partyContentKey = partyMediaKey(parentMetaType, parentMetaId, seasonNumber, episodeNumber),
                 debridEnabled = debridSettings.canResolvePlayableLinks,
                 appendInstantServiceToDefaultName = debridSettings.canResolvePlayableLinks && !debridSettings.hasCustomStreamFormatting,
                 resumePositionMs = effectiveResumePositionMs,
@@ -405,6 +407,7 @@ fun StreamsScreen(
 @Composable
 private fun MobileStreamsLayout(
     isEpisode: Boolean,
+    partyContentKey: String,
     backgroundMode: StreamBackgroundMode,
     title: String,
     logo: String?,
@@ -499,7 +502,7 @@ private fun MobileStreamsLayout(
 
                     StreamList(
                         uiState = uiState,
-                        partyContentKey = partyMediaKey(parentMetaType, parentMetaId, seasonNumber, episodeNumber),
+                        partyContentKey = partyContentKey,
                         debridEnabled = debridEnabled,
                         appendInstantServiceToDefaultName = appendInstantServiceToDefaultName,
                         onStreamSelected = onStreamSelected,

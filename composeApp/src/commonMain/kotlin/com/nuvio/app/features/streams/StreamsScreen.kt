@@ -747,8 +747,12 @@ internal fun StreamList(
     val checkingMoreAddonsText = stringResource(Res.string.streams_checking_more_addons)
     val partyState by PartyRepository.state.collectAsStateWithLifecycle()
     val receivedPartyStream by PartyRepository.sharedStream.collectAsStateWithLifecycle()
-    val sharedSource = receivedPartyStream?.takeIf {
-        partyState.party?.isHost == false && it.mediaKey == partyContentKey
+    // Match against the room's authoritative media key as well as the screen key.
+    // Some catalog routes use different meta types for the same title.
+    val sharedSource = receivedPartyStream?.takeIf { stream ->
+        val party = partyState.party
+        party != null && !party.isHost &&
+            (stream.mediaKey == partyContentKey || stream.mediaKey == party.media.key)
     }?.toStreamItem()
     val formatStreamSize = rememberStreamSizeLabelFormat()
     val streamBadgeSettings by remember {

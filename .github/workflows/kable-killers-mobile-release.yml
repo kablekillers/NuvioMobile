@@ -128,8 +128,8 @@ jobs:
           "$APKSIGNER" verify --verbose "$APK" || { echo "::error::Candidate APK signature verification failed"; exit 1; }
           old_certs="$("$APKSIGNER" verify --print-certs "$OLD")"
           new_certs="$("$APKSIGNER" verify --print-certs "$APK")"
-          old_cert="$(printf '%s\\n' "$old_certs" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1)"
-          new_cert="$(printf '%s\\n' "$new_certs" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1)"
+          old_cert="$(printf '%s\n' "$old_certs" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1)"
+          new_cert="$(printf '%s\n' "$new_certs" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1)"
           echo "Previous APK certificate SHA-256: ${old_cert:-unavailable}"
           echo "Candidate APK certificate SHA-256: ${new_cert:-unavailable}"
           if [ -z "$old_cert" ] || [ -z "$new_cert" ]; then

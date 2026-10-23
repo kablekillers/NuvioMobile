@@ -126,10 +126,12 @@ jobs:
           "$APKSIGNER" verify --verbose "$OLD" || { echo "::error::Previous APK signature verification failed"; exit 1; }
           echo "Verifying candidate APK signature..."
           "$APKSIGNER" verify --verbose "$APK" || { echo "::error::Candidate APK signature verification failed"; exit 1; }
-          old_certs="$("$APKSIGNER" verify --print-certs "$OLD")"
-          new_certs="$("$APKSIGNER" verify --print-certs "$APK")"
-          old_cert="$(printf '%s\n' "$old_certs" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1)"
-          new_cert="$(printf '%s\n' "$new_certs" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1)"
+          echo "Previous signing certificate details:"
+          "$APKSIGNER" verify --print-certs "$OLD"
+          echo "Candidate signing certificate details:"
+          "$APKSIGNER" verify --print-certs "$APK"
+          old_cert="$("$APKSIGNER" verify --print-certs "$OLD" | grep -i -m1 'certificate SHA-256 digest' | sed -E 's/.*: *//' | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]' || true)"
+          new_cert="$("$APKSIGNER" verify --print-certs "$APK" | grep -i -m1 'certificate SHA-256 digest' | sed -E 's/.*: *//' | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]' || true)"
           echo "Previous APK certificate SHA-256: ${old_cert:-unavailable}"
           echo "Candidate APK certificate SHA-256: ${new_cert:-unavailable}"
           if [ -z "$old_cert" ] || [ -z "$new_cert" ]; then

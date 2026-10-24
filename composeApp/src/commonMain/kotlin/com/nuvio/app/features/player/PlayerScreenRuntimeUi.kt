@@ -117,7 +117,6 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
     val gestureCallbacks = rememberSurfaceGestureCallbacks()
     val playbackGesturesEnabled = initialLoadCompleted && errorMessage == null
 
-    BindAutoSyncRuntimeEffects() // AutoSync hook
 
     Box(
         modifier = Modifier
@@ -574,7 +573,7 @@ private fun PlayerScreenRuntime.RenderPlayerModals(displayedPositionMs: Long) {
             useCustomSubtitles = true
             preferredSubtitleSelectionApplied = true
             persistAddonSubtitlePreference(addon)
-            attachSelectedAddonSubtitleWithAutoSync(addon.url) // AutoSync hook
+            attachSelectedAddonSubtitle(addon.url)
             if (hasBurnedInServerSubtitle) clearServerSubtitleTrack()
         },
         onFetchAddonSubtitles = { fetchAddonSubtitlesForActiveItem() },

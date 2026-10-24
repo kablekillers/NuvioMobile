@@ -1501,7 +1501,6 @@ internal fun MainAppContent(
                         p2pEnabled = p2pSettingsUiState.p2pEnabled,
                         openExternalPlayback = ::openExternalPlayback,
                         openExternalStreamUrl = ::openExternalStreamUrl,
-                        onOpenPartyMedia = ::openPartyMedia,
                     )
                 }
                 entry<PlayerRoute>(
@@ -1532,6 +1531,7 @@ internal fun MainAppContent(
                         onExternalPlayerLaunch = { launch -> lastExternalPlayerLaunch = launch },
                         launchExternalPlayer = launchExternalPlayer,
                         openExternalStreamUrl = ::openExternalStreamUrl,
+                        onOpenPartyMedia = ::openPartyMedia,
                     )
                 }
                 entry<CatalogRoute> { route ->

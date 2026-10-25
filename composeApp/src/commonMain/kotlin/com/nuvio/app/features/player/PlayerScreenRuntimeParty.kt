@@ -137,7 +137,7 @@ internal fun PlayerScreenRuntime.ownSeekTarget(targetMs: Long): Long? {
 internal fun PlayerScreenRuntime.syncToPartyHost() {
     val party = PartyRepository.state.value.party ?: return
     val playback = PartyRepository.playback.value ?: return
-    if (!party.connected || party.media.key != partyKey || party.canControl) return
+    if (!party.connected || party.media.key != partyKey || party.isHost) return
     val expected = PartySync.expectedPositionMs(playback, PartyRepository.nowMs(), playbackSnapshot.durationMs)
     partyBehind = false
     partyBehindMs = null

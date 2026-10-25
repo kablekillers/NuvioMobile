@@ -134,6 +134,17 @@ internal fun PlayerScreenRuntime.ownSeekTarget(targetMs: Long): Long? {
     }
 }
 
+internal fun PlayerScreenRuntime.syncToPartyHost() {
+    val party = PartyRepository.state.value.party ?: return
+    val playback = PartyRepository.playback.value ?: return
+    if (!party.connected || party.media.key != partyKey || party.canControl) return
+    val expected = PartySync.expectedPositionMs(playback, PartyRepository.nowMs(), playbackSnapshot.durationMs)
+    partyBehind = false
+    partyBehindMs = null
+    playerController?.seekTo(expected)
+    scheduleProgressSyncAfterSeek()
+}
+
 internal fun PlayerScreenRuntime.currentPartyMedia(): PartyMedia = PartyMedia(
     type = contentType ?: parentMetaType,
     metaId = parentMetaId,

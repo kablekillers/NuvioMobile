@@ -318,6 +318,9 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
                 null
             },
             partyActive = partyActive,
+            onPartySyncClick = if (partyState.party?.let { it.connected && !it.canControl && it.media.key == partyKey } == true) {
+                { syncToPartyHost() }
+            } else null,
             onTogglePlayback = { togglePlayback() },
             onSeekBack = { seekBy(-10_000L) },
             onSeekForward = { seekBy(10_000L) },

@@ -20,6 +20,7 @@ import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material.icons.rounded.Flag
 import androidx.compose.material.icons.rounded.Groups
+import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.LockOpen
@@ -63,6 +64,7 @@ internal fun PlayerToolbar(
     modifier: Modifier = Modifier,
     onPartyClick: (() -> Unit)? = null,
     partyActive: Boolean = false,
+    onPartySyncClick: (() -> Unit)? = null,
 ) {
     Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Spacer(Modifier.weight(1f))
@@ -72,6 +74,13 @@ internal fun PlayerToolbar(
                 icon = Icons.Rounded.Groups,
                 onClick = onPartyClick,
                 tint = if (partyActive) MaterialTheme.colorScheme.primary else Color.White,
+            )
+        }
+        if (onPartySyncClick != null) {
+            PlayerAction(
+                description = "Sync to watch party host",
+                icon = Icons.Rounded.Sync,
+                onClick = onPartySyncClick,
             )
         }
         PlayerAction(

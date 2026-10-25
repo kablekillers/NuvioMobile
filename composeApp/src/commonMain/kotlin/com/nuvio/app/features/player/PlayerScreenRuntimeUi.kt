@@ -318,7 +318,7 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
                 null
             },
             partyActive = partyActive,
-            onPartySyncClick = if (partyState.party?.let { it.connected && !it.canControl && it.media.key == partyKey } == true) {
+            onPartySyncClick = if (partyState.party?.let { it.connected && !it.isHost } == true) {
                 { syncToPartyHost() }
             } else null,
             onTogglePlayback = { togglePlayback() },

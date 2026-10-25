@@ -73,7 +73,7 @@ object PartyRepository {
 
     private val _enabled = MutableStateFlow(true)
     val available: StateFlow<Boolean> = combine(ServerConfigurationRepository.active, _enabled) { server, enabled ->
-        server.capabilities.watchParty && enabled
+        server.capabilities.watchParty
     }.stateIn(scope, SharingStarted.Eagerly, ServerConfigurationRepository.active.value.capabilities.watchParty)
 
     private var channel: PartyChannel? = null

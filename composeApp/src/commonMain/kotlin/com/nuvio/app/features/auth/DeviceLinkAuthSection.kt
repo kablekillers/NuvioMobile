@@ -98,6 +98,9 @@ internal fun DeviceLinkAuthSection(
                     )
                 }
 
+                // The QR contains the same session-specific verification URL as the code login.
+                DeviceLoginQr(url = state.verificationUrl)
+
                 Spacer(modifier = Modifier.height(12.dp * scale))
 
                 AuthPrimaryButton(

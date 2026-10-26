@@ -1,0 +1,37 @@
+name: Publish Kable Killers Mobile v0.5.16
+on:
+  push:
+    branches: [cmp-rewrite]
+    paths:
+      - .github/workflows/publish-kable-killers-mobile-v0.5.16.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify signed release run and publish APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_id=40358854074
+          expected_sha=9cfd78f66e8b716169574a8248452b6eb9e644c1
+          result="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}")"
+          test "$(jq -r '.conclusion' <<< "$result")" = success
+          test "$(jq -r '.head_sha' <<< "$result")" = "$expected_sha"
+          test "$(jq -r '.head_branch' <<< "$result")" = release-v0.5.16-rc
+          gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name Kable-Killers-Mobile-Signed-Release --dir signed
+          apk=signed/androidApp-full-universal-release.apk
+          test -s "$apk"
+          sha256sum "$apk"
+          if gh release view v0.5.16 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release v0.5.16 already exists; not overwriting it."
+            exit 0
+          fi
+          gh release create v0.5.16 "$apk" --repo "$GITHUB_REPOSITORY" --target cmp-rewrite \
+            --title "Kable Killers Mobile v0.5.16" \
+            --notes "Watch Party realtime connection and Share My Stream repairs; guest Sync control. Signed release tested as an in-place update from v0.5.15 preserving customer logins, settings, plugins, and watch history. Signed build: https://github.com/kablekillers/NuvioMobile/actions/runs/40358854074"

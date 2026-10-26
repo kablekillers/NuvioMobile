@@ -9,6 +9,7 @@ permissions:
 
 jobs:
   validate_pr_body:
+    if: ${{ !startsWith(github.event.pull_request.head.ref, 'release-v') }}
     runs-on: ubuntu-latest
     steps:
       - name: Validate required PR sections
@@ -145,4 +146,38 @@ jobs:
               core.setFailed(lines.join("\n"));
             } else {
               core.info("PR template check passed.");
+            }
+
+  validate_kable_killers_release:
+    if: ${{ startsWith(github.event.pull_request.head.ref, 'release-v') && github.event.pull_request.base.ref == 'cmp-rewrite' }}
+    name: Validate Kable Killers release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+    steps:
+      - name: Check release notes and successful signed build
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const body = pr.body || "";
+            const required = ["## Summary", "## Testing", "## Breaking changes"];
+            for (const heading of required) {
+              if (!body.includes(heading)) core.setFailed("Missing release note: " + heading);
+            }
+            if (!/0\\.5\\.16|v\\d+\\.\\d+\\.\\d+/i.test(pr.title + " " + body)) {
+              core.setFailed("Specify the release version.");
+            }
+            const runs = await github.paginate(github.rest.actions.listWorkflowRuns, {
+              owner: context.repo.owner, repo: context.repo.repo,
+              workflow_id: "kable-killers-mobile-release.yml",
+              head_sha: pr.head.sha, per_page: 100
+            });
+            const signed = runs.find(run => run.conclusion === "success");
+            if (!signed) {
+              core.setFailed("No successful signed release build for PR head " + pr.head.sha);
+            } else {
+              core.info("Signed build verified: " + signed.html_url);
             }

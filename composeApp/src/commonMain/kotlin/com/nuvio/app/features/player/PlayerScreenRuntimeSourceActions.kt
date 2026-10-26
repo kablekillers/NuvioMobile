@@ -214,6 +214,7 @@ internal fun PlayerScreenRuntime.switchToP2pSourceStream(stream: StreamItem) {
     )
     externalSubtitles = stream.externalSubtitles
     activeSourceUrl = p2pSentinelUrl(infoHash, stream.p2pFileIdx)
+    activeStream = stream
     activeSourceAudioUrl = null
     activeSourceHeaders = emptyMap()
     activeSourceResponseHeaders = emptyMap()
@@ -259,6 +260,7 @@ internal fun PlayerScreenRuntime.switchToP2pEpisodeStream(
     )
     externalSubtitles = stream.externalSubtitles
     activeSourceUrl = p2pSentinelUrl(infoHash, stream.p2pFileIdx)
+    activeStream = stream
     activeSourceAudioUrl = null
     activeSourceHeaders = emptyMap()
     activeSourceResponseHeaders = emptyMap()
@@ -317,6 +319,8 @@ internal fun PlayerScreenRuntime.switchToSource(
     }
     externalSubtitles = stream.externalSubtitles
     activeSourceUrl = url
+    activeStream = stream
+    activeSourceFilename = stream.behaviorHints.filename
     activeSourceAudioUrl = null
     activeSourceHeaders = sanitizePlaybackHeaders(stream.behaviorHints.proxyHeaders?.request)
     activeSourceResponseHeaders = sanitizePlaybackResponseHeaders(stream.behaviorHints.proxyHeaders?.response)
@@ -379,6 +383,8 @@ internal fun PlayerScreenRuntime.switchToEpisodeStream(
     }
     externalSubtitles = stream.externalSubtitles
     activeSourceUrl = url
+    activeStream = stream
+    activeSourceFilename = stream.behaviorHints.filename
     activeSourceAudioUrl = null
     activeSourceHeaders = sanitizePlaybackHeaders(stream.behaviorHints.proxyHeaders?.request)
     activeSourceResponseHeaders = sanitizePlaybackResponseHeaders(stream.behaviorHints.proxyHeaders?.response)

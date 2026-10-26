@@ -181,7 +181,7 @@ internal fun PlayerScreenRuntime.currentPartyStream(): PartyStream? {
         name = stream?.name ?: activeStreamTitle,
         description = stream?.description,
         addonName = stream?.addonName ?: activeProviderName,
-        addonId = stream?.addonId ?: activeProviderAddonId,
+        addonId = stream?.addonId ?: activeProviderAddonId.orEmpty(),
         addonLogo = stream?.addonLogo,
         filename = activeSourceFilename ?: stream?.behaviorHints?.filename,
         videoSize = stream?.behaviorHints?.videoSize,

@@ -167,7 +167,7 @@ jobs:
             for (const heading of required) {
               if (!body.includes(heading)) core.setFailed("Missing release note: " + heading);
             }
-            if (!/0\\.5\\.16|v\\d+\\.\\d+\\.\\d+/i.test(pr.title + " " + body)) {
+            if (!/0\.5\.16|v\d+\.\d+\.\d+/i.test(pr.title + " " + body)) {
               core.setFailed("Specify the release version.");
             }
             const runs = await github.paginate(github.rest.actions.listWorkflowRuns, {

@@ -169,23 +169,25 @@ internal fun PlayerScreenRuntime.currentPartyMedia(): PartyMedia = PartyMedia(
 )
 
 internal fun PlayerScreenRuntime.currentPartyStream(): PartyStream? {
-    val stream = activeStream ?: return null
+    // A player can be launched with a resolved URL without a StreamItem.
+    // The URL is sufficient for sharing; stream metadata is optional.
+    val stream = activeStream
     if (!isShareableStreamUrl(activeSourceUrl) || activeSourceAudioUrl != null) return null
     return PartyStream(
         mediaKey = partyKey,
         url = activeSourceUrl,
         headers = activeSourceHeaders,
         responseHeaders = activeSourceResponseHeaders,
-        name = stream.name,
-        description = stream.description,
-        addonName = stream.addonName,
-        addonId = stream.addonId,
-        addonLogo = stream.addonLogo,
-        filename = activeSourceFilename ?: stream.behaviorHints.filename,
-        videoSize = stream.behaviorHints.videoSize,
-        bingeGroup = stream.behaviorHints.bingeGroup,
+        name = stream?.name ?: activeStreamTitle,
+        description = stream?.description,
+        addonName = stream?.addonName ?: activeProviderName,
+        addonId = stream?.addonId ?: activeProviderAddonId,
+        addonLogo = stream?.addonLogo,
+        filename = activeSourceFilename ?: stream?.behaviorHints?.filename,
+        videoSize = stream?.behaviorHints?.videoSize,
+        bingeGroup = stream?.behaviorHints?.bingeGroup ?: currentStreamBingeGroup,
         streamType = activeStreamType,
-        badges = stream.badges,
+        badges = stream?.badges ?: emptyList(),
     )
 }
 

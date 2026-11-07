@@ -47,10 +47,11 @@ enum class DeviceLinkAuthFailure {
     Start,
     Expired,
     Complete,
+    Connection,
 }
 
 object DeviceLinkAuthRepository {
-    private const val maxConsecutivePollFailures = 3
+    private const val maxConsecutivePollFailures = 8
     private const val maxPollAttempts = 120
     private const val officialLinkUrl = "https://nuvio.tv/link"
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -143,7 +144,9 @@ object DeviceLinkAuthRepository {
                 throw error
             } catch (error: Throwable) {
                 consecutiveFailures += 1
-                if (consecutiveFailures >= maxConsecutivePollFailures) throw error
+                if (consecutiveFailures >= maxConsecutivePollFailures) {
+                    throw DeviceLinkAuthException(DeviceLinkAuthFailure.Connection, error)
+                }
                 continue
             }
             consecutiveFailures = 0
@@ -159,7 +162,11 @@ object DeviceLinkAuthRepository {
                     completeSession(session.deviceCode, nonce)
                     return
                 }
-                else -> throw DeviceLinkAuthException(DeviceLinkAuthFailure.Expired)
+                "expired", "denied", "cancelled", "canceled" -> throw DeviceLinkAuthException(DeviceLinkAuthFailure.Expired)
+                else -> {
+                    log.w { "Unexpected device login polling status: ${poll.status}" }
+                    throw DeviceLinkAuthException(DeviceLinkAuthFailure.Complete)
+                }
             }
         }
 

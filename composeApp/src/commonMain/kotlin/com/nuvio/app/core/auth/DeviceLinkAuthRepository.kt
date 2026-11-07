@@ -195,6 +195,8 @@ object DeviceLinkAuthRepository {
         } catch (error: CancellationException) {
             throw error
         } catch (error: Throwable) {
+            // The exchange can consume a one-time code; do not replay it blindly.
+            log.w(error) { "Device link session exchange or import failed" }
             throw DeviceLinkAuthException(DeviceLinkAuthFailure.Complete, error)
         }
     }

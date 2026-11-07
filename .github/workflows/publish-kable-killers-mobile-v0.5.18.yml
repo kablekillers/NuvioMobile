@@ -1,0 +1,37 @@
+name: Publish Kable Killers Mobile v0.5.18
+on:
+  push:
+    branches: [cmp-rewrite]
+    paths:
+      - .github/workflows/publish-kable-killers-mobile-v0.5.18.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify signed release run and publish APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_id=42414070994
+          expected_sha=cb4b8e7f4309043956c12c5a6ffcc7a801e6af31
+          result="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}")"
+          test "$(jq -r '.conclusion' <<< "$result")" = success
+          test "$(jq -r '.head_sha' <<< "$result")" = "$expected_sha"
+          test "$(jq -r '.head_branch' <<< "$result")" = release-v0.5.18-rc
+          gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name Kable-Killers-Mobile-Signed-Release --dir signed
+          apk=signed/androidApp-full-universal-release.apk
+          test -s "$apk"
+          sha256sum "$apk"
+          if gh release view v0.5.18 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release v0.5.18 already exists; not overwriting it."
+            exit 0
+          fi
+          gh release create v0.5.18 "$apk" --repo "$GITHUB_REPOSITORY" --target cmp-rewrite \
+            --title "Kable Killers Mobile v0.5.18" \
+            --notes "Improves device-link login resilience for QR and manual-code approval. Both methods tested successfully by maintainer on an affected Android device. In-place upgrade and existing customer data should be verified on a production device. Signed build: https://github.com/kablekillers/NuvioMobile/actions/runs/42414070994"

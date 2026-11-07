@@ -173,6 +173,7 @@ internal fun DeviceLinkAuthSection(
                             stringResource(Res.string.compose_auth_link_code_expired)
                         }
                         DeviceLinkAuthFailure.Start,
+                        DeviceLinkAuthFailure.Connection,
                         DeviceLinkAuthFailure.Complete,
                         -> stringResource(Res.string.compose_auth_link_failed)
                     },

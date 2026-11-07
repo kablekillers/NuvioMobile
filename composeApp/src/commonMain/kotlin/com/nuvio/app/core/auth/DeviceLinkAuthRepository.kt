@@ -181,7 +181,9 @@ object DeviceLinkAuthRepository {
             }
             val response = SupabaseProvider.client.functions.invoke("tv-logins-exchange", payload)
             val result = json.decodeFromString<DeviceLinkExchangeResponse>(response.bodyAsText())
-            val user = result.user ?: SupabaseProvider.client.auth.retrieveUser(result.accessToken)
+            // The exchange already returns credentials. Avoid a second network request
+            // before importing them; user details can be fetched after sign-in.
+            val user = result.user
             val expiresIn = requireNotNull(result.expiresIn?.takeIf { it > 0L })
             SupabaseProvider.client.auth.importSession(
                 UserSession(

@@ -1,5 +1,7 @@
 package com.nuvio.app.features.downloads
 
+import org.junit.Rule
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -10,6 +12,20 @@ import kotlin.test.assertIs
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class AndroidDownloadQueueProjectionTest {
+    @get:Rule val temporary = TemporaryFolder()
+
+    @Test
+    fun storeSnapshotReflectsAuthoritativeTransferUpdates() {
+        val store = AndroidDownloadStore(temporary.newFolder())
+        val initial = store.begin(transfer(DownloadStatus.Paused).item)
+        assertIs<DownloadState.Running>(AndroidDownloadQueueProjection.fromStore(store).entries.single().state)
+
+        store.update(initial.item.fileName, initial.generation) {
+            it.copy(item = it.item.copy(status = DownloadStatus.Paused))
+        }
+        assertIs<DownloadState.Paused>(AndroidDownloadQueueProjection.fromStore(store).entries.single().state)
+    }
+
     private fun transfer(status: DownloadStatus): AndroidDownloadTransfer {
         val item = downloadItem().copy(
             fileName = "projection.mkv",

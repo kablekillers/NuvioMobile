@@ -53,3 +53,18 @@ The Android app already has a production-capable transfer subsystem:
 **Do not replace this store, reschedule its jobs from the new queue, or independently delete media files.** The existing scheduler/store remains authoritative for real transfer execution, credentials, retry state, progress, and downloaded file locations. The new `DownloadQueueRepository` is a prospective presentation/ordering layer only, and its separate `download_manager/queue-v1.json` must not become a second authoritative transfer state.
 
 Before enabling the new lifecycle bridge or UI, implement a read-only mapping from existing `DownloadItem`/`DownloadStatus` to the queue presentation model, including stable identity and file URI semantics; then test restart, cancellation, retry, and generation races against the existing Android lifecycle tests. Decide whether a second persisted queue is needed at all: prefer deriving visible state from `AndroidDownloadStore.transfers` and storing only metadata that the existing store does not own (such as manual ordering). Keep the bridge opt-in until that decision is implemented and tested.
+
+
+## Existing Downloads UI discovered
+
+The application already ships a shared Compose `DownloadsScreen` at
+`composeApp/src/commonMain/kotlin/com/nuvio/app/features/downloads/DownloadsScreen.kt`.
+It collects `DownloadsRepository.uiState` with `collectAsStateWithLifecycle()`,
+displays active/completed movie/episode rows, and delegates pause, resume,
+retry, and cancel to `DownloadsRepository`. The existing deletion confirmation
+must remain intact. Therefore **do not replace the screen or wire the Android
+projection directly to a second independent UI**. The new projection is an
+Android-only read-only integration aid; any smart queue ordering or controls
+should extend `DownloadsRepository` and the existing shared Compose screen,
+with the platform downloader remaining the source of truth. Confirm the
+repository's identity mapping before attaching new queue actions.

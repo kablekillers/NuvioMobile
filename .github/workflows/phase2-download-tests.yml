@@ -6,6 +6,7 @@ on:
       - 'composeApp/src/commonMain/kotlin/com/nuvio/app/features/downloads/**'
       - 'composeApp/src/commonTest/kotlin/com/nuvio/app/features/downloads/**'
       - 'composeApp/src/androidMain/kotlin/com/nuvio/app/features/downloads/**'
+      - 'composeApp/src/androidHostTest/kotlin/com/nuvio/app/features/downloads/**'
       - '.github/workflows/phase2-download-tests.yml'
   workflow_dispatch:
 
@@ -33,4 +34,5 @@ jobs:
           --tests 'com.nuvio.app.features.downloads.DownloadQueueTest'
           --tests 'com.nuvio.app.features.downloads.DownloadQueueSnapshotCodecTest'
           --tests 'com.nuvio.app.features.downloads.DownloadQueueRepositoryTest'
+          --tests 'com.nuvio.app.features.downloads.AndroidDownloadQueueProjectionTest'
           --stacktrace --no-daemon

@@ -16,6 +16,8 @@ import kotlin.math.abs
 data class EpisodeReleaseNotificationsUiState(
     val isEnabled: Boolean = false,
     val isLoading: Boolean = false,
+    val episodeAlertsEnabled: Boolean = true,
+    val movieAlertsEnabled: Boolean = false,
     val permissionGranted: Boolean = false,
     val scheduledCount: Int = 0,
     val testTargetTitle: String? = null,
@@ -28,6 +30,8 @@ data class EpisodeReleaseNotificationsUiState(
 internal data class StoredEpisodeReleaseNotificationsPayload(
     val enabled: Boolean = false,
     val followedShows: List<TrackedFollowedShow> = emptyList(),
+    val episodeAlertsEnabled: Boolean = true,
+    val movieAlertsEnabled: Boolean = false,
 )
 
 @Serializable
@@ -61,6 +65,11 @@ internal fun normalizeSeriesType(type: String): String = when (type.trim().lower
 }
 
 internal fun isSeriesLibraryType(type: String): Boolean = normalizeSeriesType(type) == "series"
+
+internal fun isMovieLibraryType(type: String): Boolean = type.trim().lowercase() == "movie"
+
+internal fun buildMovieReleaseNotificationId(profileId: Int, contentId: String, releaseDateIso: String): String =
+    "movie-release-$profileId-${abs(contentId.trim().hashCode())}-$releaseDateIso"
 
 internal fun releaseDateIso(rawValue: String?): String? {
     return parseEpisodeReleaseLocalDate(rawValue)

@@ -365,7 +365,7 @@ object TmdbCollectionSourceResolver {
             log.w(error) { "TMDB Discover HTTP request failed for $endpoint" }
             val status = Regex("""\\b(400|401|403|404|429|500|502|503)\\b""")
                 .find(error.message.orEmpty())?.value
-            error("TMDB Discover request failed" + (status?.let { " (HTTP $it)" } ?: " (network/HTTP error)"))
+            kotlin.error("TMDB Discover request failed" + (status?.let { " (HTTP $it)" } ?: " (network/HTTP error)"))
         }
         val response = runCatching { json.decodeFromString<TmdbDiscoverResponse>(responseText) }
             .getOrElse { failure ->

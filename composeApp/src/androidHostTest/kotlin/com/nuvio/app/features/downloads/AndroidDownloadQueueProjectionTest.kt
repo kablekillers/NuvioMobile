@@ -30,7 +30,7 @@ class AndroidDownloadQueueProjectionTest {
         val snapshots = observed.await()
         assertEquals(0, snapshots.first().entries.size)
         assertEquals(1, snapshots.last().entries.size)
-        assertEquals(transfer.item.fileName, snapshots.last().entries.single().id)
+        assertEquals(transfer.item.id, snapshots.last().entries.single().id)
         assertEquals(DownloadStatus.Downloading, store.get(transfer.item.fileName)?.item?.status)
     }
 
@@ -61,7 +61,7 @@ class AndroidDownloadQueueProjectionTest {
         val source = transfer(DownloadStatus.Downloading)
         val queue = AndroidDownloadQueueProjection.fromTransfers(listOf(source))
         val entry = queue.entries.single()
-        assertEquals(source.item.fileName, entry.id)
+        assertEquals(source.item.id, entry.id)
         assertEquals(source.item.title, entry.title)
         assertEquals(DownloadState.Running(20, 100), entry.state)
         assertEquals(DownloadStatus.Downloading, source.item.status)

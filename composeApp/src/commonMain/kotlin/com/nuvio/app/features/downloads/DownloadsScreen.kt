@@ -18,8 +18,11 @@ import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -93,20 +96,40 @@ fun DownloadsScreen(
                     }
                 },
                 actions = {
-                    if (selectedShowId == null && uiState.items.any { it.status == DownloadStatus.Downloading }) {
-                        IconButton(onClick = DownloadsRepository::pauseActiveDownloads) {
-                            Icon(
-                                imageVector = Icons.Rounded.Pause,
-                                contentDescription = "Pause all active downloads",
-                            )
-                        }
-                    }
-                    if (selectedShowId == null && uiState.items.any { it.status == DownloadStatus.Paused }) {
-                        IconButton(onClick = DownloadsRepository::resumePausedDownloads) {
-                            Icon(
-                                imageVector = Icons.Rounded.PlayArrow,
-                                contentDescription = "Resume all paused downloads",
-                            )
+                    if (selectedShowId == null && uiState.items.any {
+                            it.status == DownloadStatus.Downloading || it.status == DownloadStatus.Paused
+                        }) {
+                        var showBatchActions by remember { mutableStateOf(false) }
+                        Box {
+                            IconButton(onClick = { showBatchActions = true }) {
+                                Icon(
+                                    imageVector = Icons.Rounded.MoreVert,
+                                    contentDescription = "Download queue actions",
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = showBatchActions,
+                                onDismissRequest = { showBatchActions = false },
+                            ) {
+                                if (uiState.items.any { it.status == DownloadStatus.Downloading }) {
+                                    DropdownMenuItem(
+                                        text = { Text("Pause all downloads") },
+                                        onClick = {
+                                            showBatchActions = false
+                                            DownloadsRepository.pauseActiveDownloads()
+                                        },
+                                    )
+                                }
+                                if (uiState.items.any { it.status == DownloadStatus.Paused }) {
+                                    DropdownMenuItem(
+                                        text = { Text("Resume paused downloads") },
+                                        onClick = {
+                                            showBatchActions = false
+                                            DownloadsRepository.resumePausedDownloads()
+                                        },
+                                    )
+                                }
+                            }
                         }
                     }
                     IconButton(

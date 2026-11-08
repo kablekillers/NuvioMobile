@@ -115,6 +115,20 @@ object EpisodeReleaseNotificationsRepository {
         }
     }
 
+    fun setEpisodeAlertsEnabled(enabled: Boolean) {
+        ensureLoaded()
+        _uiState.value = _uiState.value.copy(episodeAlertsEnabled = enabled)
+        persist()
+        refreshAsync()
+    }
+
+    fun setMovieAlertsEnabled(enabled: Boolean) {
+        ensureLoaded()
+        _uiState.value = _uiState.value.copy(movieAlertsEnabled = enabled)
+        persist()
+        refreshAsync()
+    }
+
     fun setEnabled(enabled: Boolean) {
         ensureLoaded()
         scope.launch {
@@ -264,6 +278,8 @@ object EpisodeReleaseNotificationsRepository {
 
         _uiState.value = EpisodeReleaseNotificationsUiState(
             isEnabled = stored?.enabled ?: false,
+            episodeAlertsEnabled = stored?.episodeAlertsEnabled ?: true,
+            movieAlertsEnabled = stored?.movieAlertsEnabled ?: false,
             permissionGranted = false,
             scheduledCount = 0,
             testTargetTitle = null,
@@ -277,6 +293,8 @@ object EpisodeReleaseNotificationsRepository {
             json.encodeToString(
                 StoredEpisodeReleaseNotificationsPayload(
                     enabled = _uiState.value.isEnabled,
+                    episodeAlertsEnabled = _uiState.value.episodeAlertsEnabled,
+                    movieAlertsEnabled = _uiState.value.movieAlertsEnabled,
                     followedShows = trackedShowsByKey.values
                         .sortedWith(compareBy(TrackedFollowedShow::contentType, TrackedFollowedShow::contentId)),
                 ),
@@ -308,7 +326,7 @@ object EpisodeReleaseNotificationsRepository {
     private fun reconcileTrackedShows(state: LibraryUiState): Boolean {
         if (!state.isLoaded) return false
 
-        val seriesItems = state.items.filter { item -> isSeriesLibraryType(item.type) }
+        val seriesItems = state.items.filter { item -> isSeriesLibraryType(item.type) || isMovieLibraryType(item.type) }
         val nextTrackedShows = linkedMapOf<String, TrackedFollowedShow>()
 
         seriesItems.forEach { item ->
@@ -377,7 +395,7 @@ object EpisodeReleaseNotificationsRepository {
                 errorMessage = null,
             )
 
-            if (trackedShowsByKey.isEmpty()) {
+            if (trackedShowsByKey.isEmpty() || (!_uiState.value.episodeAlertsEnabled && !_uiState.value.movieAlertsEnabled)) {
                 runCatching { EpisodeReleaseNotificationPlatform.clearScheduledEpisodeReleaseNotifications() }
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -394,7 +412,10 @@ object EpisodeReleaseNotificationsRepository {
             }
 
             val semaphore = Semaphore(metadataFetchConcurrency)
-            val requests = trackedShowsByKey.values.map { trackedShow ->
+            val requests = trackedShowsByKey.values.filter { tracked ->
+                if (isMovieLibraryType(tracked.contentType)) _uiState.value.movieAlertsEnabled
+                else _uiState.value.episodeAlertsEnabled
+            }.map { trackedShow ->
                 scope.async {
                     semaphore.withPermit {
                         buildRequestsForShow(trackedShow)
@@ -443,6 +464,19 @@ object EpisodeReleaseNotificationsRepository {
         }.getOrNull() ?: return emptyList()
 
         val showTitle = meta.name.ifBlank { trackedShow.contentId }
+        if (isMovieLibraryType(trackedShow.contentType)) {
+            // Movie metadata may contain only a year; never schedule an alert from an imprecise date.
+            val date = releaseDateIso(meta.releaseInfo) ?: return emptyList()
+            if (date < trackedShow.followedOnIsoDate) return emptyList()
+            return listOf(EpisodeReleaseNotificationRequest(
+                requestId = buildMovieReleaseNotificationId(ProfileRepository.activeProfileId, trackedShow.contentId, date),
+                notificationTitle = showTitle,
+                notificationBody = "Movie release day",
+                releaseDateIso = date,
+                deepLinkUrl = buildMetaDeepLinkUrl(type = trackedShow.contentType, id = trackedShow.contentId),
+                backdropUrl = meta.background ?: meta.poster,
+            ))
+        }
         return meta.videos.mapNotNull { episode ->
             val releaseDate = releaseDateIso(episode.released) ?: return@mapNotNull null
             if (releaseDate < trackedShow.followedOnIsoDate) return@mapNotNull null

@@ -111,8 +111,8 @@ jobs:
             exit 1
           fi
           cp "$APK" "Kable-Killers-Mobile-v0.5.20.apk"
-          gh release create "$TAG" "Kable-Killers-Mobile-v0.5.20.apk" \\
-            --target "$GITHUB_SHA" \\
-            --title "Kable Killers Mobile v0.5.20" \\
-            --notes "Kable Killers Mobile branding refinements and tested bulk download Pause All / Resume All controls. Existing individual download management, interruption recovery, and retry preserved. Advanced experimental queue scheduling is not included." \\
+          gh release create "$TAG" "Kable-Killers-Mobile-v0.5.20.apk" \
+            --target "$GITHUB_SHA" \
+            --title "Kable Killers Mobile v0.5.20" \
+            --notes "Kable Killers Mobile branding refinements and tested bulk download Pause All / Resume All controls. Existing individual download management, interruption recovery, and retry preserved. Advanced experimental queue scheduling is not included." \
             --latest

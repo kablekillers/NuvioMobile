@@ -1,5 +1,6 @@
 
 name: Kable Killers Mobile - Signed Release
+# Production v0.5.19: approved remote device-link fix
 
 on:
   push:

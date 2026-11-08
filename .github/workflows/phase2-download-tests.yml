@@ -25,5 +25,7 @@ jobs:
           java-version: '17'
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+      - name: Prepare local Gradle configuration
+        run: touch local.properties
       - name: Run Android host unit tests (includes commonTest)
         run: ./gradlew :composeApp:testAndroidHostTest --stacktrace --no-daemon

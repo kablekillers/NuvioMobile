@@ -93,6 +93,22 @@ fun DownloadsScreen(
                     }
                 },
                 actions = {
+                    if (selectedShowId == null && uiState.items.any { it.status == DownloadStatus.Downloading }) {
+                        IconButton(onClick = DownloadsRepository::pauseActiveDownloads) {
+                            Icon(
+                                imageVector = Icons.Rounded.Pause,
+                                contentDescription = "Pause all active downloads",
+                            )
+                        }
+                    }
+                    if (selectedShowId == null && uiState.items.any { it.status == DownloadStatus.Paused }) {
+                        IconButton(onClick = DownloadsRepository::resumePausedDownloads) {
+                            Icon(
+                                imageVector = Icons.Rounded.PlayArrow,
+                                contentDescription = "Resume all paused downloads",
+                            )
+                        }
+                    }
                     IconButton(
                         onClick = {
                             if (!DownloadsPlatformDownloader.openDownloadsDirectory()) {

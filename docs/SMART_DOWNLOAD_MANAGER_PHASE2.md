@@ -40,3 +40,16 @@ Status: architecture and discovery; no download behavior implemented.
 - No customer release or signing changes.
 
 Related tracking: #12. Multiple profiles remain a future, separate phase.
+
+
+## Existing Android downloader identified (integration decision)
+
+The Android app already has a production-capable transfer subsystem:
+
+- `AndroidDownloadScheduler` schedules user-initiated JobScheduler jobs on Android 14+ and WorkManager work on older supported devices. Its `restore` method handles missing jobs by pausing interrupted downloads.
+- `AndroidDownloadStore` persists `AndroidDownloadTransfer` records individually using `android.util.AtomicFile`, with a generation token to reject stale worker updates.
+- `AndroidDownloadLifecycleTest` verifies persisted jobs, process recreation, missing-job recovery, stale-worker isolation, and background transfer behavior.
+
+**Do not replace this store, reschedule its jobs from the new queue, or independently delete media files.** The existing scheduler/store remains authoritative for real transfer execution, credentials, retry state, progress, and downloaded file locations. The new `DownloadQueueRepository` is a prospective presentation/ordering layer only, and its separate `download_manager/queue-v1.json` must not become a second authoritative transfer state.
+
+Before enabling the new lifecycle bridge or UI, implement a read-only mapping from existing `DownloadItem`/`DownloadStatus` to the queue presentation model, including stable identity and file URI semantics; then test restart, cancellation, retry, and generation races against the existing Android lifecycle tests. Decide whether a second persisted queue is needed at all: prefer deriving visible state from `AndroidDownloadStore.transfers` and storing only metadata that the existing store does not own (such as manual ordering). Keep the bridge opt-in until that decision is implemented and tested.

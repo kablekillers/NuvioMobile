@@ -1,38 +1,27 @@
 package com.nuvio.app.features.downloads
 
 import android.content.Context
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 
 /**
- * Opt-in Android lifecycle bridge for the device-local download queue.
+ * Opt-in Android bridge for the device-local download queue.
  *
- * Call [initialize] once from the Android app's startup path when the
- * download-manager UI is ready to consume recovered queue state.
- * Initialization is intentionally NOT wired into startup yet: this feature
- * branch must not alter the existing customer download implementation.
- *
- * The restored queue converts interrupted Running transfers to Paused through
- * DownloadQueueSnapshotCodec. No network transfer is automatically resumed.
+ * Initialization is deliberately not wired to app startup while Phase 2 is
+ * under development. Consumers explicitly call [load] and handle failures.
+ * No transfers are started or resumed by this component.
  */
 internal object AndroidDownloadQueueLifecycle {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    @Volatile
     private var repository: DownloadQueueRepository? = null
 
     @Synchronized
-    fun initialize(context: Context) {
-        if (repository != null) return
-        val queueRepository = DownloadQueueRepository(AndroidDownloadQueueStorage(context))
-        repository = queueRepository
-        scope.launch {
-            // Failures remain observable to callers of load() and do not
-            // trigger any media deletion or transfer execution.
-            runCatching { queueRepository.load() }
-        }
+    fun initialize(context: Context): DownloadQueueRepository {
+        repository?.let { return it }
+        return DownloadQueueRepository(AndroidDownloadQueueStorage(context.applicationContext))
+            .also { repository = it }
     }
 
-    @Synchronized
+    /** Restores saved queue state; errors are propagated, never swallowed. */
+    suspend fun load(context: Context): DownloadQueue = initialize(context).load()
+
     fun repositoryOrNull(): DownloadQueueRepository? = repository
 }

@@ -24,6 +24,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -163,6 +164,27 @@ private fun LazyListScope.downloadsRootContent(
             }
         }
         .sortedBy { (item, _) -> item.title.lowercase() }
+
+    if (activeItems.any { it.status == DownloadStatus.Downloading || it.status == DownloadStatus.Paused }) {
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (activeItems.any { it.status == DownloadStatus.Downloading }) {
+                    TextButton(onClick = DownloadsRepository::pauseActiveDownloads) {
+                        Text("Pause all")
+                    }
+                }
+                if (activeItems.any { it.status == DownloadStatus.Paused }) {
+                    TextButton(onClick = DownloadsRepository::resumePausedDownloads) {
+                        Text("Resume all")
+                    }
+                }
+            }
+        }
+    }
 
     if (activeItems.isNotEmpty()) {
         item {

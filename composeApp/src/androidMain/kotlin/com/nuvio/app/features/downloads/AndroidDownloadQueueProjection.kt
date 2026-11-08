@@ -8,6 +8,9 @@ package com.nuvio.app.features.downloads
  * cancels, or removes a transfer, and never persists duplicate transfer state.
  */
 internal object AndroidDownloadQueueProjection {
+    fun fromStore(store: AndroidDownloadStore): DownloadQueue =
+        fromTransfers(store.transfers.value.values)
+
     fun fromTransfers(transfers: Collection<AndroidDownloadTransfer>): DownloadQueue =
         DownloadQueue.restore(transfers.map { transfer ->
             val item = transfer.item

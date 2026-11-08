@@ -288,11 +288,7 @@ object TmdbCollectionSourceResolver {
             TmdbCollectionMediaType.MOVIE -> "discover/movie"
             TmdbCollectionMediaType.TV -> "discover/tv"
         }
-        val body = fetch<TmdbDiscoverResponse>(
-            endpoint = endpoint,
-            apiKey = apiKey,
-            query = query,
-        ) ?: error(getString(Res.string.collections_tmdb_discover_no_data))
+        val body = fetchDiscoverResponse(endpoint, apiKey, query)
         val items = body.results.orEmpty()
             .mapNotNull { it.toPreview(mediaType) }
             .distinctBy { it.id }
@@ -354,6 +350,29 @@ object TmdbCollectionSourceResolver {
                 filters.releaseDateLte,
             )
         }
+    }
+
+    // Do not display request URLs or exception messages: TMDB API keys may be embedded in them.
+    private suspend fun fetchDiscoverResponse(
+        endpoint: String,
+        apiKey: String,
+        query: Map<String, String>,
+    ): TmdbDiscoverResponse {
+        val url = buildTmdbUrl(endpoint = endpoint, apiKey = apiKey, query = query)
+        val responseText = try {
+            httpGetText(url)
+        } catch (error: Exception) {
+            log.w(error) { "TMDB Discover HTTP request failed for $endpoint" }
+            val status = Regex("""\\b(400|401|403|404|429|500|502|503)\\b""")
+                .find(error.message.orEmpty())?.value
+            kotlin.error("TMDB Discover request failed" + (status?.let { " (HTTP $it)" } ?: " (network/HTTP error)"))
+        }
+        val response = runCatching { json.decodeFromString<TmdbDiscoverResponse>(responseText) }
+            .getOrElse { failure ->
+                log.w(failure) { "TMDB Discover response could not be decoded for $endpoint" }
+                error("TMDB Discover returned an invalid response")
+            }
+        return response
     }
 
     private suspend inline fun <reified T> fetch(

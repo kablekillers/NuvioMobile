@@ -1,5 +1,9 @@
 package com.nuvio.app.features.downloads
 
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
@@ -13,6 +17,22 @@ import kotlin.test.assertIs
 @Config(sdk = [34])
 class AndroidDownloadQueueProjectionTest {
     @get:Rule val temporary = TemporaryFolder()
+
+    @Test
+    fun liveQueueEmitsStoreChangesWithoutMutatingTransfers() = runTest {
+        val store = AndroidDownloadStore(temporary.newFolder())
+        val observed = async {
+            AndroidDownloadQueueProjection.observeStore(store).take(2).toList()
+        }
+        // Start collecting before the store is updated.
+        testScheduler.runCurrent()
+        val transfer = store.begin(transfer(DownloadStatus.Paused).item)
+        val snapshots = observed.await()
+        assertEquals(0, snapshots.first().entries.size)
+        assertEquals(1, snapshots.last().entries.size)
+        assertEquals(transfer.item.fileName, snapshots.last().entries.single().id)
+        assertEquals(DownloadStatus.Downloading, store.get(transfer.item.fileName)?.item?.status)
+    }
 
     @Test
     fun storeSnapshotReflectsAuthoritativeTransferUpdates() {

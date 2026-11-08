@@ -1,5 +1,8 @@
 package com.nuvio.app.features.downloads
 
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+
 /**
  * Read-only view of the existing Android transfer store.
  *
@@ -8,6 +11,10 @@ package com.nuvio.app.features.downloads
  * cancels, or removes a transfer, and never persists duplicate transfer state.
  */
 internal object AndroidDownloadQueueProjection {
+    /** Live, read-only queue for the UI; no second persistence layer. */
+    fun observeStore(store: AndroidDownloadStore): Flow<DownloadQueue> =
+        store.transfers.map { transfers -> fromTransfers(transfers.values) }
+
     fun fromStore(store: AndroidDownloadStore): DownloadQueue =
         fromTransfers(store.transfers.value.values)
 

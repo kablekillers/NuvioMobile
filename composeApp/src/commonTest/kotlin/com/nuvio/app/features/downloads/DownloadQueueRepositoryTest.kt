@@ -1,5 +1,7 @@
 package com.nuvio.app.features.downloads
 
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -78,4 +80,33 @@ internal class DownloadQueueRepositoryTest {
         assertIs<DownloadState.Paused>(restored.entries.first().state)
         assertIs<DownloadState.Queued>(restored.entries.last().state)
     }
+    @Test
+    fun concurrentEnqueuesAreSerializedWithoutLostEntries() = runTest {
+        val storage = MemoryStorage()
+        val repository = DownloadQueueRepository(storage)
+        (1..25).map { index ->
+            async { repository.enqueue("download-$index", "Title $index") }
+        }.awaitAll()
+
+        val recovered = DownloadQueueRepository(storage).load()
+        assertEquals(25, recovered.entries.size)
+        assertEquals(25, recovered.entries.map { it.id }.distinct().size)
+        assertEquals(25, storage.writes)
+    }
+
+    @Test
+    fun completedDownloadRemainsCompletedAfterRestart() = runTest {
+        val storage = MemoryStorage()
+        val repository = DownloadQueueRepository(storage)
+        repository.enqueue("movie-1", "Movie One")
+        repository.update("movie-1", DownloadState.Running(100, 100))
+        repository.update("movie-1", DownloadState.Completed("file:///local/movie-1.mp4"))
+
+        val restored = DownloadQueueRepository(storage).load()
+        assertEquals(
+            DownloadState.Completed("file:///local/movie-1.mp4"),
+            restored.entries.single().state,
+        )
+    }
+
 }

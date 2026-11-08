@@ -1,5 +1,5 @@
 
-name: Kable Killers Mobile - Signed Release
+name: Kable Killers Mobile - Publish v0.5.20
 # Approved final release candidate: merged download controls and Kable Killers branding (post v0.5.19)
 
 on:
@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   release:
@@ -88,7 +88,7 @@ jobs:
       - name: Upload signed APK
         uses: actions/upload-artifact@v4
         with:
-          name: Kable-Killers-Mobile-Signed-Release
+          name: Kable-Killers-Mobile-v0.5.20-Signed-Release
           path: androidApp/build/outputs/apk/full/release/androidApp-full-universal-release.apk
           if-no-files-found: error
           retention-days: 30
@@ -97,3 +97,22 @@ jobs:
         if: always()
         run: |
           rm -f kable-killers-mobile.jks local.properties
+
+      - name: Publish Kable Killers Mobile v0.5.20
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="v0.5.20"
+          APK="androidApp/build/outputs/apk/full/release/androidApp-full-universal-release.apk"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::error::Release $TAG already exists; refusing to overwrite."
+            exit 1
+          fi
+          cp "$APK" "Kable-Killers-Mobile-v0.5.20.apk"
+          gh release create "$TAG" "Kable-Killers-Mobile-v0.5.20.apk" \\
+            --target "$GITHUB_SHA" \\
+            --title "Kable Killers Mobile v0.5.20" \\
+            --notes "Kable Killers Mobile branding refinements and tested bulk download Pause All / Resume All controls. Existing individual download management, interruption recovery, and retry preserved. Advanced experimental queue scheduling is not included." \\
+            --latest

@@ -57,6 +57,18 @@ class AndroidDownloadQueueProjectionTest {
     }
 
     @Test
+    fun distinctDownloadIdsRemainDistinctEvenWhenTitlesMatch() {
+        val first = transfer(DownloadStatus.Paused)
+        val second = first.copy(
+            item = first.item.copy(id = "different-download-id", fileName = "second.mkv"),
+            generation = "second-generation",
+        )
+        val entries = AndroidDownloadQueueProjection.fromTransfers(listOf(first, second)).entries
+        assertEquals(2, entries.size)
+        assertEquals(setOf(first.item.id, second.item.id), entries.map { it.id }.toSet())
+    }
+
+    @Test
     fun runningTransferIsProjectedWithoutChangingTheSource() {
         val source = transfer(DownloadStatus.Downloading)
         val queue = AndroidDownloadQueueProjection.fromTransfers(listOf(source))

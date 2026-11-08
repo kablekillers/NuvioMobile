@@ -47,9 +47,9 @@
     <string name="addons_configure">Configure addon</string>
     <string name="addons_delete">Delete addon</string>
     <string name="addons_delete_confirm_title">Delete addon?</string>
-    <string name="addons_appstore_add_description">Bring your library into Nuvio with the addons you use.</string>
+    <string name="addons_appstore_add_description">Bring your library into Kable Killers Mobile with the addons you use.</string>
     <string name="addons_appstore_empty_subtitle">Add an addon to start building your library.</string>
-    <string name="addons_appstore_empty_title">Make Nuvio yours.</string>
+    <string name="addons_appstore_empty_title">Make Kable Killers Mobile yours.</string>
     <string name="addons_appstore_input_placeholder">Addon URL</string>
     <string name="addons_appstore_install_button">Add Addon</string>
     <string name="store_empty_unavailable_title">Nothing here yet</string>
@@ -531,7 +531,7 @@
     <string name="compose_settings_root_check_updates_description">Download latest release</string>
     <string name="compose_settings_root_check_updates_title">Check for updates</string>
     <string name="compose_settings_root_content_discovery_description">Manage addons and discovery sources.</string>
-    <string name="compose_settings_root_content_discovery_description_appstore">Manage addons and choose what appears in Nuvio.</string>
+    <string name="compose_settings_root_content_discovery_description_appstore">Manage addons and choose what appears in Kable Killers Mobile.</string>
     <string name="compose_settings_root_downloads_description">Manage your downloaded movies and episodes.</string>
     <string name="compose_settings_root_downloads_description_appstore">Manage what you’ve saved on this device.</string>
     <string name="compose_settings_root_downloads_title">Downloads</string>
@@ -839,7 +839,7 @@
     <string name="settings_content_discovery_recent_searches">Recent Searches</string>
     <string name="settings_content_discovery_recent_searches_description">Save recent searches and show them when the search bar is focused.</string>
     <string name="settings_content_discovery_addons_description">Install, remove, refresh, and sort your content sources.</string>
-    <string name="settings_content_discovery_addons_description_appstore">Add and manage the addons you use with Nuvio.</string>
+    <string name="settings_content_discovery_addons_description_appstore">Add and manage the addons you use with Kable Killers Mobile.</string>
     <string name="settings_content_discovery_plugins_description">Install JavaScript scraper repositories and test providers internally.</string>
     <string name="settings_content_discovery_homescreen_description">Adjust home layout, content visibility, and poster behavior</string>
     <string name="settings_content_discovery_meta_screen_description">Settings for the detail and episode screens.</string>
@@ -985,10 +985,10 @@
     <string name="settings_meta_tab_layout_description">Group sections into tabs like the TV app. Assign up to 3 sections per tab group.</string>
     <string name="settings_meta_trailers">Trailers</string>
     <string name="settings_meta_trailers_description">Trailer rail and playback shortcuts.</string>
-    <string name="settings_notifications_disabled_in_app">Notifications are currently disabled in Nuvio.</string>
+    <string name="settings_notifications_disabled_in_app">Notifications are currently disabled in Kable Killers Mobile.</string>
     <string name="settings_notifications_episode_release_alerts">Episode release alerts</string>
     <string name="settings_notifications_episode_release_alerts_description">Schedule local notifications when a new episode for a saved show becomes available.</string>
-    <string name="settings_notifications_permission_disabled">System notifications are disabled for Nuvio. Enable them to receive alerts and test notifications.</string>
+    <string name="settings_notifications_permission_disabled">System notifications are disabled for Kable Killers Mobile. Enable them to receive alerts and test notifications.</string>
     <string name="settings_notifications_scheduled_count">%1$d release alerts are currently scheduled on this device.</string>
     <string name="settings_notifications_section_alerts">ALERTS</string>
     <string name="settings_notifications_section_test">TEST</string>
@@ -1740,7 +1740,7 @@
     <string name="addon_already_installed">That addon is already installed.</string>
     <string name="addon_invalid_url">Enter a valid addon URL</string>
     <string name="addon_load_manifest_failed">Unable to load manifest</string>
-    <string name="app_brand_name">Nuvio</string>
+    <string name="app_brand_name">Kable Killers Mobile</string>
     <string name="auth_account_deletion_failed">Account deletion failed</string>
     <string name="auth_sign_in_failed">Sign-in failed</string>
     <string name="auth_sign_out_failed">Sign-out failed</string>
@@ -2210,7 +2210,7 @@
     <string name="downloads_error_open_partial_file_failed">Failed to open partial download file</string>
     <string name="downloads_error_partial_file_not_open">Partial download file is not open</string>
     <string name="downloads_error_write_partial_file_failed">Failed to write partial download file</string>
-    <string name="library_local_tab_title">Nuvio Library</string>
+    <string name="library_local_tab_title">My Library</string>
     <string name="network_connection_issue">Connection issue</string>
     <string name="network_empty_response_body">Empty response body</string>
     <string name="network_please_check_connection">Please check your connection and try again.</string>

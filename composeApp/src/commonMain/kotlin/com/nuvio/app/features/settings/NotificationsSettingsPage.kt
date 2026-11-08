@@ -49,6 +49,22 @@ internal fun LazyListScope.notificationsSettingsContent(
                     isTablet = isTablet,
                     onCheckedChange = EpisodeReleaseNotificationsRepository::setEnabled,
                 )
+                SettingsSwitchRow(
+                    title = "New episode alerts",
+                    description = "Notify me about new episodes of saved series",
+                    checked = uiState.episodeAlertsEnabled,
+                    enabled = uiState.isEnabled && !uiState.isLoading,
+                    isTablet = isTablet,
+                    onCheckedChange = EpisodeReleaseNotificationsRepository::setEpisodeAlertsEnabled,
+                )
+                SettingsSwitchRow(
+                    title = "Movie release alerts",
+                    description = "Notify me on the known release date of saved movies",
+                    checked = uiState.movieAlertsEnabled,
+                    enabled = uiState.isEnabled && !uiState.isLoading,
+                    isTablet = isTablet,
+                    onCheckedChange = EpisodeReleaseNotificationsRepository::setMovieAlertsEnabled,
+                )
             }
         }
     }

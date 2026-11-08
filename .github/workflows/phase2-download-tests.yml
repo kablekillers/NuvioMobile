@@ -27,5 +27,10 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
       - name: Prepare local Gradle configuration
         run: touch local.properties
-      - name: Run Android host unit tests (includes commonTest)
-        run: ./gradlew :composeApp:testAndroidHostTest --stacktrace --no-daemon
+      - name: Run Phase 2 queue tests
+        run: >-
+          ./gradlew :composeApp:testAndroidHostTest
+          --tests 'com.nuvio.app.features.downloads.DownloadQueueTest'
+          --tests 'com.nuvio.app.features.downloads.DownloadQueueSnapshotCodecTest'
+          --tests 'com.nuvio.app.features.downloads.DownloadQueueRepositoryTest'
+          --stacktrace --no-daemon

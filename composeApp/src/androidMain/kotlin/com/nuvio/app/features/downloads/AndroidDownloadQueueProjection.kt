@@ -34,6 +34,6 @@ internal object AndroidDownloadQueueProjection {
                 DownloadStatus.Failed -> DownloadState.Failed(true, item.errorMessage ?: "Download failed")
                 else -> DownloadState.Queued
             }
-            DownloadEntry(id = item.fileName, title = item.title, state = state)
+            DownloadEntry(id = item.id, title = item.title, state = state)
         })
 }

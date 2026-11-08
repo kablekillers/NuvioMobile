@@ -30,7 +30,7 @@ jobs:
           done
           test "$(jq -r '.conclusion' <<< "$result")" = success
           test "$(jq -r '.head_sha' <<< "$result")" = "$expected_sha"
-          test "$(jq -r '.head_branch' <<< "$result")" = release-v0.5.19-rc
+          test "$(jq -r '.head_branch' <<< "$result")" = cmp-rewrite
           gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name Kable-Killers-Mobile-Signed-Release --dir signed
           apk=signed/androidApp-full-universal-release.apk
           test -s "$apk"

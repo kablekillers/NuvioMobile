@@ -122,14 +122,23 @@ object ProfileRepository {
     }
 
     suspend fun pullProfiles() {
-        if (AuthRepository.state.value.isAnonymous) {
+        val requestAuth = AuthRepository.state.value
+        if (requestAuth !is AuthState.Authenticated || requestAuth.isAnonymous) {
             if (!_state.value.isLoaded) {
                 _state.value = _state.value.copy(isLoaded = true)
             }
             return
         }
+        val requestedUserId = requestAuth.userId
         try {
             val result = SupabaseProvider.client.postgrest.rpc("sync_pull_profiles")
+            val currentAuth = AuthRepository.state.value
+            if (currentAuth !is AuthState.Authenticated || currentAuth.isAnonymous ||
+                currentAuth.userId != requestedUserId
+            ) {
+                log.d { "Ignoring stale profile pull after account switch" }
+                return
+            }
             val profiles = result.decodeList<NuvioProfile>()
             _state.value = _state.value.copy(
                 profiles = profiles.sortedBy { it.profileIndex },

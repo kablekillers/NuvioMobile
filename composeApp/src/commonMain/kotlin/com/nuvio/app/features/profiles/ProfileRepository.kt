@@ -151,9 +151,15 @@ object ProfileRepository {
     }
 
     fun selectProfile(profileIndex: Int) {
+        // Never switch profile-scoped data to a missing profile index.
+        // This can happen when a profile is deleted on another device before refresh.
+        val selectedProfile = _state.value.profiles.find { it.profileIndex == profileIndex }
+        if (selectedProfile == null) {
+            log.w { "Ignoring selection of unavailable profile index $profileIndex" }
+            return
+        }
         activeProfileIndex = profileIndex
         CustomPosterUrlRepository.onProfileChanged()
-        val selectedProfile = _state.value.profiles.find { it.profileIndex == profileIndex }
         _state.value = _state.value.copy(
             activeProfile = selectedProfile,
             hasEverSelectedProfile = selectedProfile != null || _state.value.hasEverSelectedProfile,

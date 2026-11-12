@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - cmp-rewrite
+      - feature/tv-mobile-profile-parity
   pull_request:
     branches:
       - cmp-rewrite

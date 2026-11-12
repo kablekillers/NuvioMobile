@@ -122,8 +122,9 @@ object HomeCatalogSettingsSyncService {
             }
 
             if (remotePayload.items.isEmpty()) {
+                // Match TV behavior: an empty remote layout must not replace the
+                // local catalog configuration (including its row ordering).
                 log.i { "pullFromServer — remote has empty items, preserving local catalog order" }
-                applyRemotePayload(remotePayload)
                 markInitialPullComplete(pullToken)
                 return
             }

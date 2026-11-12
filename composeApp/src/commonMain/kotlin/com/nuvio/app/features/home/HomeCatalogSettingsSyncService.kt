@@ -95,6 +95,12 @@ object HomeCatalogSettingsSyncService {
             val pullToken = currentPullToken(profileId) ?: return
             val localPayload = HomeCatalogSettingsRepository.exportToSyncPayload()
             val remoteBlob = fetchRemoteBlob(profileId)
+            // A profile/account switch may happen while the network request is in flight.
+            // Never apply another profile's catalog layout to the currently active profile.
+            if (currentPullToken() != pullToken) {
+                log.d { "pullFromServer — discarded stale response after profile switch" }
+                return
+            }
             cachedSharedSettings = CachedSharedSettings(
                 token = pullToken,
                 settingsJson = remoteBlob?.settingsJson ?: buildJsonObject { },
@@ -148,7 +154,10 @@ object HomeCatalogSettingsSyncService {
 
     private suspend fun pushToRemote(token: PullToken) {
         runCatching {
+            // Debounced writes must never publish the next profile's layout under the old ID.
+            if (currentPullToken() != token) return
             val payload = HomeCatalogSettingsRepository.exportToSyncPayload()
+            if (currentPullToken() != token) return
             val jsonElement = mergedSharedPayloadJson(token, payload)
 
             val params = buildJsonObject {

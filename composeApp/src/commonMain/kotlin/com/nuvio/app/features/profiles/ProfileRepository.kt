@@ -122,15 +122,30 @@ object ProfileRepository {
     }
 
     suspend fun pullProfiles() {
-        if (AuthRepository.state.value.isAnonymous) {
+        val requestAuth = AuthRepository.state.value
+        if (requestAuth !is AuthState.Authenticated || requestAuth.isAnonymous) {
             if (!_state.value.isLoaded) {
                 _state.value = _state.value.copy(isLoaded = true)
             }
             return
         }
+        val requestedUserId = requestAuth.userId
         try {
             val result = SupabaseProvider.client.postgrest.rpc("sync_pull_profiles")
-            val profiles = result.decodeList<NuvioProfile>()
+            val currentAuth = AuthRepository.state.value
+            if (currentAuth !is AuthState.Authenticated || currentAuth.isAnonymous ||
+                currentAuth.userId != requestedUserId
+            ) {
+                log.d { "Ignoring stale profile pull after account switch" }
+                return
+            }
+            // The server's secondary profiles belong to the shared account, not
+            // this household. Preserve only this device's locally saved profiles.
+            val remotePrimary = result.decodeList<NuvioProfile>()
+                .firstOrNull { it.profileIndex == 1 }
+            val localProfiles = _state.value.profiles.filter { it.profileIndex != 1 && it.id.startsWith("local-household-") }
+            val profiles = (listOfNotNull(remotePrimary) + localProfiles)
+                .sortedBy { it.profileIndex }
             _state.value = _state.value.copy(
                 profiles = profiles.sortedBy { it.profileIndex },
                 isLoaded = true,
@@ -151,9 +166,15 @@ object ProfileRepository {
     }
 
     fun selectProfile(profileIndex: Int) {
+        // Never switch profile-scoped data to a missing profile index.
+        // This can happen when a profile is deleted on another device before refresh.
+        val selectedProfile = _state.value.profiles.find { it.profileIndex == profileIndex }
+        if (selectedProfile == null) {
+            log.w { "Ignoring selection of unavailable profile index $profileIndex" }
+            return
+        }
         activeProfileIndex = profileIndex
         CustomPosterUrlRepository.onProfileChanged()
-        val selectedProfile = _state.value.profiles.find { it.profileIndex == profileIndex }
         _state.value = _state.value.copy(
             activeProfile = selectedProfile,
             hasEverSelectedProfile = selectedProfile != null || _state.value.hasEverSelectedProfile,
@@ -195,22 +216,35 @@ object ProfileRepository {
     }
 
     suspend fun pushProfiles(profiles: List<ProfilePushPayload>) {
-        if (AuthRepository.state.value.isAnonymous) {
-            applyPayloadsLocally(profiles)
-            return
+        // This public entry point must never upload household profiles to the
+        // account shared by customers, even if an older screen still calls it.
+        val localProfiles = profiles.filter { it.profileIndex != 1 }
+        val currentPrimary = _state.value.profiles.firstOrNull { it.profileIndex == 1 }
+        val auth = AuthRepository.state.value as? AuthState.Authenticated ?: return
+        val updated = localProfiles.map { payload ->
+            val previous = _state.value.profiles.firstOrNull { it.profileIndex == payload.profileIndex }
+            NuvioProfile(
+                id = previous?.id?.takeIf { it.startsWith("local-household-") }
+                    ?: "local-household-${payload.profileIndex}",
+                userId = auth.userId,
+                profileIndex = payload.profileIndex,
+                name = payload.name,
+                avatarColorHex = payload.avatarColorHex,
+                avatarId = payload.avatarId,
+                avatarUrl = payload.avatarUrl,
+                profileBackgroundId = payload.profileBackgroundId,
+                profileBackgroundUrl = payload.profileBackgroundUrl,
+                usesPrimaryAddons = true,
+                usesPrimaryPlugins = true,
+            )
         }
-        try {
-            val params = buildJsonObject {
-                put("p_client_max_profiles", MAX_PROFILES)
-                put("p_profiles", json.encodeToJsonElement(profiles))
-                putSyncOriginClientId()
-            }
-            SupabaseProvider.client.postgrest.rpc("sync_push_profiles", params)
-            pullProfiles()
-        } catch (e: Throwable) {
-            if (AuthRepository.signOutIfSessionInvalid(e, "Profile push")) return
-            log.e(e) { "Failed to push profiles" }
-        }
+        val combined = (listOfNotNull(currentPrimary) + updated).sortedBy { it.profileIndex }
+        _state.value = _state.value.copy(
+            profiles = combined,
+            activeProfile = combined.find { it.profileIndex == activeProfileIndex } ?: combined.firstOrNull(),
+            isLoaded = true,
+        )
+        persist()
     }
 
     suspend fun createProfile(
@@ -220,31 +254,27 @@ object ProfileRepository {
         avatarUrl: String? = null,
         usesPrimaryAddons: Boolean = false,
     ) {
+        // Customer household profiles are device-local. Never publish them to
+        // sync_push_profiles: every customer may share the master login.
         val existing = _state.value.profiles
-        val nextIndex = ((1..MAX_PROFILES).toSet() - existing.map { it.profileIndex }.toSet()).minOrNull() ?: return
-
-        val allPayloads = existing.map { profile ->
-            ProfilePushPayload(
-                profileIndex = profile.profileIndex,
-                name = profile.name,
-                avatarColorHex = profile.avatarColorHex,
-                usesPrimaryAddons = profile.usesPrimaryAddons,
-                usesPrimaryPlugins = profile.usesPrimaryPlugins,
-                avatarId = profile.avatarId,
-                avatarUrl = profile.avatarUrl,
-                profileBackgroundId = profile.profileBackgroundId,
-                profileBackgroundUrl = profile.profileBackgroundUrl,
-            )
-        } + ProfilePushPayload(
+        val nextIndex = (2..MAX_PROFILES).firstOrNull { index ->
+            existing.none { it.profileIndex == index }
+        } ?: return
+        val userId = (AuthRepository.state.value as? AuthState.Authenticated)?.userId ?: return
+        val profile = NuvioProfile(
+            id = "local-household-$nextIndex",
+            userId = userId,
             profileIndex = nextIndex,
             name = name,
             avatarColorHex = avatarColorHex,
-            usesPrimaryAddons = usesPrimaryAddons,
             avatarId = avatarId,
             avatarUrl = avatarUrl,
+            usesPrimaryAddons = true,
+            usesPrimaryPlugins = true,
         )
-
-        pushProfiles(allPayloads)
+        val profiles = (existing + profile).sortedBy { it.profileIndex }
+        _state.value = _state.value.copy(profiles = profiles, isLoaded = true)
+        persist()
     }
 
     suspend fun updateProfile(
@@ -264,6 +294,7 @@ object ProfileRepository {
                     name = name,
                     avatarColorHex = avatarColorHex,
                     usesPrimaryAddons = usesPrimaryAddons,
+                    usesPrimaryPlugins = profile.usesPrimaryPlugins,
                     avatarId = avatarId,
                     avatarUrl = avatarUrl,
                     profileBackgroundId = profileBackgroundId,
@@ -284,39 +315,25 @@ object ProfileRepository {
             }
         }
 
+        if (profileIndex == 1) return // Master is managed separately; do not overwrite cloud profiles.
         pushProfiles(allPayloads)
     }
 
     suspend fun deleteProfile(profileIndex: Int) {
-        if (AuthRepository.state.value.isAnonymous) {
-            val remaining = _state.value.profiles.filter { it.profileIndex != profileIndex }
-            ProfilePinCacheStorage.removePayload(profileIndex)
-            ServerRepository.removeProfile(profileIndex)
-            _state.value = _state.value.copy(
-                profiles = remaining,
-                activeProfile = if (_state.value.activeProfile?.profileIndex == profileIndex) remaining.firstOrNull() else _state.value.activeProfile,
-            )
-            if (_state.value.activeProfile != null) {
-                activeProfileIndex = _state.value.activeProfile!!.profileIndex
-            }
-            persist()
-            return
-        }
-        try {
-            val params = buildJsonObject {
-                put("p_profile_id", profileIndex)
-                putSyncOriginClientId()
-            }
-            SupabaseProvider.client.postgrest.rpc("sync_delete_profile_data", params)
-            ServerRepository.removeProfile(profileIndex)
-            pullProfiles()
-        } catch (e: Throwable) {
-            if (AuthRepository.signOutIfSessionInvalid(e, "Profile delete")) return
-            log.e(e) { "Failed to delete profile $profileIndex" }
-        }
+        if (profileIndex == 1) return
+        // Never call sync_delete_profile_data for a local household profile.
+        val remaining = _state.value.profiles.filter { it.profileIndex != profileIndex }
+        if (remaining.size == _state.value.profiles.size) return
+        ProfilePinCacheStorage.removePayload(profileIndex)
+        ServerRepository.removeProfile(profileIndex)
+        val active = remaining.find { it.profileIndex == activeProfileIndex } ?: remaining.firstOrNull()
+        activeProfileIndex = active?.profileIndex ?: 1
+        _state.value = _state.value.copy(profiles = remaining, activeProfile = active)
+        persist()
     }
 
     suspend fun verifyPin(profileIndex: Int, pin: String): PinVerifyResult {
+        if (profileIndex != 1) return verifyPinLocally(profileIndex, pin)
         if (AuthRepository.state.value !is AuthState.Authenticated) {
             return verifyPinLocally(profileIndex, pin)
         }
@@ -340,6 +357,8 @@ object ProfileRepository {
     }
 
     suspend fun setPin(profileIndex: Int, pin: String, currentPin: String? = null): PinVerifyResult {
+        // Household profiles must never alter a shared cloud profile's PIN.
+        if (profileIndex != 1) return PinVerifyResult(unlocked = false, message = "Local profile PIN editing is not yet available")
         if (AuthRepository.state.value !is AuthState.Authenticated) {
             return PinVerifyResult(unlocked = false, message = getString(Res.string.profile_pin_set_requires_internet))
         }
@@ -362,6 +381,8 @@ object ProfileRepository {
     }
 
     suspend fun clearPin(profileIndex: Int, currentPin: String? = null): PinVerifyResult {
+        // Household profiles must never alter a shared cloud profile's PIN.
+        if (profileIndex != 1) return PinVerifyResult(unlocked = false, message = "Local profile PIN editing is not yet available")
         if (AuthRepository.state.value !is AuthState.Authenticated) {
             return PinVerifyResult(unlocked = false, message = getString(Res.string.profile_pin_clear_requires_internet))
         }
@@ -383,6 +404,8 @@ object ProfileRepository {
     }
 
     suspend fun clearPinWithPassword(profileIndex: Int, accountPassword: String) {
+        // Household profiles must never alter a shared cloud profile's PIN.
+        if (profileIndex != 1) return 
         runCatching {
             val params = buildJsonObject {
                 put("p_account_password", accountPassword)
@@ -445,7 +468,7 @@ object ProfileRepository {
     }
 
     private fun applyStoredPayload(stored: StoredProfilePayload) {
-        val profiles = stored.profiles.sortedBy { it.profileIndex }
+        val profiles = stored.profiles.filter { it.profileIndex == 1 || it.id.startsWith("local-household-") }.sortedBy { it.profileIndex }
         activeProfileIndex = stored.activeProfileIndex
         _state.value = ProfileState(
             profiles = profiles,

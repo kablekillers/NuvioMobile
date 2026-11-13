@@ -48,7 +48,7 @@ object CollectionSyncService {
         if (ProfileRepository.activeProfileId != profileId) return
         runCatching {
             val params = buildJsonObject {
-                put("p_profile_id", profileId)
+                put("p_profile_id", if (inheritsPrimaryCollections(profileId)) 1 else profileId)
             }
             val result = SupabaseProvider.client.postgrest.rpc("sync_pull_collections", params)
             if (ProfileRepository.activeProfileId != profileId) return@runCatching
@@ -93,7 +93,13 @@ object CollectionSyncService {
         }
     }
 
+    private fun inheritsPrimaryCollections(profileId: Int): Boolean =
+        profileId != 1 && ProfileRepository.state.value.profiles.any {
+            it.profileIndex == profileId && it.usesPrimaryAddons
+        }
+
     fun triggerPush() {
+        if (inheritsPrimaryCollections(ProfileRepository.activeProfileId)) return
         pushJob?.cancel()
         pushJob = scope.launch {
             val profileId = ProfileRepository.activeProfileId
@@ -108,7 +114,7 @@ object CollectionSyncService {
 
     private suspend fun pushToRemote(profileId: Int) {
         runCatching {
-            if (ProfileRepository.activeProfileId != profileId) return@runCatching
+            if (ProfileRepository.activeProfileId != profileId || inheritsPrimaryCollections(profileId)) return@runCatching
             val collectionsJson = CollectionRepository.exportToJson()
             if (ProfileRepository.activeProfileId != profileId) return@runCatching
             val jsonElement = runCatching {
@@ -134,7 +140,7 @@ object CollectionSyncService {
                 .debounce(PUSH_DEBOUNCE_MS)
                 .collect {
                     val profileId = ProfileRepository.activeProfileId
-                    if (isSyncingFromRemote) return@collect
+                    if (isSyncingFromRemote || inheritsPrimaryCollections(profileId)) return@collect
                     val authState = AuthRepository.state.value
                     if (authState !is AuthState.Authenticated || authState.isAnonymous) return@collect
                     pushToRemote(profileId)

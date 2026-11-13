@@ -143,7 +143,7 @@ object ProfileRepository {
             // this household. Preserve only this device's locally saved profiles.
             val remotePrimary = result.decodeList<NuvioProfile>()
                 .firstOrNull { it.profileIndex == 1 }
-            val localProfiles = _state.value.profiles.filter { it.profileIndex != 1 }
+            val localProfiles = _state.value.profiles.filter { it.profileIndex != 1 && it.id.startsWith("local-household-") }
             val profiles = (listOfNotNull(remotePrimary) + localProfiles)
                 .sortedBy { it.profileIndex }
             _state.value = _state.value.copy(
@@ -216,22 +216,35 @@ object ProfileRepository {
     }
 
     suspend fun pushProfiles(profiles: List<ProfilePushPayload>) {
-        if (AuthRepository.state.value.isAnonymous) {
-            applyPayloadsLocally(profiles)
-            return
+        // This public entry point must never upload household profiles to the
+        // account shared by customers, even if an older screen still calls it.
+        val localProfiles = profiles.filter { it.profileIndex != 1 }
+        val currentPrimary = _state.value.profiles.firstOrNull { it.profileIndex == 1 }
+        val auth = AuthRepository.state.value as? AuthState.Authenticated ?: return
+        val updated = localProfiles.map { payload ->
+            val previous = _state.value.profiles.firstOrNull { it.profileIndex == payload.profileIndex }
+            NuvioProfile(
+                id = previous?.id?.takeIf { it.startsWith("local-household-") }
+                    ?: "local-household-${payload.profileIndex}",
+                userId = auth.userId,
+                profileIndex = payload.profileIndex,
+                name = payload.name,
+                avatarColorHex = payload.avatarColorHex,
+                avatarId = payload.avatarId,
+                avatarUrl = payload.avatarUrl,
+                profileBackgroundId = payload.profileBackgroundId,
+                profileBackgroundUrl = payload.profileBackgroundUrl,
+                usesPrimaryAddons = true,
+                usesPrimaryPlugins = true,
+            )
         }
-        try {
-            val params = buildJsonObject {
-                put("p_client_max_profiles", MAX_PROFILES)
-                put("p_profiles", json.encodeToJsonElement(profiles))
-                putSyncOriginClientId()
-            }
-            SupabaseProvider.client.postgrest.rpc("sync_push_profiles", params)
-            pullProfiles()
-        } catch (e: Throwable) {
-            if (AuthRepository.signOutIfSessionInvalid(e, "Profile push")) return
-            log.e(e) { "Failed to push profiles" }
-        }
+        val combined = (listOfNotNull(currentPrimary) + updated).sortedBy { it.profileIndex }
+        _state.value = _state.value.copy(
+            profiles = combined,
+            activeProfile = combined.find { it.profileIndex == activeProfileIndex } ?: combined.firstOrNull(),
+            isLoaded = true,
+        )
+        persist()
     }
 
     suspend fun createProfile(
@@ -249,6 +262,7 @@ object ProfileRepository {
         } ?: return
         val userId = (AuthRepository.state.value as? AuthState.Authenticated)?.userId ?: return
         val profile = NuvioProfile(
+            id = "local-household-$nextIndex",
             userId = userId,
             profileIndex = nextIndex,
             name = name,
@@ -302,7 +316,7 @@ object ProfileRepository {
         }
 
         if (profileIndex == 1) return // Master is managed separately; do not overwrite cloud profiles.
-        applyPayloadsLocally(allPayloads)
+        pushProfiles(allPayloads)
     }
 
     suspend fun deleteProfile(profileIndex: Int) {

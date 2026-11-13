@@ -94,7 +94,12 @@ object HomeCatalogSettingsSyncService {
         runCatching {
             val pullToken = currentPullToken(profileId) ?: return
             val localPayload = HomeCatalogSettingsRepository.exportToSyncPayload()
-            val remoteBlob = fetchRemoteBlob(profileId)
+            // Secondary profiles that inherit the primary add-ons also inherit the
+            // primary home catalog layout. Fetch it read-only: never push a child's
+            // personalized state into the primary profile's shared configuration.
+            val inheritsPrimaryLayout = inheritsPrimaryCatalogLayout(profileId)
+            val sourceProfileId = if (inheritsPrimaryLayout) 1 else profileId
+            val remoteBlob = fetchRemoteBlob(sourceProfileId)
             // A profile/account switch may happen while the network request is in flight.
             // Never apply another profile's catalog layout to the currently active profile.
             if (currentPullToken() != pullToken) {
@@ -140,6 +145,10 @@ object HomeCatalogSettingsSyncService {
 
     fun triggerPush() {
         val requestedToken = currentPullToken()
+        if (requestedToken != null && inheritsPrimaryCatalogLayout(requestedToken.profileId)) {
+            log.d { "triggerPush — inherited primary layout is read-only on secondary profiles" }
+            return
+        }
         if (requestedToken == null || !hasCompletedInitialPull(requestedToken)) {
             log.d { "triggerPush — skipped before initial home catalog pull completed" }
             return
@@ -156,7 +165,7 @@ object HomeCatalogSettingsSyncService {
     private suspend fun pushToRemote(token: PullToken) {
         runCatching {
             // Debounced writes must never publish the next profile's layout under the old ID.
-            if (currentPullToken() != token) return
+            if (currentPullToken() != token || inheritsPrimaryCatalogLayout(token.profileId)) return
             val payload = HomeCatalogSettingsRepository.exportToSyncPayload()
             if (currentPullToken() != token) return
             val jsonElement = mergedSharedPayloadJson(token, payload)
@@ -174,6 +183,10 @@ object HomeCatalogSettingsSyncService {
             log.e(e) { "pushToRemote — FAILED" }
         }
     }
+
+    private fun inheritsPrimaryCatalogLayout(profileId: Int): Boolean =
+        profileId != 1 && ProfileRepository.state.value.profiles
+            .any { it.profileIndex == profileId && it.usesPrimaryAddons }
 
     private fun currentPullToken(profileId: Int = ProfileRepository.activeProfileId): PullToken? {
         val authState = AuthRepository.state.value

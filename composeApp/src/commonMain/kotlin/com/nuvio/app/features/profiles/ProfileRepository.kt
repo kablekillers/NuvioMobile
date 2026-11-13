@@ -333,6 +333,7 @@ object ProfileRepository {
     }
 
     suspend fun verifyPin(profileIndex: Int, pin: String): PinVerifyResult {
+        if (profileIndex != 1) return verifyPinLocally(profileIndex, pin)
         if (AuthRepository.state.value !is AuthState.Authenticated) {
             return verifyPinLocally(profileIndex, pin)
         }
@@ -356,6 +357,8 @@ object ProfileRepository {
     }
 
     suspend fun setPin(profileIndex: Int, pin: String, currentPin: String? = null): PinVerifyResult {
+        // Household profiles must never alter a shared cloud profile's PIN.
+        if (profileIndex != 1) return PinVerifyResult(unlocked = false, message = "Local profile PIN editing is not yet available")
         if (AuthRepository.state.value !is AuthState.Authenticated) {
             return PinVerifyResult(unlocked = false, message = getString(Res.string.profile_pin_set_requires_internet))
         }
@@ -378,6 +381,8 @@ object ProfileRepository {
     }
 
     suspend fun clearPin(profileIndex: Int, currentPin: String? = null): PinVerifyResult {
+        // Household profiles must never alter a shared cloud profile's PIN.
+        if (profileIndex != 1) return PinVerifyResult(unlocked = false, message = "Local profile PIN editing is not yet available")
         if (AuthRepository.state.value !is AuthState.Authenticated) {
             return PinVerifyResult(unlocked = false, message = getString(Res.string.profile_pin_clear_requires_internet))
         }
@@ -399,6 +404,8 @@ object ProfileRepository {
     }
 
     suspend fun clearPinWithPassword(profileIndex: Int, accountPassword: String) {
+        // Household profiles must never alter a shared cloud profile's PIN.
+        if (profileIndex != 1) return 
         runCatching {
             val params = buildJsonObject {
                 put("p_account_password", accountPassword)
@@ -461,7 +468,7 @@ object ProfileRepository {
     }
 
     private fun applyStoredPayload(stored: StoredProfilePayload) {
-        val profiles = stored.profiles.sortedBy { it.profileIndex }
+        val profiles = stored.profiles.filter { it.profileIndex == 1 || it.id.startsWith("local-household-") }.sortedBy { it.profileIndex }
         activeProfileIndex = stored.activeProfileIndex
         _state.value = ProfileState(
             profiles = profiles,

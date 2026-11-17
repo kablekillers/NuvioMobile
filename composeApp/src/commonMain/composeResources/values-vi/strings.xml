@@ -47,9 +47,9 @@
     <string name="addons_configure">Cấu hình tiện ích</string>
     <string name="addons_delete">Xóa tiện ích</string>
     <string name="addons_delete_confirm_title">Xóa tiện ích?</string>
-    <string name="addons_appstore_add_description">Đưa thư viện của bạn vào Nuvio bằng các tiện ích bạn sử dụng.</string>
+    <string name="addons_appstore_add_description">Đưa thư viện của bạn vào Kable Killers Mobile bằng các tiện ích bạn sử dụng.</string>
     <string name="addons_appstore_empty_subtitle">Thêm một tiện ích để bắt đầu xây dựng thư viện của bạn.</string>
-    <string name="addons_appstore_empty_title">Tùy chỉnh Nuvio theo cách của bạn</string>
+    <string name="addons_appstore_empty_title">Tùy chỉnh Kable Killers Mobile theo cách của bạn</string>
     <string name="addons_appstore_input_placeholder">URL tiện ích</string>
     <string name="addons_appstore_install_button">Thêm tiện ích</string>
     <string name="store_empty_unavailable_title">Chưa có gì ở đây</string>
@@ -336,7 +336,6 @@
     <string name="collections_pinned">Đã ghim</string>
     <string name="collections_tab_all">Tất cả</string>
     <string name="collections_your_collections">Bộ sưu tập của bạn</string>
-    <string name="compose_about_made_with">Được tạo bằng ❤️ bởi Tapframe và bạn bè</string>
     <string name="compose_about_version_format">Phiên bản %1$s (%2$s)</string>
     <string name="compose_action_off">Tắt</string>
     <string name="compose_action_on">Bật</string>
@@ -531,7 +530,7 @@
     <string name="compose_settings_root_check_updates_description">Tải xuống phiên bản mới nhất</string>
     <string name="compose_settings_root_check_updates_title">Kiểm tra cập nhật</string>
     <string name="compose_settings_root_content_discovery_description">Quản lý các tiện ích và nguồn khám phá.</string>
-    <string name="compose_settings_root_content_discovery_description_appstore">Quản lý các tiện ích và chọn những gì xuất hiện trong Nuvio.</string>
+    <string name="compose_settings_root_content_discovery_description_appstore">Quản lý các tiện ích và chọn những gì xuất hiện trong Kable Killers Mobile.</string>
     <string name="compose_settings_root_downloads_description">Quản lý các phim điện ảnh và tập phim đã tải xuống của bạn.</string>
     <string name="compose_settings_root_downloads_description_appstore">Quản lý những gì bạn đã lưu trên thiết bị này.</string>
     <string name="compose_settings_root_downloads_title">Tải xuống</string>
@@ -839,7 +838,7 @@
     <string name="settings_content_discovery_recent_searches">Các tìm kiếm gần đây</string>
     <string name="settings_content_discovery_recent_searches_description">Lưu các tìm kiếm gần đây và hiển thị khi chọn vào thanh tìm kiếm.</string>
     <string name="settings_content_discovery_addons_description">Cài đặt, xóa, làm mới và sắp xếp các nguồn nội dung của bạn.</string>
-    <string name="settings_content_discovery_addons_description_appstore">Thêm và quản lý các tiện ích bạn dùng với Nuvio.</string>
+    <string name="settings_content_discovery_addons_description_appstore">Thêm và quản lý các tiện ích bạn dùng với Kable Killers Mobile.</string>
     <string name="settings_content_discovery_plugins_description">Cài đặt các kho lưu trữ trình thu thập dữ liệu bằng JavaScript và kiểm tra các nhà cung cấp nội bộ</string>
     <string name="settings_content_discovery_homescreen_description">Điều chỉnh bố cục trang chủ, nội dung hiển thị và cách hiển thị poster.</string>
     <string name="settings_content_discovery_meta_screen_description">Cài đặt cho màn hình chi tiết và tập phim.</string>
@@ -985,10 +984,10 @@
     <string name="settings_meta_tab_layout_description">Nhóm các mục thành từng thẻ như trên ứng dụng TV. Gán tối đa 3 mục cho mỗi thẻ</string>
     <string name="settings_meta_trailers">Trailer</string>
     <string name="settings_meta_trailers_description">Thanh trailer và phím tắt phát lại</string>
-    <string name="settings_notifications_disabled_in_app">Thông báo hiện đang bị tắt trên Nuvio</string>
+    <string name="settings_notifications_disabled_in_app">Thông báo hiện đang bị tắt trên Kable Killers Mobile</string>
     <string name="settings_notifications_episode_release_alerts">Thông báo tập mới</string>
     <string name="settings_notifications_episode_release_alerts_description">Gửi thông báo cục bộ khi có một tập mới của chương trình đã lưu.</string>
-    <string name="settings_notifications_permission_disabled">Thông báo cho Nuvio hiện đang bị tắt. Vui lòng bật thông báo để nhận các cảnh báo và gửi thông báo kiểm tra</string>
+    <string name="settings_notifications_permission_disabled">Thông báo cho Kable Killers Mobile hiện đang bị tắt. Vui lòng bật thông báo để nhận các cảnh báo và gửi thông báo kiểm tra</string>
     <string name="settings_notifications_scheduled_count">%1$d thông báo phát hành đang được lên lịch trên thiết bị này</string>
     <string name="settings_notifications_section_alerts">THÔNG BÁO</string>
     <string name="settings_notifications_section_test">KIỂM TRA</string>
@@ -1740,7 +1739,7 @@
     <string name="addon_already_installed">Tiện ích này đã được cài đặt</string>
     <string name="addon_invalid_url">Nhập URL tiện ích hợp lệ</string>
     <string name="addon_load_manifest_failed">Không thể tải tệp kê khai</string>
-    <string name="app_brand_name">Nuvio</string>
+    <string name="app_brand_name">Kable Killers Mobile</string>
     <string name="auth_account_deletion_failed">Xóa tài khoản thất bại</string>
     <string name="auth_sign_in_failed">Đăng nhập thất bại</string>
     <string name="auth_sign_out_failed">Đăng xuất thất bại</string>
@@ -2210,7 +2209,7 @@
     <string name="downloads_error_open_partial_file_failed">Không thể mở tệp tải xuống một phần</string>
     <string name="downloads_error_partial_file_not_open">Tệp tải xuống một phần không mở được</string>
     <string name="downloads_error_write_partial_file_failed">Không thể ghi dữ liệu vào tệp tải xuống một phần</string>
-    <string name="library_local_tab_title">Thư viện Nuvio</string>
+    <string name="library_local_tab_title">Thư viện Kable Killers</string>
     <string name="network_connection_issue">Sự cố kết nối</string>
     <string name="network_empty_response_body">Nội dung phản hồi trống</string>
     <string name="network_please_check_connection">Vui lòng kiểm tra kết nối và thử lại</string>

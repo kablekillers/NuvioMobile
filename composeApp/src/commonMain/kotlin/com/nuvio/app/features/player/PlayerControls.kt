@@ -473,7 +473,7 @@ private fun PlayerHeader(
                     if (onPartySyncClick != null) {
                         PlayerHeaderIconButton(
                             icon = Icons.Filled.Sync,
-                            contentDescription = "Sync to watch party host",
+                            contentDescription = stringResource(Res.string.party_sync_to_host),
                             buttonSize = metrics.headerIconSize + 16.dp,
                             iconSize = metrics.headerIconSize,
                             onClick = onPartySyncClick,

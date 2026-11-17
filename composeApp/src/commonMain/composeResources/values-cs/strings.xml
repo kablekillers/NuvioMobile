@@ -34,7 +34,7 @@
     <string name="addons_delete">Smazat doplněk</string>
     <string name="addons_appstore_add_description">Přeneste svou knihovnu do Nuvia pomocí doplňků, které používáte.</string>
     <string name="addons_appstore_empty_subtitle">Přidejte doplněk a začněte vytvářet svou knihovnu.</string>
-    <string name="addons_appstore_empty_title">Přizpůsobte si Nuvio.</string>
+    <string name="addons_appstore_empty_title">Přizpůsobte si Kable Killers Mobile.</string>
     <string name="addons_appstore_input_placeholder">URL doplňku</string>
     <string name="addons_appstore_install_button">Přidat doplněk</string>
     <string name="store_empty_unavailable_title">Zatím tu nic není</string>
@@ -308,7 +308,6 @@
     <string name="collections_pinned">Připnuté</string>
     <string name="collections_tab_all">Vše</string>
     <string name="collections_your_collections">Vaše sbírky</string>
-    <string name="compose_about_made_with">Vytvořeno s ❤️ od Tapframe a přátel</string>
     <string name="compose_about_version_format">Verze %1$s (%2$s)</string>
     <string name="compose_action_off">Vyp</string>
     <string name="compose_action_on">Zap</string>
@@ -776,10 +775,10 @@
     <string name="settings_meta_tab_layout_description">Seskupte sekce do karet jako v aplikaci TV. Každé skupině karet přiřaďte až 3 sekce.</string>
     <string name="settings_meta_trailers">Trailery</string>
     <string name="settings_meta_trailers_description">Pruh s trailery a zástupci pro přehrávání.</string>
-    <string name="settings_notifications_disabled_in_app">Oznámení jsou momentálně v Nuvio zakázána.</string>
+    <string name="settings_notifications_disabled_in_app">Oznámení jsou momentálně v Kable Killers Mobile zakázána.</string>
     <string name="settings_notifications_episode_release_alerts">Upozornění na vydání epizody</string>
     <string name="settings_notifications_episode_release_alerts_description">Naplánovat lokální upozornění, když bude k dispozici nová epizoda u uloženého pořadu.</string>
-    <string name="settings_notifications_permission_disabled">Systémová oznámení jsou pro Nuvio vypnutá. Povolte je, abyste mohli dostávat upozornění a zkušební oznámení.</string>
+    <string name="settings_notifications_permission_disabled">Systémová oznámení jsou pro Kable Killers Mobile vypnutá. Povolte je, abyste mohli dostávat upozornění a zkušební oznámení.</string>
     <string name="settings_notifications_scheduled_count">Momentálně je na tomto zařízení naplánováno %1$d upozornění na vydání.</string>
     <string name="settings_notifications_section_alerts">UPOZORNĚNÍ</string>
     <string name="settings_notifications_section_test">TEST</string>
@@ -1357,7 +1356,7 @@
     <string name="addon_already_installed">Tento doplněk je již nainstalován.</string>
     <string name="addon_invalid_url">Zadejte platnou URL doplňku</string>
     <string name="addon_load_manifest_failed">Nepodařilo se načíst manifest</string>
-    <string name="app_brand_name">Nuvio</string>
+    <string name="app_brand_name">Kable Killers Mobile</string>
     <string name="auth_account_deletion_failed">Smazání účtu selhalo</string>
     <string name="auth_sign_in_failed">Přihlášení selhalo</string>
     <string name="auth_sign_out_failed">Odhlášení selhalo</string>
@@ -1805,7 +1804,7 @@
     <string name="downloads_error_open_partial_file_failed">Nepodařilo se otevřít částečný soubor stahování</string>
     <string name="downloads_error_partial_file_not_open">Částečný soubor stahování není otevřený</string>
     <string name="downloads_error_write_partial_file_failed">Nepodařilo se zapsat do částečného souboru stahování</string>
-    <string name="library_local_tab_title">Knihovna Nuvio</string>
+    <string name="library_local_tab_title">Knihovna Kable Killers</string>
     <string name="network_connection_issue">Problém s připojením</string>
     <string name="network_empty_response_body">Prázdné tělo odpovědi</string>
     <string name="network_please_check_connection">Zkontrolujte prosím své připojení a zkuste to znovu.</string>

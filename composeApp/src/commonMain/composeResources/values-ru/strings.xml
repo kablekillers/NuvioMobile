@@ -45,9 +45,9 @@
     <string name="addons_configure">Настроить аддон</string>
     <string name="addons_delete">Удалить аддон</string>
     <string name="addons_delete_confirm_title">Удалить аддон?</string>
-    <string name="addons_appstore_add_description">Перенесите свою библиотеку в Nuvio с помощью используемых вами дополнений.</string>
+    <string name="addons_appstore_add_description">Перенесите свою библиотеку в Kable Killers Mobile с помощью используемых вами дополнений.</string>
     <string name="addons_appstore_empty_subtitle">Добавьте дополнение, чтобы начать создавать свою библиотеку.</string>
-    <string name="addons_appstore_empty_title">Сделайте Nuvio своим.</string>
+    <string name="addons_appstore_empty_title">Сделайте Kable Killers Mobile своим.</string>
     <string name="addons_appstore_input_placeholder">Аддон URL</string>
     <string name="addons_appstore_install_button">Добавить аддон</string>
     <string name="store_empty_unavailable_title">Здесь пока ничего</string>
@@ -334,7 +334,6 @@
     <string name="collections_pinned">Закреплено</string>
     <string name="collections_tab_all">Все</string>
     <string name="collections_your_collections">Ваши коллекции</string>
-    <string name="compose_about_made_with">Сделано с ❤️ Tapframe и друзьями</string>
     <string name="compose_about_version_format">Версия %1$s (%2$s)</string>
     <string name="compose_action_off">Выкл.</string>
     <string name="compose_action_on">Вкл.</string>
@@ -526,7 +525,7 @@
     <string name="compose_settings_root_check_updates_description">Скачать последнюю версию</string>
     <string name="compose_settings_root_check_updates_title">Проверьте наличие обновлений</string>
     <string name="compose_settings_root_content_discovery_description">Управляйте надстройками и источниками обнаружения.</string>
-    <string name="compose_settings_root_content_discovery_description_appstore">Управляйте аддонами и выбирайте, что появится в Nuvio.</string>
+    <string name="compose_settings_root_content_discovery_description_appstore">Управляйте аддонами и выбирайте, что появится в Kable Killers Mobile.</string>
     <string name="compose_settings_root_downloads_description">Управляйте загруженными фильмами и эпизодами.</string>
     <string name="compose_settings_root_downloads_description_appstore">Управляйте тем, что вы сохранили на этом устройстве.</string>
     <string name="compose_settings_root_downloads_title">Загрузки</string>
@@ -801,7 +800,7 @@
     <string name="settings_content_discovery_section_home">ГЛАВНАЯ</string>
     <string name="settings_content_discovery_section_sources">ИСТОЧНИКИ</string>
     <string name="settings_content_discovery_addons_description">Устанавливайте, удаляйте, обновляйте и сортируйте источники контента.</string>
-    <string name="settings_content_discovery_addons_description_appstore">Добавляйте и управляйте надстройками, которые вы используете с Nuvio.</string>
+    <string name="settings_content_discovery_addons_description_appstore">Добавляйте и управляйте надстройками, которые вы используете с Kable Killers Mobile.</string>
     <string name="settings_content_discovery_plugins_description">Установите репозитории парсеров JavaScript и протестируйте поставщиков внутри компании.</string>
     <string name="settings_content_discovery_homescreen_description">Настройте главную, видимость контента и отображение постеров.</string>
     <string name="settings_content_discovery_meta_screen_description">Настройки для экранов подробностей и эпизодов.</string>
@@ -943,10 +942,10 @@
     <string name="settings_meta_tab_layout_description">Группируйте разделы по вкладкам, как в приложении «ТВ». Назначьте до 3 разделов на группу вкладок.</string>
     <string name="settings_meta_trailers">Трейлеры</string>
     <string name="settings_meta_trailers_description">Полка трейлеров и быстрый запуск воспроизведения.</string>
-    <string name="settings_notifications_disabled_in_app">Уведомления в настоящее время отключены в Nuvio.</string>
+    <string name="settings_notifications_disabled_in_app">Уведомления в настоящее время отключены в Kable Killers Mobile.</string>
     <string name="settings_notifications_episode_release_alerts">Оповещения о выходе эпизода</string>
     <string name="settings_notifications_episode_release_alerts_description">Запланируйте локальные уведомления, когда станет доступен новый выпуск сохраненного шоу.</string>
-    <string name="settings_notifications_permission_disabled">Системные уведомления отключены для Nuvio. Разрешите им получать оповещения и тестовые уведомления.</string>
+    <string name="settings_notifications_permission_disabled">Системные уведомления отключены для Kable Killers Mobile. Разрешите им получать оповещения и тестовые уведомления.</string>
     <string name="settings_notifications_scheduled_count">На этом устройстве в настоящее время запланированы оповещения о выпуске %1$d.</string>
     <string name="settings_notifications_section_alerts">ПРЕДУПРЕЖДЕНИЯ</string>
     <string name="settings_notifications_section_test">ТЕСТ</string>
@@ -1615,7 +1614,7 @@
     <string name="addon_already_installed">Этот аддон уже установлен.</string>
     <string name="addon_invalid_url">Введите действительный аддон URL.</string>
     <string name="addon_load_manifest_failed">Не удалось загрузить манифест</string>
-    <string name="app_brand_name">Nuvio</string>
+    <string name="app_brand_name">Kable Killers Mobile</string>
     <string name="auth_account_deletion_failed">Удаление аккаунта не удалось</string>
     <string name="auth_sign_in_failed">Не удалось войти в систему</string>
     <string name="auth_sign_out_failed">Не удалось выйти из системы</string>
@@ -2082,7 +2081,7 @@
     <string name="downloads_error_open_partial_file_failed">Не удалось открыть файл частичной загрузки.</string>
     <string name="downloads_error_partial_file_not_open">Файл частичной загрузки не открыт</string>
     <string name="downloads_error_write_partial_file_failed">Не удалось записать файл частичной загрузки.</string>
-    <string name="library_local_tab_title">Библиотека Nuvio</string>
+    <string name="library_local_tab_title">Библиотека Kable Killers</string>
     <string name="network_connection_issue">Проблема с подключением</string>
     <string name="network_empty_response_body">Пустое тело ответа</string>
     <string name="network_please_check_connection">Пожалуйста, проверьте подключение и повторите попытку.</string>

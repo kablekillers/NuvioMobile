@@ -72,7 +72,9 @@ object PartyRepository {
     val sharedStream: StateFlow<PartyStream?> = _sharedStream.asStateFlow()
 
     private val _enabled = MutableStateFlow(true)
-    val available: StateFlow<Boolean> = combine(ServerConfigurationRepository.active, _enabled) { server, enabled ->
+    // Visibility follows the server capability only. The enabled check can report a temporary
+    // outage, so it is tracked in _enabled but never hides the controls or ends a live party.
+    val available: StateFlow<Boolean> = combine(ServerConfigurationRepository.active, _enabled) { server, _ ->
         server.capabilities.watchParty
     }.stateIn(scope, SharingStarted.Eagerly, ServerConfigurationRepository.active.value.capabilities.watchParty)
 
@@ -550,7 +552,7 @@ object PartyRepository {
         if (!ServerConfigurationRepository.active.value.capabilities.watchParty) return
         val enabled = runRemote { PartyApi.enabled() } ?: return
         _enabled.value = enabled
-        if (!enabled) finish(PartyEvent.Ended)
+        if (!enabled) log.w { "Watch party enabled check returned false; keeping current session" }
     }
 
     private suspend fun refineClock() {
@@ -686,7 +688,7 @@ object PartyRepository {
         )
     }
 
-    private const val DEFAULT_NAME = "Nuvio"
+    private const val DEFAULT_NAME = "Kable Killers"
     private val COLOR_PATTERN = Regex("^#[0-9A-Fa-f]{6}$")
     private val HEARTBEAT_INTERVAL = 2.minutes
     private val PERSIST_DELAY = 1.5.seconds

@@ -47,9 +47,9 @@
     <string name="addons_configure">Konfiguriraj dodatak</string>
     <string name="addons_delete">Izbriši dodatak</string>
     <string name="addons_delete_confirm_title">Izbrisati dodatak?</string>
-    <string name="addons_appstore_add_description">Povežite svoju medijateku u Nuvio pomoću dodataka koje koristite.</string>
+    <string name="addons_appstore_add_description">Povežite svoju medijateku u Kable Killers Mobile pomoću dodataka koje koristite.</string>
     <string name="addons_appstore_empty_subtitle">Dodajte dodatak kako biste započeli s izgradnjom svoje medijateke.</string>
-    <string name="addons_appstore_empty_title">Prilagodite Nuvio sebi.</string>
+    <string name="addons_appstore_empty_title">Prilagodite Kable Killers Mobile sebi.</string>
     <string name="addons_appstore_input_placeholder">URL dodatka</string>
     <string name="addons_appstore_install_button">Dodaj dodatak</string>
     <string name="store_empty_unavailable_title">Ovdje još nema ničega</string>
@@ -336,7 +336,6 @@
     <string name="collections_pinned">Prikvačeno</string>
     <string name="collections_tab_all">Sve</string>
     <string name="collections_your_collections">Vaše zbirke</string>
-    <string name="compose_about_made_with">Napravljeno s ❤️ od strane Tapframe i prijatelja</string>
     <string name="compose_about_version_format">Verzija %1$s (%2$s)</string>
     <string name="compose_action_off">Isključeno</string>
     <string name="compose_action_on">Uključeno</string>
@@ -839,7 +838,7 @@
     <string name="settings_content_discovery_recent_searches">Nedavna pretraživanja</string>
     <string name="settings_content_discovery_recent_searches_description">Spremaj nedavna pretraživanja i prikaži ih kada je traka za pretraživanje u fokusu.</string>
     <string name="settings_content_discovery_addons_description">Instalirajte, uklonite, osvježite i sortirajte svoje izvore sadržaja.</string>
-    <string name="settings_content_discovery_addons_description_appstore">Dodajte i upravljajte dodacima koje koristite s aplikacijom Nuvio.</string>
+    <string name="settings_content_discovery_addons_description_appstore">Dodajte i upravljajte dodacima koje koristite s aplikacijom Kable Killers Mobile.</string>
     <string name="settings_content_discovery_plugins_description">Instalirajte repozitorije JavaScript strugača i interno testirajte pružatelje.</string>
     <string name="settings_content_discovery_homescreen_description">Prilagodite izgled početnog zaslona, vidljivost sadržaja i ponašanje plakata</string>
     <string name="settings_content_discovery_meta_screen_description">Postavke za zaslone s pojedinostima i epizodama.</string>
@@ -988,7 +987,7 @@
     <string name="settings_notifications_disabled_in_app">Obavijesti su trenutačno onemogućene u Nuviju.</string>
     <string name="settings_notifications_episode_release_alerts">Upozorenja o izlasku epizoda</string>
     <string name="settings_notifications_episode_release_alerts_description">Zakažite lokalne obavijesti kada nova epizoda spremljene serije postane dostupna.</string>
-    <string name="settings_notifications_permission_disabled">Sustavne obavijesti su onemogućene za Nuvio. Omogućite ih za primanje upozorenja i probnih obavijesti.</string>
+    <string name="settings_notifications_permission_disabled">Sustavne obavijesti su onemogućene za Kable Killers Mobile. Omogućite ih za primanje upozorenja i probnih obavijesti.</string>
     <string name="settings_notifications_scheduled_count">%1$d upozorenja o izlasku trenutačno je zakazano na ovom uređaju.</string>
     <string name="settings_notifications_section_alerts">UPOZORENJA</string>
     <string name="settings_notifications_section_test">TESTIRANJE</string>
@@ -1711,7 +1710,7 @@
     <string name="addon_already_installed">Taj je dodatak već instaliran.</string>
     <string name="addon_invalid_url">Unesite valjani URL dodatka</string>
     <string name="addon_load_manifest_failed">Nije uspjelo učitavanje manifesta</string>
-    <string name="app_brand_name">Nuvio</string>
+    <string name="app_brand_name">Kable Killers Mobile</string>
     <string name="auth_account_deletion_failed">Brisanje računa nije uspjelo</string>
     <string name="auth_sign_in_failed">Prijava nije uspjela</string>
     <string name="auth_sign_out_failed">Odjava nije uspjela</string>
@@ -2179,7 +2178,7 @@
     <string name="downloads_error_open_partial_file_failed">Otvaranje djelomične datoteke preuzimanja nije uspjelo</string>
     <string name="downloads_error_partial_file_not_open">Djelomična datoteka preuzimanja nije otvorena</string>
     <string name="downloads_error_write_partial_file_failed">Zapisivanje u djelomičnu datoteku preuzimanja nije uspjelo</string>
-    <string name="library_local_tab_title">Nuvio medijateka</string>
+    <string name="library_local_tab_title">Kable Killers medijateka</string>
     <string name="network_connection_issue">Problem s vezom</string>
     <string name="network_empty_response_body">Prazno tijelo odgovora</string>
     <string name="network_please_check_connection">Provjerite vezu i pokušajte ponovno.</string>

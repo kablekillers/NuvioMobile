@@ -4,7 +4,7 @@ import com.nuvio.app.core.ui.AppTheme
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import nuvio.composeapp.generated.resources.Res
-import nuvio.composeapp.generated.resources.app_logo_wordmark_gold
+import nuvio.composeapp.generated.resources.app_logo_wordmark
 
 class AppIconOptionTest {
     @Test
@@ -33,7 +33,7 @@ class AppIconOptionTest {
     @Test
     fun goldThemeUsesGoldWordmark() {
         assertEquals(
-            Res.drawable.app_logo_wordmark_gold,
+            Res.drawable.app_logo_wordmark,
             AppTheme.GOLD.wordmarkResource(AppIconOption.COPPER),
         )
     }

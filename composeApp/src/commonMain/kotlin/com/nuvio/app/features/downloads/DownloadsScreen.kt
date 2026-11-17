@@ -174,12 +174,12 @@ private fun LazyListScope.downloadsRootContent(
             ) {
                 if (activeItems.any { it.status == DownloadStatus.Downloading }) {
                     TextButton(onClick = DownloadsRepository::pauseActiveDownloads) {
-                        Text("Pause all")
+                        Text(stringResource(Res.string.downloads_pause_all))
                     }
                 }
                 if (activeItems.any { it.status == DownloadStatus.Paused }) {
                     TextButton(onClick = DownloadsRepository::resumePausedDownloads) {
-                        Text("Resume all")
+                        Text(stringResource(Res.string.downloads_resume_all))
                     }
                 }
             }

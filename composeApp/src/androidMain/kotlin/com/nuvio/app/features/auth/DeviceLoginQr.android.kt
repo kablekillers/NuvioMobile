@@ -15,6 +15,9 @@ import androidx.compose.ui.unit.dp
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
+import nuvio.composeapp.generated.resources.Res
+import nuvio.composeapp.generated.resources.auth_device_login_qr_description
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal actual fun DeviceLoginQr(url: String) {
@@ -37,7 +40,7 @@ internal actual fun DeviceLoginQr(url: String) {
     if (bitmap != null) {
         Image(
             bitmap = bitmap.asImageBitmap(),
-            contentDescription = "Scan to sign in on another device",
+            contentDescription = stringResource(Res.string.auth_device_login_qr_description),
             modifier = Modifier
                 .size(200.dp)
                 .background(Color.White, RoundedCornerShape(12.dp))

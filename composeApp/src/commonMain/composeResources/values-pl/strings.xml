@@ -31,9 +31,9 @@
     <string name="addons_badge_unavailable">Niedostępny</string>
     <string name="addons_configure">Konfiguruj dodatek</string>
     <string name="addons_delete">Usuń dodatek</string>
-    <string name="addons_appstore_add_description">Przenieś swoją bibliotekę do Nuvio za pomocą używanych dodatków.</string>
+    <string name="addons_appstore_add_description">Przenieś swoją bibliotekę do Kable Killers Mobile za pomocą używanych dodatków.</string>
     <string name="addons_appstore_empty_subtitle">Dodaj dodatek, aby zacząć tworzyć swoją bibliotekę.</string>
-    <string name="addons_appstore_empty_title">Dostosuj Nuvio do siebie.</string>
+    <string name="addons_appstore_empty_title">Dostosuj Kable Killers Mobile do siebie.</string>
     <string name="addons_appstore_input_placeholder">URL dodatku</string>
     <string name="addons_appstore_install_button">Dodaj dodatek</string>
     <string name="store_empty_unavailable_title">Na razie nic tu nie ma</string>
@@ -291,7 +291,6 @@
     <string name="collections_pinned">Przypięte</string>
     <string name="collections_tab_all">Wszystko</string>
     <string name="collections_your_collections">Twoje kolekcje</string>
-    <string name="compose_about_made_with">Stworzone z ❤️ przez Tapframe i przyjaciół</string>
     <string name="compose_about_version_format">Wersja %1$s (%2$s)</string>
     <string name="compose_action_off">Wył.</string>
     <string name="compose_action_on">Wł.</string>
@@ -420,7 +419,7 @@
     <string name="compose_settings_root_check_updates_description">Sprawdź dostępność nowych wersji aplikacji.</string>
     <string name="compose_settings_root_check_updates_title">Sprawdź aktualizacje</string>
     <string name="compose_settings_root_content_discovery_description">Zarządzaj dodatkami i źródłami odkrywania.</string>
-    <string name="compose_settings_root_content_discovery_description_appstore">Zarządzaj dodatkami i wybierz, co ma być widoczne w Nuvio.</string>
+    <string name="compose_settings_root_content_discovery_description_appstore">Zarządzaj dodatkami i wybierz, co ma być widoczne w Kable Killers Mobile.</string>
     <string name="compose_settings_root_downloads_description">Zarządzaj pobranymi filmami i odcinkami.</string>
     <string name="compose_settings_root_downloads_description_appstore">Zarządzaj zawartością zapisaną na tym urządzeniu.</string>
     <string name="compose_settings_root_downloads_title">Pobrane</string>
@@ -625,7 +624,7 @@
     <string name="settings_content_discovery_section_home">EKRAN GŁÓWNY</string>
     <string name="settings_content_discovery_section_sources">ŹRÓDŁA</string>
     <string name="settings_content_discovery_addons_description">Instaluj, usuwaj, odświeżaj i sortuj źródła treści.</string>
-    <string name="settings_content_discovery_addons_description_appstore">Dodawaj używane w Nuvio dodatki i zarządzaj nimi.</string>
+    <string name="settings_content_discovery_addons_description_appstore">Dodawaj używane w Kable Killers Mobile dodatki i zarządzaj nimi.</string>
     <string name="settings_content_discovery_plugins_description">Instaluj repozytoria scraperów JavaScript i testuj dostawców wewnętrznie.</string>
     <string name="settings_content_discovery_homescreen_description">Kontroluj, które katalogi pojawiają się na ekranie głównym i w jakiej kolejności.</string>
     <string name="settings_content_discovery_meta_screen_description">Wyłącz sekcje szczegółów i zmień kolejność wszystkiego poniżej Hero.</string>
@@ -726,10 +725,10 @@
     <string name="settings_meta_tab_layout_description">Grupuj sekcje w karty jak w aplikacji TV. Przypisz do 3 sekcji na grupę kart.</string>
     <string name="settings_meta_trailers">Zwiastuny</string>
     <string name="settings_meta_trailers_description">Wiersz zwiastunów i skróty odtwarzania.</string>
-    <string name="settings_notifications_disabled_in_app">Powiadomienia są obecnie wyłączone w Nuvio.</string>
+    <string name="settings_notifications_disabled_in_app">Powiadomienia są obecnie wyłączone w Kable Killers Mobile.</string>
     <string name="settings_notifications_episode_release_alerts">Alerty o premierach odcinków</string>
     <string name="settings_notifications_episode_release_alerts_description">Zaplanuj lokalne powiadomienia, gdy nowy odcinek zapisanego serialu stanie się dostępny.</string>
-    <string name="settings_notifications_permission_disabled">Powiadomienia systemowe są wyłączone dla Nuvio. Włącz je, aby otrzymywać alerty i powiadomienia testowe.</string>
+    <string name="settings_notifications_permission_disabled">Powiadomienia systemowe są wyłączone dla Kable Killers Mobile. Włącz je, aby otrzymywać alerty i powiadomienia testowe.</string>
     <string name="settings_notifications_scheduled_count">%1$d alertów o premierach jest obecnie zaplanowanych na tym urządzeniu.</string>
     <string name="settings_notifications_section_alerts">ALERTY</string>
     <string name="settings_notifications_section_test">TEST</string>
@@ -1275,7 +1274,7 @@
     <string name="addon_already_installed">Ten dodatek jest już zainstalowany.</string>
     <string name="addon_invalid_url">Wprowadź prawidłowy URL dodatku</string>
     <string name="addon_load_manifest_failed">Nie można załadować manifestu</string>
-    <string name="app_brand_name">Nuvio</string>
+    <string name="app_brand_name">Kable Killers Mobile</string>
     <string name="auth_account_deletion_failed">Usunięcie konta nie powiodło się</string>
     <string name="auth_sign_in_failed">Logowanie nie powiodło się</string>
     <string name="auth_sign_out_failed">Wylogowanie nie powiodło się</string>
@@ -1583,7 +1582,7 @@
     <string name="external_player_android_system">Systemowy odtwarzacz Android</string>
     <string name="home_continue_watching_hours_minutes_left">Pozostało %1$dh %2$dm</string>
     <string name="home_continue_watching_minutes_left">Pozostało %1$dm</string>
-    <string name="library_local_tab_title">Biblioteka Nuvio</string>
+    <string name="library_local_tab_title">Biblioteka Kable Killers</string>
     <string name="network_connection_issue">Problem z połączeniem</string>
     <string name="network_empty_response_body">Pusta treść odpowiedzi</string>
     <string name="network_error_empty_response_body">Pusta treść odpowiedzi</string>

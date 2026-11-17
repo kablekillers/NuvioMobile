@@ -300,7 +300,6 @@
     <string name="collections_pinned">Pripnuté</string>
     <string name="collections_tab_all">Všetko</string>
     <string name="collections_your_collections">Vaše kolekcie</string>
-    <string name="compose_about_made_with">Vytvorené s ❤️ od Tapframe a priateľov</string>
     <string name="compose_about_version_format">Verzia %1$s (%2$s)</string>
     <string name="compose_action_off">Vypnuté</string>
     <string name="compose_action_on">Zapnuté</string>
@@ -764,10 +763,10 @@
     <string name="settings_meta_tab_layout_description">Zoskupiť sekcie do záložiek ako v TV aplikácii. Priradiť až 3 sekcie na skupinu záložiek.</string>
     <string name="settings_meta_trailers">Trailery</string>
     <string name="settings_meta_trailers_description">Rad trailerov a skratky prehrávania.</string>
-    <string name="settings_notifications_disabled_in_app">Oznámenia sú momentálne vypnuté v Nuvio.</string>
+    <string name="settings_notifications_disabled_in_app">Oznámenia sú momentálne vypnuté v Kable Killers Mobile.</string>
     <string name="settings_notifications_episode_release_alerts">Upozornenia na vydanie epizód</string>
     <string name="settings_notifications_episode_release_alerts_description">Naplánovať lokálne oznámenia, keď bude dostupná nová epizóda uloženého seriálu.</string>
-    <string name="settings_notifications_permission_disabled">Systémové oznámenia sú pre Nuvio vypnuté. Povoľte ich, aby ste dostávali upozornenia a testovacie oznámenia.</string>
+    <string name="settings_notifications_permission_disabled">Systémové oznámenia sú pre Kable Killers Mobile vypnuté. Povoľte ich, aby ste dostávali upozornenia a testovacie oznámenia.</string>
     <string name="settings_notifications_scheduled_count">%1$d upozornení na vydanie je momentálne naplánovaných na tomto zariadení.</string>
     <string name="settings_notifications_section_alerts">UPOZORNENIA</string>
     <string name="settings_notifications_section_test">TEST</string>
@@ -1330,7 +1329,7 @@
     <string name="addon_already_installed">Tento doplnok je už nainštalovaný.</string>
     <string name="addon_invalid_url">Zadajte platnú URL doplnku</string>
     <string name="addon_load_manifest_failed">Nepodarilo sa načítať manifest</string>
-    <string name="app_brand_name">Nuvio</string>
+    <string name="app_brand_name">Kable Killers Mobile</string>
     <string name="auth_account_deletion_failed">Odstránenie účtu zlyhalo</string>
     <string name="auth_sign_in_failed">Prihlásenie zlyhalo</string>
     <string name="auth_sign_out_failed">Odhlásenie zlyhalo</string>
@@ -1776,7 +1775,7 @@
     <string name="downloads_error_open_partial_file_failed">Nepodarilo sa otvoriť čiastočný súbor na stiahnutie</string>
     <string name="downloads_error_partial_file_not_open">Čiastočný súbor na stiahnutie nie je otvorený</string>
     <string name="downloads_error_write_partial_file_failed">Nepodarilo sa zapísať čiastočný súbor na stiahnutie</string>
-    <string name="library_local_tab_title">Nuvio Knižnica</string>
+    <string name="library_local_tab_title">Kable Killers Knižnica</string>
     <string name="network_connection_issue">Problém s pripojením</string>
     <string name="network_empty_response_body">Prázdne telo odpovede</string>
     <string name="network_please_check_connection">Skontrolujte prosím svoje pripojenie a skúste to znova.</string>
@@ -1893,7 +1892,7 @@
     <string name="action_switch">Prepnúť</string>
     <string name="addons_appstore_add_description">Preneste svoju knižnicu do Nuvia pomocou doplnkov, ktoré používate.</string>
     <string name="addons_appstore_empty_subtitle">Pridajte doplnok a začnite si vytvárať knižnicu.</string>
-    <string name="addons_appstore_empty_title">Prispôsobte si Nuvio.</string>
+    <string name="addons_appstore_empty_title">Prispôsobte si Kable Killers Mobile.</string>
     <string name="addons_appstore_input_placeholder">URL doplnku</string>
     <string name="addons_appstore_install_button">Pridať doplnok</string>
     <string name="store_empty_unavailable_title">Zatiaľ tu nič nie je</string>
@@ -1901,7 +1900,7 @@
     <string name="compose_auth_terms_prefix">Registráciou súhlasím s</string>
     <string name="compose_auth_terms_link">Podmienkami</string>
     <string name="settings_appearance_app_language_device">Jazyk zariadenia</string>
-    <string name="settings_content_discovery_addons_description_appstore">Pridávajte a spravujte doplnky, ktoré používate s Nuviom.</string>
+    <string name="settings_content_discovery_addons_description_appstore">Pridávajte a spravujte doplnky, ktoré používate s Kable Killers Mobilem.</string>
     <string name="settings_playback_external_player_send_skip_segments">Odosielať časové značky intra a outra</string>
     <string name="settings_playback_external_player_send_skip_segments_description">Odovzdať vyriešené časové značky intra a outra externému prehrávaču na automatické preskakovanie. Funguje iba v prehrávačoch, ktoré to podporujú; ostatné prehrávače to ignorujú.</string>
     <string name="settings_playback_option_original">Pôvodný jazyk</string>

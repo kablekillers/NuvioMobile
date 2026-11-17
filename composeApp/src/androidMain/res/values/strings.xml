@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Kable Killers Mobile</string>
+    <string name="kk_intro_skip_description">Intro video. Tap to skip.</string>
 </resources>

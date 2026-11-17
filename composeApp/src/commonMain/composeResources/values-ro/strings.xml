@@ -32,9 +32,9 @@
     <string name="addons_badge_unavailable">Indisponibil</string>
     <string name="addons_configure">Configurează extensia</string>
     <string name="addons_delete">Șterge extensia</string>
-    <string name="addons_appstore_add_description">Folosește extensiile preferate pentru a-ți aduce biblioteca în Nuvio.</string>
+    <string name="addons_appstore_add_description">Folosește extensiile preferate pentru a-ți aduce biblioteca în Kable Killers Mobile.</string>
     <string name="addons_appstore_empty_subtitle">Adaugă o extensie pentru a începe să-ți construiești biblioteca.</string>
-    <string name="addons_appstore_empty_title">Personalizează Nuvio.</string>
+    <string name="addons_appstore_empty_title">Personalizează Kable Killers Mobile.</string>
     <string name="addons_appstore_input_placeholder">URL extensie</string>
     <string name="addons_appstore_install_button">Adaugă extensie</string>
     <string name="store_empty_unavailable_title">Nu este nimic aici încă</string>
@@ -308,7 +308,6 @@
     <string name="collections_pinned">Fixate</string>
     <string name="collections_tab_all">Toate</string>
     <string name="collections_your_collections">Colecțiile tale</string>
-    <string name="compose_about_made_with">Creat cu ❤️ de Tapframe și prieteni</string>
     <string name="compose_about_version_format">Versiunea %1$s (%2$s)</string>
     <string name="compose_action_off">Oprit</string>
     <string name="compose_action_on">Pornit</string>
@@ -446,7 +445,7 @@
     <string name="compose_settings_root_check_updates_description">Descarcă cea mai recentă versiune</string>
     <string name="compose_settings_root_check_updates_title">Caută actualizări</string>
     <string name="compose_settings_root_content_discovery_description">Gestionează extensiile și sursele de descoperire.</string>
-    <string name="compose_settings_root_content_discovery_description_appstore">Gestionează extensiile și alege ce apare în Nuvio.</string>
+    <string name="compose_settings_root_content_discovery_description_appstore">Gestionează extensiile și alege ce apare în Kable Killers Mobile.</string>
     <string name="compose_settings_root_downloads_description">Gestionează filmele și episoadele descărcate.</string>
     <string name="compose_settings_root_downloads_description_appstore">Gestionează ce ai salvat pe acest dispozitiv.</string>
     <string name="compose_settings_root_downloads_title">Descărcări</string>
@@ -660,7 +659,7 @@
     <string name="settings_content_discovery_section_home">ECRAN PRINCIPAL</string>
     <string name="settings_content_discovery_section_sources">SURSE</string>
     <string name="settings_content_discovery_addons_description">Instalează, elimină, reîmprospătează și sortează sursele de conținut.</string>
-    <string name="settings_content_discovery_addons_description_appstore">Adaugă și gestionează extensiile pe care le folosești cu Nuvio.</string>
+    <string name="settings_content_discovery_addons_description_appstore">Adaugă și gestionează extensiile pe care le folosești cu Kable Killers Mobile.</string>
     <string name="settings_content_discovery_plugins_description">Instalează depozite de scraper JavaScript și testează furnizorii intern.</string>
     <string name="settings_content_discovery_homescreen_description">Ajustează aspectul ecranului principal, vizibilitatea conținutului și comportamentul posterului</string>
     <string name="settings_content_discovery_meta_screen_description">Setări pentru ecranele de detalii și de episoade.</string>
@@ -802,10 +801,10 @@
     <string name="settings_meta_tab_layout_description">Grupează secțiunile în file ca în aplicația TV. Alocă până la 3 secțiuni per grup de file.</string>
     <string name="settings_meta_trailers">Trailere</string>
     <string name="settings_meta_trailers_description">Rând cu trailere și scurtături de redare.</string>
-    <string name="settings_notifications_disabled_in_app">Notificările sunt în prezent dezactivate în Nuvio.</string>
+    <string name="settings_notifications_disabled_in_app">Notificările sunt în prezent dezactivate în Kable Killers Mobile.</string>
     <string name="settings_notifications_episode_release_alerts">Alerte de lansare episoade</string>
     <string name="settings_notifications_episode_release_alerts_description">Programează notificări locale atunci când un nou episod dintr-un serial salvat devine disponibil.</string>
-    <string name="settings_notifications_permission_disabled">Notificările de sistem sunt dezactivate pentru Nuvio. Activează-le pentru a primi alerte și notificări de test.</string>
+    <string name="settings_notifications_permission_disabled">Notificările de sistem sunt dezactivate pentru Kable Killers Mobile. Activează-le pentru a primi alerte și notificări de test.</string>
     <string name="settings_notifications_scheduled_count">%1$d alerte de lansare sunt programate în prezent pe acest dispozitiv.</string>
     <string name="settings_notifications_section_alerts">ALERTE</string>
     <string name="settings_notifications_section_test">TEST</string>
@@ -1383,7 +1382,7 @@
     <string name="addon_already_installed">Această extensie este deja instalată.</string>
     <string name="addon_invalid_url">Introdu un URL valid pentru extensie</string>
     <string name="addon_load_manifest_failed">Nu s-a putut încărca manifestul</string>
-    <string name="app_brand_name">Nuvio</string>
+    <string name="app_brand_name">Kable Killers Mobile</string>
     <string name="auth_account_deletion_failed">Ștergerea contului a eșuat</string>
     <string name="auth_sign_in_failed">Autentificarea a eșuat</string>
     <string name="auth_sign_out_failed">Deconectarea a eșuat</string>
@@ -1802,7 +1801,7 @@
     <string name="downloads_error_open_partial_file_failed">Nu s-a putut deschide fișierul de descărcare parțială</string>
     <string name="downloads_error_partial_file_not_open">Fișierul de descărcare parțială nu este deschis</string>
     <string name="downloads_error_write_partial_file_failed">Nu s-a putut scrie în fișierul de descărcare parțială</string>
-    <string name="library_local_tab_title">Bibliotecă Nuvio</string>
+    <string name="library_local_tab_title">Bibliotecă Kable Killers</string>
     <string name="network_connection_issue">Problemă de conexiune</string>
     <string name="network_empty_response_body">Corpul răspunsului este gol</string>
     <string name="network_please_check_connection">Te rugăm să verifici conexiunea și să încerci din nou.</string>

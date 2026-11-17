@@ -361,6 +361,7 @@ internal fun MainAppContent(
     val supportersSettingsTitle = stringResource(Res.string.compose_settings_page_supporters_contributors)
     val licensesSettingsTitle = stringResource(Res.string.compose_settings_page_licenses_attributions)
     val collectionsTitle = stringResource(Res.string.collections_header)
+    val watchPartyTitle = stringResource(Res.string.party_title)
     val newCollectionTitle = stringResource(Res.string.collections_new)
     val detailsFallbackTitle = stringResource(Res.string.meta_section_details_title)
     val isRemoteLibrarySource = libraryUiState.sourceMode != LibrarySourceMode.LOCAL
@@ -1429,7 +1430,7 @@ internal fun MainAppContent(
                                     null
                                 },
                                 onCollectionsSettingsClick = { navController.navigate(CollectionsRoute(collectionsTitle)) },
-                                onWatchPartyClick = { navController.navigate(PartyRoute(title = "Watch Party")) },
+                                onWatchPartyClick = { navController.navigate(PartyRoute(title = watchPartyTitle)) },
 
                                 onFolderClick = { collectionId, folderId ->
                                     val folderTitle = CollectionRepository.collections.value

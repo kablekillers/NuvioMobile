@@ -24,7 +24,7 @@ jobs:
   update:
     name: Update store.json
     # Kable Killers releases ship APKs only; this AltStore (IPA) job is upstream-only.
-    if: github.repository_owner == 'NuvioMedia'
+    if: github.repository_owner == 'NuvioMedia' && (github.event_name != 'release' || !github.event.release.prerelease)
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}

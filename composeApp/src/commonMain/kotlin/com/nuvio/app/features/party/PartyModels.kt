@@ -6,7 +6,6 @@ import com.nuvio.app.features.streams.StreamItem
 import com.nuvio.app.features.streams.StreamProxyHeaders
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 
 @Serializable
 data class PartySource(
@@ -54,7 +53,7 @@ data class PartyStream(
     @SerialName("video_size") val videoSize: Long? = null,
     @SerialName("binge_group") val bingeGroup: String? = null,
     @SerialName("stream_type") val streamType: String? = null,
-    @Transient val badges: List<StreamBadge> = emptyList(),
+    val badges: List<StreamBadge> = emptyList(),
 ) {
     fun toStreamItem(): StreamItem = StreamItem(
         name = name,
@@ -150,6 +149,31 @@ internal data class PartySnapshot(
     @SerialName("server_time_ms") val serverTimeMs: Long? = null,
     val error: String? = null,
     val ok: Boolean? = null,
+)
+
+@Serializable
+internal data class PartyChatPayload(
+    val id: Long,
+    @SerialName("member_id") val memberId: String,
+    val name: String = "",
+    @SerialName("avatar_url") val avatarUrl: String? = null,
+    @SerialName("avatar_color") val avatarColor: String? = null,
+    val body: String,
+    @SerialName("client_id") val clientId: String? = null,
+    @SerialName("sent_at") val sentAt: Long = 0L,
+    val mine: Boolean = false,
+)
+
+@Serializable
+internal data class PartyChatSendResult(
+    val message: PartyChatPayload? = null,
+    val error: String? = null,
+)
+
+@Serializable
+internal data class PartyChatHistory(
+    val messages: List<PartyChatPayload> = emptyList(),
+    val error: String? = null,
 )
 
 enum class PartyError {

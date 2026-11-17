@@ -1,5 +1,8 @@
 package com.nuvio.app.features.player
 
+import com.nuvio.app.features.addons.AddonEventDispatcher
+import com.nuvio.app.features.addons.AddonPlayerAction
+import com.nuvio.app.features.addons.AddonPlayerEventTarget
 import com.nuvio.app.features.servers.ServerItemRef
 import com.nuvio.app.features.servers.ServerStreams
 import com.nuvio.app.features.tmdb.TmdbService
@@ -17,6 +20,7 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.Res
+import nuvio.composeapp.generated.resources.player_engine_switching_automatic_message
 import nuvio.composeapp.generated.resources.player_engine_switching_manual_message
 import kotlin.math.abs
 import kotlin.time.TimeSource
@@ -63,6 +67,14 @@ internal val PlayerScreenRuntime.activePlaybackKey: PlaybackKey
         seasonNumber = activeSeasonNumber,
         episodeNumber = activeEpisodeNumber,
         playbackEngine = playbackEngineOverride,
+    )
+
+internal val PlayerScreenRuntime.sourcePlaybackKey: PlaybackKey
+    get() = PlaybackKey(
+        sourceIdentity = activePlaybackIdentity,
+        videoId = activeVideoId,
+        seasonNumber = activeSeasonNumber,
+        episodeNumber = activeEpisodeNumber,
     )
 
 internal val PlayerScreenRuntime.playbackSession: WatchProgressPlaybackSession
@@ -119,12 +131,23 @@ internal fun PlayerScreenRuntime.currentLaunch(launch: PlayerLaunch): PlayerLaun
         torrentFileIdx = activeTorrentFileIdx,
         torrentFilename = activeTorrentFilename,
         torrentTrackers = activeTorrentTrackers,
+        sourceFilename = activeSourceFilename,
         initialPositionMs = positionMs ?: activeInitialPositionMs,
         initialProgressFraction = activeInitialProgressFraction.takeIf { positionMs == null },
     )
 }
 
 internal fun PlayerScreenRuntime.resetIdentityStateIfNeeded() {
+    val sourceIdentity = sourcePlaybackKey
+    if (lastResetSourcePlaybackIdentity != sourceIdentity) {
+        lastResetSourcePlaybackIdentity = sourceIdentity
+        engineFailoverTriggered = false
+        engineFailoverDisarmed = false
+        engineFailoverSourceIdentity = null
+        playbackEngineOverride = null
+        autoFetchedAddonSubtitlesForKey = null
+    }
+
     val identity = activePlaybackKey
     if (lastResetPlaybackIdentity != identity) {
         lastResetPlaybackIdentity = identity
@@ -137,7 +160,6 @@ internal fun PlayerScreenRuntime.resetIdentityStateIfNeeded() {
         lastProgressPersistEpochMs = 0L
         previousIsPlaying = false
         pendingSeekScrobbleRestart = false
-        autoFetchedAddonSubtitlesForKey = null
         trackPreferenceRestoreApplied = false
         preferredAudioSelectionApplied = false
         appliedAudioPreferences = null
@@ -156,6 +178,14 @@ internal fun PlayerScreenRuntime.resetIdentityStateIfNeeded() {
         hasSentCompletionScrobbleForCurrentItem = false
         currentTrackingMedia = null
     }
+}
+
+internal fun PlayerScreenRuntime.resetAddonSubtitlesIfSourceChanged() {
+    val sourceIdentity = sourcePlaybackKey
+    if (lastAddonSubtitleSourceIdentity == sourceIdentity) return
+    lastAddonSubtitleSourceIdentity = sourceIdentity
+    SubtitleRepository.clear()
+    autoFetchedAddonSubtitlesForKey = null
 }
 
 internal fun PlayerScreenRuntime.currentPlaybackProgressPercent(
@@ -348,12 +378,47 @@ internal suspend fun PlayerScreenRuntime.resolveParentalGuideImdbId(): String? {
     )
 }
 
+internal fun PlayerScreenRuntime.emitAddonPlayerEvent(action: AddonPlayerAction) {
+    val durationMs = playbackSnapshot.durationMs
+    if (isShortPlaceholderDuration(durationMs)) return
+    val positionMs = playbackSnapshot.positionMs
+    val active = activeAddonPlayerEventTarget
+    if (action == AddonPlayerAction.STOP) {
+        if (active == null) return
+        activeAddonPlayerEventTarget = null
+        lastAddonPlayerAction = null
+        AddonEventDispatcher.player(active, AddonPlayerAction.STOP, positionMs, durationMs)
+        return
+    }
+    val session = playbackSession
+    val target = AddonPlayerEventTarget(type = session.contentType, videoId = session.videoId)
+    if (active != null && active != target) {
+        AddonEventDispatcher.player(active, AddonPlayerAction.STOP, positionMs, durationMs)
+        activeAddonPlayerEventTarget = null
+        lastAddonPlayerAction = null
+    }
+    if (action == AddonPlayerAction.PAUSE && activeAddonPlayerEventTarget == null) return
+    activeAddonPlayerEventTarget = target
+    lastAddonPlayerAction = action
+    AddonEventDispatcher.player(target, action, positionMs, durationMs)
+}
+
+internal fun PlayerScreenRuntime.resendAddonPlayerStateAfterSeek() {
+    val action = lastAddonPlayerAction ?: return
+    emitAddonPlayerEvent(action)
+}
+
 internal fun PlayerScreenRuntime.flushWatchProgress(
     scrobbleAction: TrackingScrobbleAction = TrackingScrobbleAction.STOP,
 ) {
     when (scrobbleAction) {
         TrackingScrobbleAction.PAUSE -> emitTrackingScrobblePause()
         TrackingScrobbleAction.STOP -> emitStopScrobbleForCurrentProgress()
+        TrackingScrobbleAction.START -> Unit
+    }
+    when (scrobbleAction) {
+        TrackingScrobbleAction.PAUSE -> emitAddonPlayerEvent(AddonPlayerAction.PAUSE)
+        TrackingScrobbleAction.STOP -> emitAddonPlayerEvent(AddonPlayerAction.STOP)
         TrackingScrobbleAction.START -> Unit
     }
     WatchProgressRepository.flushPlaybackProgress(
@@ -372,6 +437,7 @@ internal fun PlayerScreenRuntime.scheduleProgressSyncAfterSeek() {
             session = playbackSession,
             snapshot = playbackSnapshot,
         )
+        resendAddonPlayerStateAfterSeek()
 
         val progressPercent = currentPlaybackProgressPercent()
         if (
@@ -426,21 +492,73 @@ internal fun PlayerScreenRuntime.persistPlaybackProgressTick() {
     )
 }
 
+internal val AndroidPlaybackEngine.switchTarget: AndroidPlaybackEngine
+    get() = if (this == AndroidPlaybackEngine.Libmpv) AndroidPlaybackEngine.ExoPlayer else AndroidPlaybackEngine.Libmpv
+
 internal fun PlayerScreenRuntime.switchPlaybackEngine() {
-    val engine = playerController?.playbackEngine ?: return
-    val target = if (engine == AndroidPlaybackEngine.Libmpv) AndroidPlaybackEngine.ExoPlayer else AndroidPlaybackEngine.Libmpv
+    val target = playerController?.playbackEngine?.switchTarget ?: return
     flushWatchProgress()
     if (initialSeekApplied) {
         activeInitialPositionMs = playbackSnapshot.positionMs.coerceAtLeast(0L)
         activeInitialProgressFraction = null
     }
+    // Capture the current track selection so it can be restored on the new engine.
+    rememberCurrentTrackPreferenceForEngineSwitch(target)
     playbackEngineOverride = target
+    // A manual switch is an explicit user decision: never let the automatic engine
+    // failover drag the user back to the engine they just switched away from.
+    engineFailoverDisarmed = true
     showGestureFeedback(
         GestureFeedbackState(
             messageRes = Res.string.player_engine_switching_manual_message,
             messageArgs = listOf(target.label),
         ),
     )
+}
+
+/**
+ * Switches to the opposite playback engine after a playback error, when the
+ * "auto-switch engine on playback error" setting is enabled. Applies whichever engine is
+ * selected; fires at most once per source, after the engine's own retries, and never after a
+ * manual engine switch.
+ *
+ * @return true when the failover was started and the caller should swallow the error.
+ */
+internal fun PlayerScreenRuntime.maybeFailoverPlaybackEngine(
+    resolvedAutoEngine: AndroidPlaybackEngine?,
+): Boolean {
+    if (!playerSettingsUiState.autoSwitchPlaybackEngineOnError) return false
+    if (engineFailoverDisarmed) return false
+    val sourceIdentity = activePlaybackIdentity
+    if (engineFailoverSourceIdentity == sourceIdentity) return false
+
+    val current = playerController?.playbackEngine
+        ?: playbackEngineOverride
+        ?: resolvedAutoEngine
+        ?: playerSettingsUiState.androidPlaybackEngine
+    val target = if (current == AndroidPlaybackEngine.Libmpv) {
+        AndroidPlaybackEngine.ExoPlayer
+    } else {
+        AndroidPlaybackEngine.Libmpv
+    }
+
+    engineFailoverTriggered = true
+    engineFailoverSourceIdentity = sourceIdentity
+    flushWatchProgress()
+    if (initialSeekApplied) {
+        activeInitialPositionMs = playbackSnapshot.positionMs.coerceAtLeast(0L)
+        activeInitialProgressFraction = null
+    }
+    // Capture the current track selection so it can be restored on the new engine.
+    rememberCurrentTrackPreferenceForEngineSwitch(target)
+    playbackEngineOverride = target
+    showGestureFeedback(
+        GestureFeedbackState(
+            messageRes = Res.string.player_engine_switching_automatic_message,
+            messageArgs = listOf(target.label),
+        ),
+    )
+    return true
 }
 
 internal fun PlayerScreenRuntime.openStreamInfo() {

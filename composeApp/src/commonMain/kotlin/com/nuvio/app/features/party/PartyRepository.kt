@@ -72,10 +72,8 @@ object PartyRepository {
     val sharedStream: StateFlow<PartyStream?> = _sharedStream.asStateFlow()
 
     private val _enabled = MutableStateFlow(true)
-    // Visibility follows the server capability only. The enabled check can report a temporary
-    // outage, so it is tracked in _enabled but never hides the controls or ends a live party.
-    val available: StateFlow<Boolean> = combine(ServerConfigurationRepository.active, _enabled) { server, _ ->
-        server.capabilities.watchParty
+    val available: StateFlow<Boolean> = combine(ServerConfigurationRepository.active, _enabled) { server, enabled ->
+        server.capabilities.watchParty && enabled
     }.stateIn(scope, SharingStarted.Eagerly, ServerConfigurationRepository.active.value.capabilities.watchParty)
 
     private var channel: PartyChannel? = null
@@ -242,6 +240,7 @@ object PartyRepository {
                         return@withLock error
                     }
                     val party = snapshot.toActiveParty() ?: return@withLock PartyError.Network
+                    PartyCompanion.stop()
                     stopSession()
                     clock.reset()
                     snapshot.serverTimeMs?.let { clock.addSample(it, sentAt) }
@@ -285,6 +284,7 @@ object PartyRepository {
         session.launch { heartbeatLoop() }
         session.launch { refineClock() }
         session.launch { coordinatorLoop() }
+        PartyChat.start(PartyChatRoom(party.id, party.memberId, party.members))
     }
 
     private suspend fun stopSession() {
@@ -300,6 +300,7 @@ object PartyRepository {
         _playback.value = null
         _sharedStream.value = null
         _state.value = PartyUiState()
+        PartyChat.stop()
     }
 
     private fun finish(event: PartyEvent) {
@@ -326,6 +327,7 @@ object PartyRepository {
         _playback.value?.let { current -> runCatching { channel?.send("state", encodePlayback(current)) } }
         if (party.isHost && party.sharing) _sharedStream.value?.let { sendStream(it) }
         requestState(party)
+        PartyChat.refresh()
     }
 
     private suspend fun onMessage(event: String, payload: JsonObject) {
@@ -368,6 +370,7 @@ object PartyRepository {
                     ?.let { decode(it, PartyStream.serializer()) }
                     ?.takeIf { isShareableStreamUrl(it.url) }
             }
+            "chat" -> PartyChat.receive(payload)
         }
     }
 
@@ -552,7 +555,7 @@ object PartyRepository {
         if (!ServerConfigurationRepository.active.value.capabilities.watchParty) return
         val enabled = runRemote { PartyApi.enabled() } ?: return
         _enabled.value = enabled
-        if (!enabled) log.w { "Watch party enabled check returned false; keeping current session" }
+        if (!enabled) finish(PartyEvent.Ended)
     }
 
     private suspend fun refineClock() {
@@ -644,6 +647,7 @@ object PartyRepository {
             displayName = profile?.name?.trim()?.takeIf { it.isNotEmpty() }?.take(40) ?: DEFAULT_NAME,
             avatarUrl = profile?.let { AvatarRepository.shareableImageUrl(it) }?.takeIf { it.startsWith("https://") && it.length <= 512 },
             avatarColor = profile?.avatarColorHex?.takeIf { COLOR_PATTERN.matches(it) },
+            profileIndex = profile?.profileIndex,
         )
     }
 

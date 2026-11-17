@@ -51,7 +51,7 @@
 		</dict>
 	</array>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Nuvio connects to media servers on your local network.</string>
+	<string>Kable Killers connects to media servers on your local network.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

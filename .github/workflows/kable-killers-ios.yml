@@ -1,0 +1,108 @@
+name: Kable Killers Mobile - iPhone build
+
+# Builds an unsigned iPhone app (.ipa). Install it with SideStore or AltStore, which
+# sign it with the user's own Apple ID. No paid Apple Developer account is needed.
+#
+# Run manually to get a test IPA, or let the release workflow call it.
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    outputs:
+      artifact:
+        description: Name of the uploaded IPA artifact
+        value: ${{ jobs.build.outputs.artifact }}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build unsigned iPhone IPA
+    # GitHub-hosted Xcode 27 image (Apple Silicon), same toolchain upstream Nuvio uses.
+    runs-on: xcode-27
+    # Kotlin/Native release linking on the standard runner takes about 2 hours.
+    timeout-minutes: 200
+    outputs:
+      artifact: ${{ steps.package.outputs.artifact }}
+    env:
+      GRADLE_OPTS: -Dfile.encoding=UTF-8
+      IOS_CONFIGURATION: Release
+      KOTLIN_DAEMON_JVMARGS: -Xmx2048M
+      NUVIO_GRADLE_JVMARGS: -Xmx4608M -Dfile.encoding=UTF-8 -XX:MaxMetaspaceSize=768M
+      NUVIO_KOTLIN_NATIVE_JVMARGS: -Xmx4608M
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Verify Apple toolchain
+        run: |
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Cache Kotlin Native
+        uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('gradle/libs.versions.toml') }}
+          restore-keys: |
+            konan-${{ runner.os }}-${{ runner.arch }}-
+
+      - name: Configure app backend
+        run: |
+          {
+            echo "NUVIO_SUPABASE_URL=https://api.nuvio.tv"
+            echo "NUVIO_SUPABASE_ANON_KEY=sb_publishable_1Clq8rlTVACkdcZuqr6_AD__xUUC_EN"
+          } > local.properties
+
+      - name: Prepare iOS dependencies
+        run: ./scripts/prepare-ios-dependencies.sh
+
+      - name: Build unsigned IPA
+        run: ./scripts/build-ios-ipa.sh
+
+      - name: Package
+        id: package
+        run: |
+          set -euo pipefail
+          version="$(sed -n 's/^MARKETING_VERSION=//p' iosApp/Configuration/Version.xcconfig | tr -d '[:space:]')"
+          ipa="$(find build/ios-ipa -maxdepth 1 -name '*-full-release.ipa' -print -quit)"
+          test -n "$ipa"
+          mkdir -p dist
+          cp "$ipa" "dist/Kable-Killers-Mobile-v${version}.ipa"
+          # Show what users will get: bundle ID, home screen name, version and icon.
+          tmp="$(mktemp -d)"
+          unzip -q "$ipa" -d "$tmp"
+          plist="$(find "$tmp/Payload" -maxdepth 2 -name Info.plist -path '*.app/Info.plist' -print -quit)"
+          for key in CFBundleIdentifier CFBundleDisplayName CFBundleShortVersionString CFBundleVersion; do
+            echo "$key: $(/usr/libexec/PlistBuddy -c "Print :$key" "$plist")"
+          done
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIcons:CFBundlePrimaryIcon" "$plist" || true
+          widget="$(find "$tmp/Payload" -path '*PlugIns/*.appex/Info.plist' -print -quit)"
+          echo "Widget: $(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$widget")"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$plist")" = com.kablekillers.mobile
+          (cd dist && shasum -a 256 *.ipa > SHA256SUMS-ios.txt)
+          echo "artifact=Kable-Killers-Mobile-iPhone-v${version}" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Kable Killers Mobile v${version} (iPhone)"
+            echo "- Size: $(du -h dist/*.ipa | cut -f1)"
+            echo "- Signing: unsigned (install with SideStore or AltStore)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.package.outputs.artifact }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 30

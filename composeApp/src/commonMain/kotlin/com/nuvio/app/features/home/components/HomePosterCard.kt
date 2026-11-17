@@ -22,15 +22,7 @@ fun HomePosterCard(
     val posterCardStyle = rememberPosterCardStyleUiState()
     val isLandscapeMode = useLandscapeBackdropMode || posterCardStyle.catalogLandscapeModeEnabled
     val effectiveLandscapePoster = if (posterCardStyle.alwaysShowLandscapeClearlogo) null else item.landscapePoster
-    val imageUrl = if (isLandscapeMode) {
-        effectiveLandscapePoster ?: item.banner ?: item.poster
-    } else item.poster
-    val fallbackImageUrl = if (isLandscapeMode && !effectiveLandscapePoster.isNullOrBlank()) {
-        // Landscape custom poster -> fall back to original backdrop, then portrait
-        item.banner ?: item.rawPosterUrl
-    } else {
-        item.rawPosterUrl
-    }
+    val (imageUrl, fallbackImageUrl) = homePosterImageUrls(item, isLandscapeMode, posterCardStyle.alwaysShowLandscapeClearlogo)
 
     NuvioPosterCard(
         title = item.name,
@@ -48,9 +40,28 @@ fun HomePosterCard(
     )
 }
 
-private fun PosterShape.toNuvioPosterShape(): NuvioPosterShape =
+internal fun PosterShape.toNuvioPosterShape(): NuvioPosterShape =
     when (this) {
         PosterShape.Poster -> NuvioPosterShape.Poster
         PosterShape.Square -> NuvioPosterShape.Square
         PosterShape.Landscape -> NuvioPosterShape.Landscape
     }
+
+/** Image URL and fallback URL a home poster card shows; shared with [HomePosterPrefetchEffect]. */
+internal fun homePosterImageUrls(
+    item: MetaPreview,
+    isLandscapeMode: Boolean,
+    alwaysShowLandscapeClearlogo: Boolean,
+): Pair<String?, String?> {
+    val effectiveLandscapePoster = if (alwaysShowLandscapeClearlogo) null else item.landscapePoster
+    val imageUrl = if (isLandscapeMode) {
+        effectiveLandscapePoster ?: item.banner ?: item.poster
+    } else item.poster
+    val fallbackImageUrl = if (isLandscapeMode && !effectiveLandscapePoster.isNullOrBlank()) {
+        // Landscape custom poster -> fall back to original backdrop, then portrait
+        item.banner ?: item.rawPosterUrl
+    } else {
+        item.rawPosterUrl
+    }
+    return imageUrl to fallbackImageUrl
+}

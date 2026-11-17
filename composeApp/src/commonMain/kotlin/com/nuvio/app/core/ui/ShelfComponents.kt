@@ -74,6 +74,8 @@ fun <T> NuvioShelfSection(
     itemContent: @Composable (T) -> Unit,
 ) {
     val tokens = MaterialTheme.nuvio
+    // Build duplicate-safe keys once per entries list instead of on every recomposition.
+    val keyedEntries = if (key != null) remember(entries) { entries.withDuplicateSafeLazyKeys(key) } else null
     ScreenActivityEffect(state) { active ->
         if (!active) state.stopScroll()
     }
@@ -97,8 +99,9 @@ fun <T> NuvioShelfSection(
         ) {
             if (key != null) {
                 items(
-                    items = entries.withDuplicateSafeLazyKeys(key),
+                    items = keyedEntries ?: emptyList(),
                     key = { entry -> entry.lazyKey },
+                    contentType = { ShelfItemContentType },
                 ) { keyedEntry ->
                     if (animatePlacement) {
                         Box(modifier = Modifier.animateItem()) { itemContent(keyedEntry.value) }
@@ -107,7 +110,7 @@ fun <T> NuvioShelfSection(
                     }
                 }
             } else {
-                items(entries) { entry ->
+                items(entries, contentType = { ShelfItemContentType }) { entry ->
                     if (animatePlacement) {
                         Box(modifier = Modifier.animateItem()) { itemContent(entry) }
                     } else {
@@ -170,16 +173,7 @@ fun NuvioPosterCard(
                 val platformContext = coil3.compose.LocalPlatformContext.current
                 val hasFallback = !fallbackImageUrl.isNullOrBlank() && fallbackImageUrl != imageUrl
                 val imageModel = remember(imageUrl, fallbackImageUrl, platformContext) {
-                    if (hasFallback) {
-                        coil3.request.ImageRequest.Builder(platformContext)
-                            .data(imageUrl)
-                            .memoryCacheKeyExtras(
-                                mapOf(com.nuvio.app.core.poster.CustomPosterFallbackInterceptor.FALLBACK_URL_KEY to fallbackImageUrl!!)
-                            )
-                            .build()
-                    } else {
-                        imageUrl
-                    }
+                    if (hasFallback) posterImageRequest(platformContext, imageUrl, fallbackImageUrl) else imageUrl
                 }
                 AsyncImage(
                     model = imageModel,
@@ -340,7 +334,7 @@ private fun NuvioViewAllPill(
     }
 }
 
-private val NuvioPosterShape.aspectRatio: Float
+internal val NuvioPosterShape.aspectRatio: Float
     get() = when (this) {
         NuvioPosterShape.Poster -> 0.675f
         NuvioPosterShape.Square -> 1f
@@ -373,9 +367,33 @@ private fun catalogLogoOverlaySize(
         }
     }
 
-private fun NuvioPosterShape.cardWidth(basePosterWidthDp: Int): Dp =
+internal fun NuvioPosterShape.cardWidth(basePosterWidthDp: Int): Dp =
     when (this) {
         NuvioPosterShape.Poster -> basePosterWidthDp.dp
         NuvioPosterShape.Square -> basePosterWidthDp.dp
         NuvioPosterShape.Landscape -> landscapePosterWidth(basePosterWidthDp)
     }
+
+private object ShelfItemContentType
+
+/**
+ * Image request used by poster cards. Kept in one place so [com.nuvio.app.features.home.components.HomePosterPrefetchEffect]
+ * produces the same memory-cache key as the card that later shows the poster.
+ */
+internal fun posterImageRequest(
+    context: coil3.PlatformContext,
+    imageUrl: String,
+    fallbackImageUrl: String?,
+    configure: coil3.request.ImageRequest.Builder.() -> Unit = {},
+): coil3.request.ImageRequest =
+    coil3.request.ImageRequest.Builder(context)
+        .data(imageUrl)
+        .apply {
+            if (!fallbackImageUrl.isNullOrBlank() && fallbackImageUrl != imageUrl) {
+                memoryCacheKeyExtras(
+                    mapOf(com.nuvio.app.core.poster.CustomPosterFallbackInterceptor.FALLBACK_URL_KEY to fallbackImageUrl),
+                )
+            }
+        }
+        .apply(configure)
+        .build()

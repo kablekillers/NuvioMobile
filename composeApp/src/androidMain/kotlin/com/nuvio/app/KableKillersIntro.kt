@@ -1,7 +1,6 @@
 package com.nuvio.app
 
 import android.app.Activity
-import android.content.Context
 import android.graphics.Color
 import android.media.AudioManager
 import android.net.Uri
@@ -14,7 +13,7 @@ import android.widget.VideoView
 /**
  * Plays the Kable Killers intro clip over the app on cold start.
  *
- * - Shown once per installed app version (first launch after install or update).
+ * - Shown on every cold start (not when reopening from a link or after rotation).
  * - Muted and does not request audio focus, so it never pauses the user's music.
  * - Tap anywhere to skip.
  */
@@ -23,10 +22,6 @@ internal class KableKillersIntro(private val activity: Activity) {
     private var videoView: VideoView? = null
 
     fun playIfDue() {
-        val prefs = activity.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val version = currentVersionCode()
-        if (prefs.getLong(KEY_LAST_SHOWN_VERSION, -1L) == version) return
-        prefs.edit().putLong(KEY_LAST_SHOWN_VERSION, version).apply()
         play()
     }
 
@@ -85,18 +80,5 @@ internal class KableKillersIntro(private val activity: Activity) {
         } catch (_: Exception) {
             dismiss()
         }
-    }
-
-    @Suppress("DEPRECATION")
-    private fun currentVersionCode(): Long = try {
-        val info = activity.packageManager.getPackageInfo(activity.packageName, 0)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) info.longVersionCode else info.versionCode.toLong()
-    } catch (_: Exception) {
-        0L
-    }
-
-    private companion object {
-        const val PREFS = "kable_killers_intro"
-        const val KEY_LAST_SHOWN_VERSION = "last_shown_version_code"
     }
 }

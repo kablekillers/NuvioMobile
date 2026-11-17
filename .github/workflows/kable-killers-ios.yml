@@ -21,7 +21,8 @@ permissions:
 jobs:
   build:
     name: Build unsigned iPhone IPA
-    runs-on: macos-26
+    # GitHub-hosted Xcode 27 image (Apple Silicon), same toolchain upstream Nuvio uses.
+    runs-on: xcode-27
     timeout-minutes: 120
     outputs:
       artifact: ${{ steps.package.outputs.artifact }}
@@ -36,12 +37,8 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
-      - name: Select newest Xcode
+      - name: Verify Apple toolchain
         run: |
-          set -euo pipefail
-          ls -d /Applications/Xcode*.app || true
-          xcode="$(ls -d /Applications/Xcode_*.app | grep -v -i beta | sort -V | tail -n 1)"
-          sudo xcode-select -s "$xcode/Contents/Developer"
           xcodebuild -version
           xcrun --sdk iphoneos --show-sdk-version
 

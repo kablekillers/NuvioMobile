@@ -4,7 +4,9 @@ name: Kable Killers Mobile - Release
 #   1. Bump MARKETING_VERSION and CURRENT_PROJECT_VERSION in iosApp/Configuration/Version.xcconfig.
 #   2. Merge to cmp-rewrite.
 #   3. Push a tag that matches the version:  git tag v0.5.21 && git push origin v0.5.21
-# The workflow builds signed APKs and publishes the GitHub release the in-app updater reads.
+# The workflow builds signed APKs and an unsigned iPhone IPA, publishes the GitHub release the
+# Android in-app updater reads, and adds the IPA to the SideStore/AltStore source
+# (branch altstore-source, file source.json).
 #
 # To test a release build without publishing, run this workflow manually ("Run workflow")
 # and leave "publish" unchecked; the APKs are attached to the run as an artifact.
@@ -23,6 +25,10 @@ on:
         description: Shrink code and resources with R8 (recommended)
         type: boolean
         default: true
+      ios:
+        description: Also build the iPhone IPA
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -35,6 +41,11 @@ jobs:
   release:
     name: Build signed APKs
     runs-on: ubuntu-latest
+    outputs:
+      name: ${{ steps.version.outputs.name }}
+      code: ${{ steps.version.outputs.code }}
+      tag: ${{ steps.version.outputs.tag }}
+      publish: ${{ steps.version.outputs.publish }}
 
     steps:
       - name: Checkout repository
@@ -167,16 +178,75 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+  ios:
+    name: iPhone
+    if: github.ref_type == 'tag' || inputs.ios != false
+    uses: ./.github/workflows/kable-killers-ios.yml
+
+  publish:
+    name: Publish release
+    needs: [release, ios]
+    # The Android release goes out even if the iPhone build fails.
+    if: always() && needs.release.result == 'success' && needs.release.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ needs.release.outputs.tag }}
+      VERSION: ${{ needs.release.outputs.name }}
+      BUILD: ${{ needs.release.outputs.code }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Android APKs
+        uses: actions/download-artifact@v4
+        with:
+          name: Kable-Killers-Mobile-v${{ needs.release.outputs.name }}
+          path: dist
+
+      - name: Download iPhone IPA
+        if: needs.ios.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.ios.outputs.artifact }}
+          path: dist
+
       - name: Publish GitHub release
-        if: steps.version.outputs.publish == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.version.outputs.tag }}
-          VERSION: ${{ steps.version.outputs.name }}
         run: |
           set -euo pipefail
-          gh release create "$TAG" dist/*.apk dist/SHA256SUMS.txt \
+          ls -lah dist
+          if [ -f dist/SHA256SUMS-ios.txt ]; then
+            cat dist/SHA256SUMS-ios.txt >> dist/SHA256SUMS.txt
+            rm dist/SHA256SUMS-ios.txt
+          fi
+          gh release create "$TAG" dist/* \
             --target "$GITHUB_SHA" \
             --title "Kable Killers Mobile v${VERSION}" \
             --generate-notes \
             --latest
+
+      - name: Add the IPA to the SideStore/AltStore source
+        if: needs.ios.result == 'success'
+        run: |
+          set -euo pipefail
+          ipa="dist/Kable-Killers-Mobile-v${VERSION}.ipa"
+          test -f "$ipa"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          cp scripts/kable-killers-altstore-source.py /tmp/altstore-source.py
+          if git fetch --depth 1 origin altstore-source 2>/dev/null; then
+            git switch -C altstore-source FETCH_HEAD
+          else
+            git switch --orphan altstore-source
+            git rm -rfq . 2>/dev/null || true
+          fi
+          python3 -I /tmp/altstore-source.py source.json \
+            --version "$VERSION" \
+            --build "$BUILD" \
+            --ipa "$ipa" \
+            --download-url "https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/Kable-Killers-Mobile-v${VERSION}.ipa" \
+            --notes "Kable Killers Mobile v${VERSION}. Full notes: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}"
+          git add source.json
+          git commit -m "Add Kable Killers Mobile v${VERSION} to the iPhone source"
+          git push origin altstore-source
+          echo "Source URL: https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/altstore-source/source.json" >> "$GITHUB_STEP_SUMMARY"

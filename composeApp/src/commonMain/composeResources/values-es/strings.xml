@@ -45,9 +45,9 @@
     <string name="addons_configure">Configurar complemento</string>
     <string name="addons_delete">Eliminar complemento</string>
     <string name="addons_delete_confirm_title">¿Eliminar complemento?</string>
-    <string name="addons_appstore_add_description">Lleva tu biblioteca a Nuvio con los complementos que utilizas.</string>
+    <string name="addons_appstore_add_description">Lleva tu biblioteca a Kable Killers Mobile con los complementos que utilizas.</string>
     <string name="addons_appstore_empty_subtitle">Agrega un complemento para empezar a crear tu biblioteca.</string>
-    <string name="addons_appstore_empty_title">Haz tuyo Nuvio.</string>
+    <string name="addons_appstore_empty_title">Haz tuyo Kable Killers Mobile.</string>
     <string name="addons_appstore_input_placeholder">URL del complemento</string>
     <string name="addons_appstore_install_button">Agregar complemento</string>
     <string name="store_empty_unavailable_title">Aún no hay nada aquí</string>
@@ -334,7 +334,6 @@
     <string name="collections_pinned">Fijado</string>
     <string name="collections_tab_all">Todo</string>
     <string name="collections_your_collections">Tus colecciones</string>
-    <string name="compose_about_made_with">Hecho con ❤️ por Tapframe y amigos</string>
     <string name="compose_about_version_format">Versión %1$s (%2$s)</string>
     <string name="compose_action_off">Desactivado</string>
     <string name="compose_action_on">Activado</string>
@@ -529,7 +528,7 @@
     <string name="compose_settings_root_check_updates_description">Buscar nuevas versiones de la app.</string>
     <string name="compose_settings_root_check_updates_title">Buscar actualizaciones</string>
     <string name="compose_settings_root_content_discovery_description">Administra complementos y fuentes de descubrimiento.</string>
-    <string name="compose_settings_root_content_discovery_description_appstore">Administra tus complementos y elige qué aparece en Nuvio.</string>
+    <string name="compose_settings_root_content_discovery_description_appstore">Administra tus complementos y elige qué aparece en Kable Killers Mobile.</string>
     <string name="compose_settings_root_downloads_description">Administra tus películas y episodios descargados.</string>
     <string name="compose_settings_root_downloads_description_appstore">Administra lo que has guardado en este dispositivo.</string>
     <string name="compose_settings_root_downloads_title">Descargas</string>
@@ -825,7 +824,7 @@
     <string name="settings_content_discovery_recent_searches">Búsquedas recientes</string>
     <string name="settings_content_discovery_recent_searches_description">Guarda las búsquedas recientes y muéstralas cuando la barra de búsqueda esté enfocada.</string>
     <string name="settings_content_discovery_addons_description">Instala, elimina, actualiza y ordena tus fuentes de contenido.</string>
-    <string name="settings_content_discovery_addons_description_appstore">Agrega y administra los complementos que utilizas con Nuvio.</string>
+    <string name="settings_content_discovery_addons_description_appstore">Agrega y administra los complementos que utilizas con Kable Killers Mobile.</string>
     <string name="settings_content_discovery_plugins_description">Instala repositorios de scrapers en JavaScript y prueba proveedores internamente.</string>
     <string name="settings_content_discovery_homescreen_description">Controla qué catálogos aparecen en Inicio y en qué orden.</string>
     <string name="settings_content_discovery_meta_screen_description">Desactiva secciones de detalles y reordena todo debajo del Destacado.</string>
@@ -971,10 +970,10 @@
     <string name="settings_meta_tab_layout_description">Agrupa secciones en pestañas como en la app de TV. Asigna hasta 3 secciones por grupo de pestañas.</string>
     <string name="settings_meta_trailers">Tráilers</string>
     <string name="settings_meta_trailers_description">Carril de tráilers y atajos de reproducción.</string>
-    <string name="settings_notifications_disabled_in_app">Las notificaciones están actualmente desactivadas en Nuvio.</string>
+    <string name="settings_notifications_disabled_in_app">Las notificaciones están actualmente desactivadas en Kable Killers Mobile.</string>
     <string name="settings_notifications_episode_release_alerts">Alertas de estreno de episodios</string>
     <string name="settings_notifications_episode_release_alerts_description">Programa notificaciones locales cuando haya disponible un nuevo episodio de una serie guardada.</string>
-    <string name="settings_notifications_permission_disabled">Las notificaciones del sistema están desactivadas para Nuvio. Actívalas para recibir alertas y notificaciones de prueba.</string>
+    <string name="settings_notifications_permission_disabled">Las notificaciones del sistema están desactivadas para Kable Killers Mobile. Actívalas para recibir alertas y notificaciones de prueba.</string>
     <string name="settings_notifications_scheduled_count">Actualmente hay %1$d alertas de estreno programadas en este dispositivo.</string>
     <string name="settings_notifications_section_alerts">ALERTAS</string>
     <string name="settings_notifications_section_test">PRUEBA</string>
@@ -1682,7 +1681,7 @@
     <string name="addon_already_installed">Ese complemento ya está instalado.</string>
     <string name="addon_invalid_url">Introduce una URL de complemento válida</string>
     <string name="addon_load_manifest_failed">No se pudo cargar el manifiesto</string>
-    <string name="app_brand_name">Nuvio</string>
+    <string name="app_brand_name">Kable Killers Mobile</string>
     <string name="auth_account_deletion_failed">No se pudo eliminar la cuenta</string>
     <string name="auth_sign_in_failed">Error al iniciar sesión</string>
     <string name="auth_sign_out_failed">Error al cerrar sesión</string>
@@ -2120,7 +2119,7 @@
     <string name="downloads_error_open_partial_file_failed">No se pudo abrir el archivo de descarga parcial</string>
     <string name="downloads_error_partial_file_not_open">El archivo de descarga parcial no está abierto</string>
     <string name="downloads_error_write_partial_file_failed">No se pudo escribir el archivo de descarga parcial</string>
-    <string name="library_local_tab_title">Biblioteca Nuvio</string>
+    <string name="library_local_tab_title">Biblioteca Kable Killers</string>
     <string name="network_connection_issue">Problema de conexión</string>
     <string name="network_empty_response_body">Cuerpo de respuesta vacío</string>
     <string name="network_please_check_connection">Por favor verifique su conexión e inténtelo nuevamente.</string>

@@ -45,9 +45,9 @@
     <string name="addons_configure">Add-on configureren</string>
     <string name="addons_delete">Add-on verwijderen</string>
     <string name="addons_delete_confirm_title">Add-on verwijderen?</string>
-    <string name="addons_appstore_add_description">Breng je bibliotheek naar Nuvio met de add-ons die je gebruikt.</string>
+    <string name="addons_appstore_add_description">Breng je bibliotheek naar Kable Killers Mobile met de add-ons die je gebruikt.</string>
     <string name="addons_appstore_empty_subtitle">Voeg een add-on toe om je bibliotheek op te bouwen.</string>
-    <string name="addons_appstore_empty_title">Maak Nuvio helemaal van jou.</string>
+    <string name="addons_appstore_empty_title">Maak Kable Killers Mobile helemaal van jou.</string>
     <string name="addons_appstore_input_placeholder">Add-on-URL</string>
     <string name="addons_appstore_install_button">Add-on toevoegen</string>
     <string name="store_empty_unavailable_title">Hier is nog niets</string>
@@ -334,7 +334,6 @@
     <string name="collections_pinned">Vastgezet</string>
     <string name="collections_tab_all">Alles</string>
     <string name="collections_your_collections">Jouw collecties</string>
-    <string name="compose_about_made_with">Gemaakt met ❤️ door Tapframe en vrienden</string>
     <string name="compose_about_version_format">Versie %1$s (%2$s)</string>
     <string name="compose_action_off">Uit</string>
     <string name="compose_action_on">Aan</string>
@@ -526,7 +525,7 @@
     <string name="compose_settings_root_check_updates_description">Download de laatste versie</string>
     <string name="compose_settings_root_check_updates_title">Controleren op updates</string>
     <string name="compose_settings_root_content_discovery_description">Beheer add-ons en ontdekkingsbronnen.</string>
-    <string name="compose_settings_root_content_discovery_description_appstore">Beheer add-ons en kies wat er in Nuvio verschijnt.</string>
+    <string name="compose_settings_root_content_discovery_description_appstore">Beheer add-ons en kies wat er in Kable Killers Mobile verschijnt.</string>
     <string name="compose_settings_root_downloads_description">Beheer je gedownloade films en afleveringen.</string>
     <string name="compose_settings_root_downloads_description_appstore">Beheer wat je op dit apparaat hebt opgeslagen.</string>
     <string name="compose_settings_root_downloads_title">Downloads</string>
@@ -801,7 +800,7 @@
     <string name="settings_content_discovery_section_home">HOME</string>
     <string name="settings_content_discovery_section_sources">BRONNEN</string>
     <string name="settings_content_discovery_addons_description">Installeer, verwijder, vernieuw en sorteer je contentbronnen.</string>
-    <string name="settings_content_discovery_addons_description_appstore">Voeg de add-ons toe die je met Nuvio gebruikt en beheer ze.</string>
+    <string name="settings_content_discovery_addons_description_appstore">Voeg de add-ons toe die je met Kable Killers Mobile gebruikt en beheer ze.</string>
     <string name="settings_content_discovery_plugins_description">Installeer JavaScript-scraperrepository's en test providers intern.</string>
     <string name="settings_content_discovery_homescreen_description">Pas startschermindeling, zichtbaarheid van inhoud en postergedrag aan</string>
     <string name="settings_content_discovery_meta_screen_description">Instellingen voor de detail- en afleveringsschermen.</string>
@@ -943,10 +942,10 @@
     <string name="settings_meta_tab_layout_description">Groepeer secties in tabbladen zoals de tv-app. Wijs maximaal 3 secties per tabbladgroep toe.</string>
     <string name="settings_meta_trailers">Trailers</string>
     <string name="settings_meta_trailers_description">Trailerrij en snelkoppelingen voor afspelen.</string>
-    <string name="settings_notifications_disabled_in_app">Meldingen zijn momenteel uitgeschakeld in Nuvio.</string>
+    <string name="settings_notifications_disabled_in_app">Meldingen zijn momenteel uitgeschakeld in Kable Killers Mobile.</string>
     <string name="settings_notifications_episode_release_alerts">Meldingen bij nieuwe afleveringen</string>
     <string name="settings_notifications_episode_release_alerts_description">Plan lokale meldingen wanneer een nieuwe aflevering van een opgeslagen serie beschikbaar komt.</string>
-    <string name="settings_notifications_permission_disabled">Systeemmeldingen zijn uitgeschakeld voor Nuvio. Schakel ze in om meldingen en testmeldingen te ontvangen.</string>
+    <string name="settings_notifications_permission_disabled">Systeemmeldingen zijn uitgeschakeld voor Kable Killers Mobile. Schakel ze in om meldingen en testmeldingen te ontvangen.</string>
     <string name="settings_notifications_scheduled_count">%1$d releasemeldingen staan momenteel gepland op dit apparaat.</string>
     <string name="settings_notifications_section_alerts">MELDINGEN</string>
     <string name="settings_notifications_section_test">TEST</string>
@@ -1634,7 +1633,7 @@
     <string name="addon_already_installed">Die add-on is al geïnstalleerd.</string>
     <string name="addon_invalid_url">Voer een geldige add-on-URL in</string>
     <string name="addon_load_manifest_failed">Kan manifest niet laden</string>
-    <string name="app_brand_name">Nuvio</string>
+    <string name="app_brand_name">Kable Killers Mobile</string>
     <string name="auth_account_deletion_failed">Verwijderen van account mislukt</string>
     <string name="auth_sign_in_failed">Inloggen mislukt</string>
     <string name="auth_sign_out_failed">Uitloggen mislukt</string>
@@ -2101,7 +2100,7 @@
     <string name="downloads_error_open_partial_file_failed">Openen van gedeeltelijk downloadbestand mislukt</string>
     <string name="downloads_error_partial_file_not_open">Gedeeltelijk downloadbestand is niet geopend</string>
     <string name="downloads_error_write_partial_file_failed">Schrijven naar gedeeltelijk downloadbestand mislukt</string>
-    <string name="library_local_tab_title">Nuvio-bibliotheek</string>
+    <string name="library_local_tab_title">Kable Killers-bibliotheek</string>
     <string name="network_connection_issue">Verbindingsprobleem</string>
     <string name="network_empty_response_body">Lege responsebody</string>
     <string name="network_please_check_connection">Controleer je verbinding en probeer het opnieuw.</string>

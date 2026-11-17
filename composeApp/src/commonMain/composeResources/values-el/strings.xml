@@ -124,7 +124,6 @@
     <string name="collections_pinned">Καρφιτσωμένα</string>
     <string name="collections_tab_all">Όλα</string>
     <string name="collections_your_collections">Οι συλλογές σας</string>
-    <string name="compose_about_made_with">Φτιαγμένο με ❤️ από την Tapframe και φίλους</string>
     <string name="compose_about_version_format">Έκδοση %1$s (%2$s)</string>
     <string name="compose_action_off">Απενεργοποίηση</string>
     <string name="compose_action_on">Ενεργοποίηση</string>
@@ -294,7 +293,7 @@
     <string name="compose_settings_root_check_updates_description">Ελέγξτε για νέες εκδόσεις της εφαρμογής.</string>
     <string name="compose_settings_root_check_updates_title">Έλεγχος για ενημερώσεις</string>
     <string name="compose_settings_root_content_discovery_description">Διαχείριση πρόσθετων και πηγών ανακάλυψης.</string>
-    <string name="compose_settings_root_content_discovery_description_appstore">Διαχειριστείτε τα πρόσθετα και επιλέξτε τι εμφανίζεται στο Nuvio.</string>
+    <string name="compose_settings_root_content_discovery_description_appstore">Διαχειριστείτε τα πρόσθετα και επιλέξτε τι εμφανίζεται στο Kable Killers Mobile.</string>
     <string name="compose_settings_root_downloads_description">Διαχειριστείτε τις κατεβασμένες ταινίες και επεισόδιά σας.</string>
     <string name="compose_settings_root_downloads_description_appstore">Διαχειριστείτε όσα έχετε αποθηκεύσει σε αυτή τη συσκευή.</string>
     <string name="compose_settings_root_downloads_title">Λήψεις</string>
@@ -579,10 +578,10 @@
     <string name="settings_meta_tab_layout_description">Ομαδοποίηση ενοτήτων σε καρτέλες όπως η εφαρμογή TV. Αντιστοιχίστε έως 3 ενότητες ανά ομάδα καρτελών.</string>
     <string name="settings_meta_trailers">Τρέιλερ</string>
     <string name="settings_meta_trailers_description">Ράγα τρέιλερ και συντομεύσεις αναπαραγωγής.</string>
-    <string name="settings_notifications_disabled_in_app">Οι ειδοποιήσεις είναι απενεργοποιημένες αυτή τη στιγμή στο Nuvio.</string>
+    <string name="settings_notifications_disabled_in_app">Οι ειδοποιήσεις είναι απενεργοποιημένες αυτή τη στιγμή στο Kable Killers Mobile.</string>
     <string name="settings_notifications_episode_release_alerts">Ειδοποιήσεις κυκλοφορίας επεισοδίων</string>
     <string name="settings_notifications_episode_release_alerts_description">Προγραμματισμός τοπικών ειδοποιήσεων όταν ένα νέο επεισόδιο αποθηκευμένης σειράς γίνει διαθέσιμο.</string>
-    <string name="settings_notifications_permission_disabled">Οι ειδοποιήσεις συστήματος είναι απενεργοποιημένες για το Nuvio. Ενεργοποιήστε τες για να λαμβάνετε ειδοποιήσεις και δοκιμαστικές ειδοποιήσεις.</string>
+    <string name="settings_notifications_permission_disabled">Οι ειδοποιήσεις συστήματος είναι απενεργοποιημένες για το Kable Killers Mobile. Ενεργοποιήστε τες για να λαμβάνετε ειδοποιήσεις και δοκιμαστικές ειδοποιήσεις.</string>
     <string name="settings_notifications_scheduled_count">%1$d ειδοποιήσεις κυκλοφορίας είναι προγραμματισμένες αυτήν τη στιγμή σε αυτήν τη συσκευή.</string>
     <string name="settings_notifications_section_alerts">ΕΙΔΟΠΟΙΗΣΕΙΣ</string>
     <string name="settings_notifications_section_test">ΔΟΚΙΜΗ</string>
@@ -1185,7 +1184,7 @@
     <string name="addon_already_installed">Αυτό το πρόσθετο είναι ήδη εγκατεστημένο.</string>
     <string name="addon_invalid_url">Εισάγετε μια έγκυρη διεύθυνση URL πρόσθετου</string>
     <string name="addon_load_manifest_failed">Αδυναμία φόρτωσης μανιφέστου</string>
-    <string name="app_brand_name">Nuvio</string>
+    <string name="app_brand_name">Kable Killers Mobile</string>
     <string name="auth_account_deletion_failed">Η διαγραφή λογαριασμού απέτυχε</string>
     <string name="auth_sign_in_failed">Η σύνδεση απέτυχε</string>
     <string name="auth_sign_out_failed">Η αποσύνδεση απέτυχε</string>
@@ -1370,9 +1369,9 @@
     <string name="action_saving">Αποθήκευση…</string>
     <string name="action_switch">Εναλλαγή</string>
     <string name="action_validate">Επικύρωση</string>
-    <string name="addons_appstore_add_description">Φέρτε τη βιβλιοθήκη σας στο Nuvio με τα πρόσθετα που χρησιμοποιείτε.</string>
+    <string name="addons_appstore_add_description">Φέρτε τη βιβλιοθήκη σας στο Kable Killers Mobile με τα πρόσθετα που χρησιμοποιείτε.</string>
     <string name="addons_appstore_empty_subtitle">Προσθέστε ένα πρόσθετο για να αρχίσετε να δημιουργείτε τη βιβλιοθήκη σας.</string>
-    <string name="addons_appstore_empty_title">Κάντε το Nuvio δικό σας.</string>
+    <string name="addons_appstore_empty_title">Κάντε το Kable Killers Mobile δικό σας.</string>
     <string name="addons_appstore_input_placeholder">URL πρόσθετου</string>
     <string name="addons_appstore_install_button">Προσθήκη πρόσθετου</string>
     <string name="store_empty_unavailable_title">Δεν υπάρχει τίποτα εδώ ακόμη</string>
@@ -1717,7 +1716,7 @@
     <string name="layout_hide_unreleased_sub">Απόκρυψη ταινιών και σειρών που δεν έχουν κυκλοφορήσει ακόμα.</string>
     <string name="layout_catalog_type">Εμφάνιση τύπου καταλόγου</string>
     <string name="layout_catalog_type_sub">Εμφάνιση επιθήματος τύπου δίπλα στο όνομα καταλόγου (Ταινία/Σειρές).</string>
-    <string name="library_local_tab_title">Nuvio Βιβλιοθήκη</string>
+    <string name="library_local_tab_title">Kable Killers Βιβλιοθήκη</string>
     <string name="library_remove_from_list_message">Κατάργηση %1$s από %2$s;</string>
     <string name="library_source_cloud">Cloud</string>
     <string name="library_source_saved">Αποθηκευμένα</string>
@@ -1851,7 +1850,7 @@
     <string name="settings_appearance_app_language_device">Γλώσσα συσκευής</string>
     <string name="settings_appearance_liquid_glass">Υγρό γυαλί</string>
     <string name="settings_appearance_liquid_glass_description">Χρήση της εγγενούς γραμμής καρτελών iPhone σε iOS 26 και νεότερα.</string>
-    <string name="settings_content_discovery_addons_description_appstore">Προσθέστε και διαχειριστείτε τα πρόσθετα που χρησιμοποιείτε με το Nuvio.</string>
+    <string name="settings_content_discovery_addons_description_appstore">Προσθέστε και διαχειριστείτε τα πρόσθετα που χρησιμοποιείτε με το Kable Killers Mobile.</string>
     <string name="settings_continue_watching_blur_next_up_description">Θόλωμα μικρογραφιών επεισοδίων που δεν έχετε παρακολουθήσει στη Συνέχεια παρακολούθησης για αποφυγή σπόιλερ.</string>
     <string name="settings_continue_watching_blur_next_up_title">Θόλωμα μη προβληθέντων στη Συνέχεια παρακολούθησης</string>
     <string name="settings_continue_watching_section_sort_order">ΣΕΙΡΑ ΤΑΞΙΝΟΜΗΣΗΣ</string>

@@ -47,9 +47,9 @@
     <string name="addons_configure">Addon ترتیب دیں</string>
     <string name="addons_delete">Addon حذف کریں</string>
     <string name="addons_delete_confirm_title">Addon حذف کریں؟</string>
-    <string name="addons_appstore_add_description">اپنے استعمال کیے جانے والے Addons کے ذریعے اپنی لائبریری Nuvio میں لائیں۔</string>
+    <string name="addons_appstore_add_description">اپنے استعمال کیے جانے والے Addons کے ذریعے اپنی لائبریری Kable Killers Mobile میں لائیں۔</string>
     <string name="addons_appstore_empty_subtitle">اپنی لائبریری بنانا شروع کرنے کے لیے ایک Addon شامل کریں۔</string>
-    <string name="addons_appstore_empty_title">Nuvio کو اپنی پسند کے مطابق بنائیں۔</string>
+    <string name="addons_appstore_empty_title">Kable Killers Mobile کو اپنی پسند کے مطابق بنائیں۔</string>
     <string name="addons_appstore_input_placeholder">Addon URL</string>
     <string name="addons_appstore_install_button">Addon شامل کریں</string>
     <string name="store_empty_unavailable_title">ابھی یہاں کچھ نہیں ہے</string>
@@ -336,7 +336,6 @@
     <string name="collections_pinned">Pin شدہ</string>
     <string name="collections_tab_all">تمام</string>
     <string name="collections_your_collections">آپ کے کلیکشنز</string>
-    <string name="compose_about_made_with">Tapframe اور دوستوں نے ❤️ کے ساتھ بنایا</string>
     <string name="compose_about_version_format">ورژن %1$s (%2$s)</string>
     <string name="compose_action_off">بند</string>
     <string name="compose_action_on">چالو</string>
@@ -531,7 +530,7 @@
     <string name="compose_settings_root_check_updates_description">تازہ ترین ریلیز ڈاؤن لوڈ کریں</string>
     <string name="compose_settings_root_check_updates_title">اپ ڈیٹس تلاش کریں</string>
     <string name="compose_settings_root_content_discovery_description">ایڈ آنز اور مواد دریافت کرنے کے ذرائع کا نظم کریں۔</string>
-    <string name="compose_settings_root_content_discovery_description_appstore">ایڈ آنز کا نظم کریں اور منتخب کریں کہ Nuvio میں کیا دکھائی دے۔</string>
+    <string name="compose_settings_root_content_discovery_description_appstore">ایڈ آنز کا نظم کریں اور منتخب کریں کہ Kable Killers Mobile میں کیا دکھائی دے۔</string>
     <string name="compose_settings_root_downloads_description">اپنی ڈاؤن لوڈ کردہ فلموں اور اقساط کا نظم کریں۔</string>
     <string name="compose_settings_root_downloads_description_appstore">اس ڈیوائس پر محفوظ کردہ مواد کا نظم کریں۔</string>
     <string name="compose_settings_root_downloads_title">ڈاؤن لوڈز</string>
@@ -835,7 +834,7 @@
     <string name="settings_content_discovery_recent_searches">حالیہ تلاشیں</string>
     <string name="settings_content_discovery_recent_searches_description">حالیہ تلاشیں محفوظ کریں اور سرچ بار منتخب ہونے پر انہیں دکھائیں۔</string>
     <string name="settings_content_discovery_addons_description">اپنے مواد کے ذرائع انسٹال، حذف، ریفریش اور ترتیب دیں۔</string>
-    <string name="settings_content_discovery_addons_description_appstore">Nuvio کے ساتھ استعمال ہونے والے Addons شامل کریں اور منظم کریں۔</string>
+    <string name="settings_content_discovery_addons_description_appstore">Kable Killers Mobile کے ساتھ استعمال ہونے والے Addons شامل کریں اور منظم کریں۔</string>
     <string name="settings_content_discovery_plugins_description">JavaScript scraper repositories انسٹال کریں اور providers کو ایپ کے اندر ٹیسٹ کریں۔</string>
     <string name="settings_content_discovery_homescreen_description">ہوم کا لے آؤٹ، مواد کی نمائش اور پوسٹر کا رویّہ ایڈجسٹ کریں۔</string>
     <string name="settings_content_discovery_meta_screen_description">تفصیلات اور قسط کی اسکرینز کی ترتیبات۔</string>
@@ -981,10 +980,10 @@
     <string name="settings_meta_tab_layout_description">TV ایپ کی طرح حصوں کو Tabs میں گروپ کریں۔ ہر Tab Group میں زیادہ سے زیادہ 3 حصے شامل کریں۔</string>
     <string name="settings_meta_trailers">ٹریلرز</string>
     <string name="settings_meta_trailers_description">ٹریلرز کی قطار اور پلے بیک شارٹ کٹس۔</string>
-    <string name="settings_notifications_disabled_in_app">Nuvio میں نوٹیفکیشنز اس وقت غیر فعال ہیں۔</string>
+    <string name="settings_notifications_disabled_in_app">Kable Killers Mobile میں نوٹیفکیشنز اس وقت غیر فعال ہیں۔</string>
     <string name="settings_notifications_episode_release_alerts">قسط جاری ہونے کی اطلاعات</string>
     <string name="settings_notifications_episode_release_alerts_description">محفوظ کی گئی سیریز کی نئی قسط دستیاب ہونے پر مقامی نوٹیفکیشنز شیڈول کریں۔</string>
-    <string name="settings_notifications_permission_disabled">Nuvio کے لیے سسٹم نوٹیفکیشنز غیر فعال ہیں۔ الرٹس اور ٹیسٹ نوٹیفکیشنز وصول کرنے کے لیے انہیں فعال کریں۔</string>
+    <string name="settings_notifications_permission_disabled">Kable Killers Mobile کے لیے سسٹم نوٹیفکیشنز غیر فعال ہیں۔ الرٹس اور ٹیسٹ نوٹیفکیشنز وصول کرنے کے لیے انہیں فعال کریں۔</string>
     <string name="settings_notifications_scheduled_count">اس ڈیوائس پر اس وقت %1$d ریلیز الرٹس شیڈول ہیں۔</string>
     <string name="settings_notifications_section_alerts">الرٹس</string>
     <string name="settings_notifications_section_test">ٹیسٹ</string>
@@ -1696,7 +1695,7 @@
     <string name="addon_already_installed">یہ Addon پہلے سے انسٹال ہے۔</string>
     <string name="addon_invalid_url">درست Addon URL درج کریں</string>
     <string name="addon_load_manifest_failed">Manifest لوڈ نہیں ہو سکا</string>
-    <string name="app_brand_name">Nuvio</string>
+    <string name="app_brand_name">Kable Killers Mobile</string>
     <string name="auth_account_deletion_failed">اکاؤنٹ حذف نہیں ہو سکا</string>
     <string name="auth_sign_in_failed">سائن اِن ناکام رہا</string>
     <string name="auth_sign_out_failed">سائن آؤٹ ناکام رہا</string>
@@ -2164,7 +2163,7 @@
     <string name="downloads_error_open_partial_file_failed">جزوی ڈاؤن لوڈ فائل نہیں کھولی جا سکی</string>
     <string name="downloads_error_partial_file_not_open">جزوی ڈاؤن لوڈ فائل کھلی نہیں ہے</string>
     <string name="downloads_error_write_partial_file_failed">جزوی ڈاؤن لوڈ فائل میں لکھا نہیں جا سکا</string>
-    <string name="library_local_tab_title">Nuvio لائبریری</string>
+    <string name="library_local_tab_title">Kable Killers لائبریری</string>
     <string name="network_connection_issue">کنکشن میں مسئلہ</string>
     <string name="network_empty_response_body">جواب کا متن خالی ہے</string>
     <string name="network_please_check_connection">اپنا کنکشن چیک کریں اور دوبارہ کوشش کریں۔</string>

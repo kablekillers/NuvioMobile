@@ -30,9 +30,9 @@
     <string name="addons_badge_unavailable">לא זמין</string>
     <string name="addons_configure">הגדר תוסף</string>
     <string name="addons_delete">מחק תוסף</string>
-    <string name="addons_appstore_add_description">הבא את הספרייה שלך אל Nuvio עם התוספים שבהם אתה משתמש.</string>
+    <string name="addons_appstore_add_description">הבא את הספרייה שלך אל Kable Killers Mobile עם התוספים שבהם אתה משתמש.</string>
     <string name="addons_appstore_empty_subtitle">הוסף תוסף כדי להתחיל לבנות את הספרייה שלך.</string>
-    <string name="addons_appstore_empty_title">הפוך את Nuvio לשלך.</string>
+    <string name="addons_appstore_empty_title">הפוך את Kable Killers Mobile לשלך.</string>
     <string name="addons_appstore_input_placeholder">כתובת URL של תוסף</string>
     <string name="addons_appstore_install_button">הוסף תוסף</string>
     <string name="store_empty_unavailable_title">אין כאן עדיין כלום</string>
@@ -155,7 +155,6 @@
     <string name="collections_new">אוסף חדש</string>
     <string name="collections_pinned">נעוץ</string>
     <string name="collections_tab_all">הכל</string>
-    <string name="compose_about_made_with">נוצר באהבה ❤️ על ידי Tapframe וחברים</string>
     <string name="compose_about_version_format">גרסה %1$s (%2$s)</string>
     <string name="compose_action_off">כבוי</string>
     <string name="compose_action_on">]פעיל</string>
@@ -267,7 +266,7 @@
     <string name="compose_settings_root_check_updates_description">הורד את הגרסה האחרונה</string>
     <string name="compose_settings_root_check_updates_title">בדיקת עדכונים</string>
     <string name="compose_settings_root_content_discovery_description">נהל תוספים ומקורות גילוי.</string>
-    <string name="compose_settings_root_content_discovery_description_appstore">נהל תוספים ובחר מה יופיע ב-Nuvio.</string>
+    <string name="compose_settings_root_content_discovery_description_appstore">נהל תוספים ובחר מה יופיע ב-Kable Killers Mobile.</string>
     <string name="compose_settings_root_downloads_description">נהל את הסרטים והפרקים שהורדת.</string>
     <string name="compose_settings_root_downloads_description_appstore">נהל את מה ששמרת במכשיר זה.</string>
     <string name="compose_settings_root_downloads_title">הורדות</string>

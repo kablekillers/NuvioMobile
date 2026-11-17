@@ -32,9 +32,9 @@
     <string name="addons_badge_unavailable">利用不可</string>
     <string name="addons_configure">アドオンを設定</string>
     <string name="addons_delete">アドオンを削除</string>
-    <string name="addons_appstore_add_description">いつものアドオンで、ライブラリをNuvioにまとめましょう。</string>
+    <string name="addons_appstore_add_description">いつものアドオンで、ライブラリをKable Killers Mobileにまとめましょう。</string>
     <string name="addons_appstore_empty_subtitle">アドオンを追加して、ライブラリを作り始めましょう。</string>
-    <string name="addons_appstore_empty_title">Nuvioを自分好みに。</string>
+    <string name="addons_appstore_empty_title">Kable Killers Mobileを自分好みに。</string>
     <string name="addons_appstore_input_placeholder">アドオンURL</string>
     <string name="addons_appstore_install_button">アドオンを追加</string>
     <string name="store_empty_unavailable_title">まだ何もありません</string>
@@ -308,7 +308,6 @@
     <string name="collections_pinned">ピン留め</string>
     <string name="collections_tab_all">すべて</string>
     <string name="collections_your_collections">マイコレクション</string>
-    <string name="compose_about_made_with">❤️ Tapframe とフレンズが制作</string>
     <string name="compose_about_version_format">バージョン %1$s (%2$s)</string>
     <string name="compose_action_off">オフ</string>
     <string name="compose_action_on">オン</string>
@@ -446,7 +445,7 @@
     <string name="compose_settings_root_check_updates_description">最新リリースをダウンロード</string>
     <string name="compose_settings_root_check_updates_title">アップデートを確認</string>
     <string name="compose_settings_root_content_discovery_description">アドオンと探索ソースを管理</string>
-    <string name="compose_settings_root_content_discovery_description_appstore">アドオンを管理して、Nuvioに表示する内容を選べます。</string>
+    <string name="compose_settings_root_content_discovery_description_appstore">アドオンを管理して、Kable Killers Mobileに表示する内容を選べます。</string>
     <string name="compose_settings_root_downloads_description">ダウンロードした映画とエピソードを管理</string>
     <string name="compose_settings_root_downloads_description_appstore">このデバイスに保存した項目を管理します。</string>
     <string name="compose_settings_root_downloads_title">ダウンロード</string>
@@ -642,7 +641,7 @@
     <string name="settings_content_discovery_section_home">ホーム</string>
     <string name="settings_content_discovery_section_sources">ソース</string>
     <string name="settings_content_discovery_addons_description">コンテンツソースのインストール・削除・更新・並べ替え</string>
-    <string name="settings_content_discovery_addons_description_appstore">Nuvioで使うアドオンを追加・管理します。</string>
+    <string name="settings_content_discovery_addons_description_appstore">Kable Killers Mobileで使うアドオンを追加・管理します。</string>
     <string name="settings_content_discovery_plugins_description">JavaScriptスクレイパーリポジトリのインストールと内部テスト</string>
     <string name="settings_content_discovery_homescreen_description">ホームレイアウト・コンテンツ表示・ポスターの動作を調整</string>
     <string name="settings_content_discovery_meta_screen_description">詳細画面とエピソード画面の設定</string>
@@ -776,10 +775,10 @@
     <string name="settings_meta_tab_layout_description">TVアプリのようにセクションをタブにグループ化します。タブグループごとに最大3つのセクションを割り当てられます。</string>
     <string name="settings_meta_trailers">予告編</string>
     <string name="settings_meta_trailers_description">予告編レールと再生ショートカット</string>
-    <string name="settings_notifications_disabled_in_app">Nuvioで通知が無効になっています。</string>
+    <string name="settings_notifications_disabled_in_app">Kable Killers Mobileで通知が無効になっています。</string>
     <string name="settings_notifications_episode_release_alerts">エピソード公開アラート</string>
     <string name="settings_notifications_episode_release_alerts_description">保存済みシリーズの新しいエピソードが公開されたときにローカル通知をスケジュールします。</string>
-    <string name="settings_notifications_permission_disabled">Nuvioのシステム通知が無効になっています。アラートとテスト通知を受け取るには有効にしてください。</string>
+    <string name="settings_notifications_permission_disabled">Kable Killers Mobileのシステム通知が無効になっています。アラートとテスト通知を受け取るには有効にしてください。</string>
     <string name="settings_notifications_scheduled_count">このデバイスで現在 %1$d 件の公開アラートがスケジュールされています。</string>
     <string name="settings_notifications_section_alerts">アラート</string>
     <string name="settings_notifications_section_test">テスト</string>
@@ -1354,7 +1353,7 @@
     <string name="addon_already_installed">そのアドオンはすでにインストールされています。</string>
     <string name="addon_invalid_url">有効なアドオンURLを入力してください</string>
     <string name="addon_load_manifest_failed">マニフェストを読み込めませんでした</string>
-    <string name="app_brand_name">Nuvio</string>
+    <string name="app_brand_name">Kable Killers Mobile</string>
     <string name="auth_account_deletion_failed">アカウントの削除に失敗しました</string>
     <string name="auth_sign_in_failed">サインインに失敗しました</string>
     <string name="auth_sign_out_failed">サインアウトに失敗しました</string>
@@ -1800,7 +1799,7 @@
     <string name="downloads_error_open_partial_file_failed">一時ダウンロードファイルを開けませんでした</string>
     <string name="downloads_error_partial_file_not_open">一時ダウンロードファイルが開いていません</string>
     <string name="downloads_error_write_partial_file_failed">一時ダウンロードファイルへの書き込みに失敗しました</string>
-    <string name="library_local_tab_title">Nuvioライブラリ</string>
+    <string name="library_local_tab_title">Kable Killersライブラリ</string>
     <string name="network_connection_issue">接続の問題</string>
     <string name="network_empty_response_body">空のレスポンスボディ</string>
     <string name="network_please_check_connection">接続を確認して再試行してください。</string>

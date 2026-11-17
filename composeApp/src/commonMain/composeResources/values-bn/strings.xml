@@ -48,9 +48,9 @@
     <string name="addons_configure">অ্যাডন কনফিগার করুন</string>
     <string name="addons_delete">অ্যাডন মুছুন</string>
     <string name="addons_delete_confirm_title">অ্যাডন মুছবেন?</string>
-    <string name="addons_appstore_add_description">আপনি যে অ্যাডন ব্যবহার করেন তার সাহায্যে আপনার লাইব্রেরিটি Nuvio-তে আনুন।</string>
+    <string name="addons_appstore_add_description">আপনি যে অ্যাডন ব্যবহার করেন তার সাহায্যে আপনার লাইব্রেরিটি Kable Killers Mobile-তে আনুন।</string>
     <string name="addons_appstore_empty_subtitle">আপনার লাইব্রেরি নির্মাণ শুরু করতে একটি অ্যাডন যোগ করুন।</string>
-    <string name="addons_appstore_empty_title">Nuvio-কে নিজের করে নিন।</string>
+    <string name="addons_appstore_empty_title">Kable Killers Mobile-কে নিজের করে নিন।</string>
     <string name="addons_appstore_input_placeholder">অ্যাডন URL</string>
     <string name="addons_appstore_install_button">অ্যাডন যোগ করুন</string>
     <string name="store_empty_unavailable_title">এখানে এখনো কিছুই নেই</string>
@@ -337,7 +337,6 @@
     <string name="collections_pinned">পিন করা</string>
     <string name="collections_tab_all">সব</string>
     <string name="collections_your_collections">আপনার কালেকশনগুলি</string>
-    <string name="compose_about_made_with">Tapframe এবং বন্ধুদের দ্বারা ❤️ দিয়ে তৈরি</string>
     <string name="compose_about_version_format">সংস্করণ %1$s (%2$s)</string>
     <string name="compose_action_off">বন্ধ</string>
     <string name="compose_action_on">চালু</string>
@@ -532,7 +531,7 @@
     <string name="compose_settings_root_check_updates_description">সর্বশেষ রিলিজ ডাউনলোড করুন</string>
     <string name="compose_settings_root_check_updates_title">আপডেটের জন্য চেক করুন</string>
     <string name="compose_settings_root_content_discovery_description">অ্যাডন এবং ডিসকভারি সোর্সসমূহ ম্যানেজ করুন।</string>
-    <string name="compose_settings_root_content_discovery_description_appstore">অ্যাডন ম্যানেজ করুন এবং Nuvio-তে কী প্রদর্শিত হবে তা বাছুন।</string>
+    <string name="compose_settings_root_content_discovery_description_appstore">অ্যাডন ম্যানেজ করুন এবং Kable Killers Mobile-তে কী প্রদর্শিত হবে তা বাছুন।</string>
     <string name="compose_settings_root_downloads_description">আপনার ডাউনলোড করা সিনেমা এবং পর্ব ম্যানেজ করুন।</string>
     <string name="compose_settings_root_downloads_description_appstore">আপনি এই ডিভাইসে কি সেভ করেছেন তা ম্যানেজ করুন।</string>
     <string name="compose_settings_root_downloads_title">ডাউনলোড</string>
@@ -837,7 +836,7 @@
     <string name="settings_content_discovery_recent_searches">সাম্প্রতিক সার্চ</string>
     <string name="settings_content_discovery_recent_searches_description">সাম্প্রতিক সার্চগুলি সেভ করুন এবং সার্চ বার ফোকাস হলে সেগুলি দেখান।</string>
     <string name="settings_content_discovery_addons_description">আপনার কন্টেন্টের সোর্সগুলি ইনস্টল করুন, সরান, রিফ্রেশ করুন এবং সাজান।</string>
-    <string name="settings_content_discovery_addons_description_appstore">আপনি Nuvio-এর সাথে যে অ্যাডন ব্যবহার করেন তা যোগ করুন এবং ম্যানেজ করুন।</string>
+    <string name="settings_content_discovery_addons_description_appstore">আপনি Kable Killers Mobile-এর সাথে যে অ্যাডন ব্যবহার করেন তা যোগ করুন এবং ম্যানেজ করুন।</string>
     <string name="settings_content_discovery_plugins_description">জাভাস্ক্রিপ্ট স্ক্র্যাপার রিপোজিটরি এবং টেস্ট প্রোভাইডার ইনস্টল করুন।</string>
     <string name="settings_content_discovery_homescreen_description">হোম লেআউট, কন্টেন্ট ভিজিবিলিটি এবং পোস্টার আচরণ অ্যাডজাস্ট করুন</string>
     <string name="settings_content_discovery_meta_screen_description">বিস্তারিত এবং পর্বের স্ক্রিনর জন্য সেটিংস।</string>
@@ -983,10 +982,10 @@
     <string name="settings_meta_tab_layout_description">টিভি অ্যাপের মতো ট্যাবে সেকশনগুলিকে গোষ্ঠীভুক্ত করুন। ট্যাব গ্রুপ প্রতি 3টি সেকশন পর্যন্ত বরাদ্দ করুন।</string>
     <string name="settings_meta_trailers">ট্রেলার</string>
     <string name="settings_meta_trailers_description">ট্রেলার রেল এবং প্লেব্যাক শর্টকাট।</string>
-    <string name="settings_notifications_disabled_in_app">Nuvio-তে বর্তমানে বিজ্ঞপ্তি নিষ্ক্রিয় করা হয়েছে।</string>
+    <string name="settings_notifications_disabled_in_app">Kable Killers Mobile-তে বর্তমানে বিজ্ঞপ্তি নিষ্ক্রিয় করা হয়েছে।</string>
     <string name="settings_notifications_episode_release_alerts">পর্ব প্রকাশের অ্যালার্ট</string>
     <string name="settings_notifications_episode_release_alerts_description">সংরক্ষিত শোয়ের জন্য একটি নতুন পর্ব উপলব্ধ হলে স্থানীয় বিজ্ঞপ্তিগুলি নির্ধারণ করুন।</string>
-    <string name="settings_notifications_permission_disabled">Nuvio-এর জন্য সিস্টেম বিজ্ঞপ্তি নিষ্ক্রিয় করা হয়েছে। অ্যালার্ট এবং পরীক্ষার বিজ্ঞপ্তি পেতে সেগুলো চালু করুন।</string>
+    <string name="settings_notifications_permission_disabled">Kable Killers Mobile-এর জন্য সিস্টেম বিজ্ঞপ্তি নিষ্ক্রিয় করা হয়েছে। অ্যালার্ট এবং পরীক্ষার বিজ্ঞপ্তি পেতে সেগুলো চালু করুন।</string>
     <string name="settings_notifications_scheduled_count">এই ডিভাইসে বর্তমানে %1$dটি রিলিজ অ্যালার্ট নির্ধারিত আছে।</string>
     <string name="settings_notifications_section_alerts">অ্যালার্ট</string>
     <string name="settings_notifications_section_test">পরীক্ষা</string>
@@ -1698,7 +1697,7 @@
     <string name="addon_already_installed">এই অ্যাডনটি ইতিমধ্যেই ইনস্টল করা আছে।</string>
     <string name="addon_invalid_url">একটি বৈধ অ্যাডন URL লিখুন</string>
     <string name="addon_load_manifest_failed">ম্যানিফেস্ট লোড করা যায়নি</string>
-    <string name="app_brand_name">Nuvio</string>
+    <string name="app_brand_name">Kable Killers Mobile</string>
     <string name="auth_account_deletion_failed">অ্যাকাউন্ট ডিলিট করতে ব্যর্থ</string>
     <string name="auth_sign_in_failed">সাইন ইন ব্যর্থ হয়েছে</string>
     <string name="auth_sign_out_failed">সাইন-আউট ব্যর্থ হয়েছে</string>
@@ -2166,7 +2165,7 @@
     <string name="downloads_error_open_partial_file_failed">আংশিক ডাউনলোড ফাইল খুলতে ব্যর্থ</string>
     <string name="downloads_error_partial_file_not_open">আংশিক ডাউনলোড ফাইল খোলা নেই</string>
     <string name="downloads_error_write_partial_file_failed">আংশিক ডাউনলোড ফাইল লিখতে ব্যর্থ</string>
-    <string name="library_local_tab_title">Nuvio লাইব্রেরি</string>
+    <string name="library_local_tab_title">Kable Killers লাইব্রেরি</string>
     <string name="network_connection_issue">সংযোগ সমস্যা</string>
     <string name="network_empty_response_body">খালি রেসপন্স বডি</string>
     <string name="network_please_check_connection">আপনার সংযোগ পরীক্ষা করুন এবং আবার চেষ্টা করুন।</string>

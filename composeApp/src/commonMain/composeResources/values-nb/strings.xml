@@ -42,9 +42,9 @@
     <string name="addon_invalid_url">Skriv inn en gyldig tilleggs-URL</string>
     <string name="addon_load_manifest_failed">Kunne ikke laste manifest</string>
     <string name="addon_title">Tillegg</string>
-    <string name="addons_appstore_add_description">Ta med biblioteket ditt til Nuvio med tilleggene du bruker.</string>
+    <string name="addons_appstore_add_description">Ta med biblioteket ditt til Kable Killers Mobile med tilleggene du bruker.</string>
     <string name="addons_appstore_empty_subtitle">Legg til et tillegg for å begynne å bygge biblioteket ditt.</string>
-    <string name="addons_appstore_empty_title">Gjør Nuvio til ditt.</string>
+    <string name="addons_appstore_empty_title">Gjør Kable Killers Mobile til ditt.</string>
     <string name="addons_appstore_input_placeholder">URL til tillegg</string>
     <string name="addons_appstore_install_button">Legg til tillegg</string>
     <string name="addons_badge_active">Aktiv</string>
@@ -80,7 +80,7 @@
     <string name="addons_section_overview">Oversikt</string>
     <string name="addons_summary_id_rules">%1$d ID-regler</string>
     <string name="addons_version_format">Versjon %1$s</string>
-    <string name="app_brand_name">Nuvio</string>
+    <string name="app_brand_name">Kable Killers Mobile</string>
     <string name="app_exit_message">Vil du avslutte appen?</string>
     <string name="app_exit_title">Avslutt app</string>
     <string name="auth_account_deletion_failed">Konto-sletting mislyktes</string>
@@ -493,7 +493,6 @@
     <string name="community_tab_supporters">Støttespillere</string>
     <string name="community_total_commits">%1$d totale commits</string>
     <string name="community_view_supporter_membership">Vis Supporter-medlemskap</string>
-    <string name="compose_about_made_with">Laget med ❤️ av Tapframe og venner</string>
     <string name="compose_about_version_format">Versjon %1$s (%2$s)</string>
     <string name="compose_action_off">Av</string>
     <string name="compose_action_on">På</string>
@@ -653,7 +652,7 @@
     <string name="compose_settings_root_check_updates_description">Last ned nyeste versjon</string>
     <string name="compose_settings_root_check_updates_title">Se etter oppdateringer</string>
     <string name="compose_settings_root_content_discovery_description">Administrer tillegg og oppdagelseskilder.</string>
-    <string name="compose_settings_root_content_discovery_description_appstore">Administrer tillegg og velg hva som vises i Nuvio.</string>
+    <string name="compose_settings_root_content_discovery_description_appstore">Administrer tillegg og velg hva som vises i Kable Killers Mobile.</string>
     <string name="compose_settings_root_downloads_description">Administrer nedlastede filmer og episoder.</string>
     <string name="compose_settings_root_downloads_description_appstore">Administrer det du har lagret på denne enheten.</string>
     <string name="compose_settings_root_downloads_title">Nedlastinger</string>
@@ -970,7 +969,7 @@
     <string name="library_layout_show_horizontal">Vis vannrette hyller</string>
     <string name="library_layout_show_vertical">Vis loddrett rutenett</string>
     <string name="library_load_failed">Kunne ikke laste bibliotek</string>
-    <string name="library_local_tab_title">Nuvio-bibliotek</string>
+    <string name="library_local_tab_title">Kable Killers-bibliotek</string>
     <string name="library_other">Annet</string>
     <string name="library_remove_confirm">Fjern</string>
     <string name="library_remove_from_list_message">Fjern %1$s fra %2$s?</string>
@@ -1380,7 +1379,7 @@ Du bruker denne funksjonen helt på eget ansvar. P2P kan deaktiveres når som he
     <string name="settings_card_depth_surface_trailers">Trailere</string>
     <string name="settings_card_depth_title">KORTDYBDE-EFFEKT</string>
     <string name="settings_content_discovery_addons_description">Installer, fjern, oppdater og sorter innholdskilder.</string>
-    <string name="settings_content_discovery_addons_description_appstore">Legg til og administrer tilleggene du bruker med Nuvio.</string>
+    <string name="settings_content_discovery_addons_description_appstore">Legg til og administrer tilleggene du bruker med Kable Killers Mobile.</string>
     <string name="settings_content_discovery_collections_description">Opprett egne kataloggrupperinger med mapper vist på hjem.</string>
     <string name="settings_content_discovery_homescreen_description">Juster hjemmeoppsett, synlighet og plakat-oppførsel.</string>
     <string name="settings_content_discovery_meta_screen_description">Innstillinger for detalj- og episodeskjermer.</string>
@@ -1684,10 +1683,10 @@ Du bruker denne funksjonen helt på eget ansvar. P2P kan deaktiveres når som he
     <string name="settings_nav_bar_style_compact">Alltid kompakt</string>
     <string name="settings_nav_bar_style_expanded">Alltid utvidet</string>
     <string name="settings_nav_bar_summary">%1$s · %2$s</string>
-    <string name="settings_notifications_disabled_in_app">Varsler er for øyeblikket deaktivert i Nuvio.</string>
+    <string name="settings_notifications_disabled_in_app">Varsler er for øyeblikket deaktivert i Kable Killers Mobile.</string>
     <string name="settings_notifications_episode_release_alerts">Episodeutgivelsesvarsler</string>
     <string name="settings_notifications_episode_release_alerts_description">Send lokale varsler når en ny episode for en lagret serie blir tilgjengelig.</string>
-    <string name="settings_notifications_permission_disabled">Systemvarsler er deaktivert for Nuvio. Skru dem på for å motta varsler.</string>
+    <string name="settings_notifications_permission_disabled">Systemvarsler er deaktivert for Kable Killers Mobile. Skru dem på for å motta varsler.</string>
     <string name="settings_notifications_scheduled_count">%1$d utgivelsesvarsler er planlagt på denne enheten.</string>
     <string name="settings_notifications_section_alerts">VARSLER</string>
     <string name="settings_notifications_section_test">TEST</string>

@@ -31,9 +31,9 @@
     <string name="addons_badge_unavailable">Tidak Tersedia</string>
     <string name="addons_configure">Konfigurasi addon</string>
     <string name="addons_delete">Hapus addon</string>
-    <string name="addons_appstore_add_description">Bawa pustaka Anda ke Nuvio dengan addon yang Anda gunakan.</string>
+    <string name="addons_appstore_add_description">Bawa pustaka Anda ke Kable Killers Mobile dengan addon yang Anda gunakan.</string>
     <string name="addons_appstore_empty_subtitle">Tambahkan addon untuk mulai membangun pustaka Anda.</string>
-    <string name="addons_appstore_empty_title">Jadikan Nuvio milik Anda.</string>
+    <string name="addons_appstore_empty_title">Jadikan Kable Killers Mobile milik Anda.</string>
     <string name="addons_appstore_input_placeholder">URL Addon</string>
     <string name="addons_appstore_install_button">Tambah Addon</string>
     <string name="store_empty_unavailable_title">Belum ada apa pun di sini</string>
@@ -291,7 +291,6 @@
     <string name="collections_pinned">Disematkan</string>
     <string name="collections_tab_all">Semua</string>
     <string name="collections_your_collections">Koleksi Anda</string>
-    <string name="compose_about_made_with">Dibuat dengan ❤️ oleh Tapframe dan teman-teman</string>
     <string name="compose_about_version_format">Versi %1$s (%2$s)</string>
     <string name="compose_action_off">Nonaktif</string>
     <string name="compose_action_on">Aktif</string>
@@ -420,7 +419,7 @@
     <string name="compose_settings_root_check_updates_description">Unduh versi terbaru</string>
     <string name="compose_settings_root_check_updates_title">Periksa pembaruan</string>
     <string name="compose_settings_root_content_discovery_description">Kelola addon dan sumber penemuan.</string>
-    <string name="compose_settings_root_content_discovery_description_appstore">Kelola addon dan pilih apa yang tampil di Nuvio.</string>
+    <string name="compose_settings_root_content_discovery_description_appstore">Kelola addon dan pilih apa yang tampil di Kable Killers Mobile.</string>
     <string name="compose_settings_root_downloads_description">Kelola film dan episode yang telah diunduh.</string>
     <string name="compose_settings_root_downloads_description_appstore">Kelola yang Anda simpan di perangkat ini.</string>
     <string name="compose_settings_root_downloads_title">Unduhan</string>
@@ -605,7 +604,7 @@
     <string name="settings_content_discovery_section_home">BERANDA</string>
     <string name="settings_content_discovery_section_sources">SUMBER</string>
     <string name="settings_content_discovery_addons_description">Pasang, hapus, perbarui, dan urutkan sumber konten Anda.</string>
-    <string name="settings_content_discovery_addons_description_appstore">Tambahkan dan kelola addon yang Anda gunakan dengan Nuvio.</string>
+    <string name="settings_content_discovery_addons_description_appstore">Tambahkan dan kelola addon yang Anda gunakan dengan Kable Killers Mobile.</string>
     <string name="settings_content_discovery_plugins_description">Pasang repositori scraper JavaScript dan uji penyedia secara internal.</string>
     <string name="settings_content_discovery_homescreen_description">Sesuaikan tata letak beranda, visibilitas konten, dan poster</string>
     <string name="settings_content_discovery_meta_screen_description">Pengaturan untuk layar detail dan episode.</string>
@@ -705,10 +704,10 @@
     <string name="settings_meta_tab_layout_description">Kelompokkan bagian ke dalam tab seperti aplikasi TV. Tetapkan hingga 3 bagian per grup tab.</string>
     <string name="settings_meta_trailers">Trailer</string>
     <string name="settings_meta_trailers_description">Baris trailer dan pintasan pemutaran.</string>
-    <string name="settings_notifications_disabled_in_app">Notifikasi saat ini dinonaktifkan di Nuvio.</string>
+    <string name="settings_notifications_disabled_in_app">Notifikasi saat ini dinonaktifkan di Kable Killers Mobile.</string>
     <string name="settings_notifications_episode_release_alerts">Peringatan rilis episode</string>
     <string name="settings_notifications_episode_release_alerts_description">Jadwalkan notifikasi lokal ketika episode baru untuk serial yang disimpan tersedia.</string>
-    <string name="settings_notifications_permission_disabled">Notifikasi sistem dinonaktifkan untuk Nuvio. Aktifkan untuk menerima peringatan dan uji notifikasi.</string>
+    <string name="settings_notifications_permission_disabled">Notifikasi sistem dinonaktifkan untuk Kable Killers Mobile. Aktifkan untuk menerima peringatan dan uji notifikasi.</string>
     <string name="settings_notifications_scheduled_count">%1$d peringatan rilis saat ini dijadwalkan di perangkat ini.</string>
     <string name="settings_notifications_section_alerts">PERINGATAN</string>
     <string name="settings_notifications_section_test">UJI COBA</string>
@@ -1243,7 +1242,7 @@
     <string name="addon_already_installed">Addon tersebut sudah terpasang.</string>
     <string name="addon_invalid_url">Masukkan URL addon yang valid</string>
     <string name="addon_load_manifest_failed">Tidak dapat memuat manifes</string>
-    <string name="app_brand_name">Nuvio</string>
+    <string name="app_brand_name">Kable Killers Mobile</string>
     <string name="auth_account_deletion_failed">Penghapusan akun gagal</string>
     <string name="auth_sign_in_failed">Masuk gagal</string>
     <string name="auth_sign_out_failed">Keluar gagal</string>

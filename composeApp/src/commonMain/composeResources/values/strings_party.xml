@@ -1,5 +1,7 @@
 <resources>
     <string name="party_title">Watch party</string>
+    <string name="party_sync_to_host">Sync to watch party host</string>
+    <string name="auth_device_login_qr_description">Scan to sign in on another device</string>
     <string name="party_start_title">Watch together</string>
     <string name="party_start_description">Invite your friends. Everyone plays from their own sources and stays in sync.</string>
     <string name="party_start_action">Start watch party</string>

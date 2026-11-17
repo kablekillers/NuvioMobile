@@ -78,7 +78,7 @@ internal fun PlayerToolbar(
         }
         if (onPartySyncClick != null) {
             PlayerAction(
-                description = "Sync to watch party host",
+                description = stringResource(Res.string.party_sync_to_host),
                 icon = Icons.Rounded.Sync,
                 onClick = onPartySyncClick,
             )

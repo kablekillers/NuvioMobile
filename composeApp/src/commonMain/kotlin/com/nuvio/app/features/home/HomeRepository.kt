@@ -23,14 +23,23 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.selects.onTimeout
+import kotlinx.coroutines.selects.select
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.TimeSource
 import kotlin.math.absoluteValue
 import kotlin.random.Random
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 object HomeRepository {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -103,47 +112,76 @@ object HomeRepository {
             val attemptedKeys = mutableSetOf<String>()
             var heroSourcesPublished = false
             var firstErrorMessage: String? = null
-            var batchIndex = 0
-
-            prioritizedRequests.chunked(HOME_CATALOG_FETCH_BATCH_SIZE).forEach { batch ->
-                if (activeRequestKey != requestKey) return@launch
-                val results = batch.map { request ->
-                    async {
-                        request to runCatching {
-                            request.toSection(forceRefresh = force)
-                        }
+            // Fetch catalogs with a concurrency limit and handle each result as soon as it
+            // arrives. The previous lockstep batches of 4 made every row wait for the slowest
+            // addon in its batch. Requests start in priority order, and row order on screen
+            // comes from the catalog settings, so finishing out of order is fine.
+            val permits = Semaphore(HOME_CATALOG_FETCH_CONCURRENCY)
+            val results = Channel<Pair<HomeCatalogDefinition, Result<HomeCatalogSection>>>(Channel.UNLIMITED)
+            prioritizedRequests.forEach { request ->
+                launch {
+                    val result = permits.withPermit {
+                        runCatching { request.toSection(forceRefresh = force) }
                     }
-                }.awaitAll()
-
-                if (activeRequestKey != requestKey) return@launch
-
-                results.mapNotNull { (request, result) ->
-                    result.getOrNull()?.let { section -> request.cacheKey to section }
-                }.forEach { (cacheKey, section) ->
-                    loadedSections[cacheKey] = section
+                    results.send(request to result)
                 }
-                if (firstErrorMessage == null) {
-                    firstErrorMessage = results.firstNotNullOfOrNull { (_, result) ->
-                        result.exceptionOrNull()?.message
-                    }
-                }
-                batch.mapTo(attemptedKeys, HomeCatalogDefinition::cacheKey)
+            }
+
+            var completed = 0
+            var unpublishedChanges = false
+            var lastPublish = TimeSource.Monotonic.markNow()
+            fun publishProgress() {
                 val heroSourcesResolved = attemptedKeys.containsAll(heroSourceKeys)
+                publishCurrentState(
+                    isLoading = true,
+                    requestKey = requestKey,
+                    heroSourcesResolved = heroSourcesResolved,
+                )
+                heroSourcesPublished = heroSourcesResolved
+                unpublishedChanges = false
+                lastPublish = TimeSource.Monotonic.markNow()
+            }
+            while (completed < prioritizedRequests.size) {
+                // Publish at most every HOME_CATALOG_PUBLISH_THROTTLE, but never hold a finished
+                // row back longer than that while waiting for the next result.
+                val next = if (unpublishedChanges) {
+                    val wait = (HOME_CATALOG_PUBLISH_THROTTLE - lastPublish.elapsedNow())
+                        .coerceAtLeast(1.milliseconds)
+                    // select (not withTimeoutOrNull) so a result is never dropped on timeout.
+                    select<Pair<HomeCatalogDefinition, Result<HomeCatalogSection>>?> {
+                        results.onReceive { it }
+                        onTimeout(wait) { null }
+                    }
+                } else {
+                    results.receive()
+                }
+                if (activeRequestKey != requestKey) {
+                    coroutineContext.cancelChildren()
+                    return@launch
+                }
+                if (next == null) {
+                    publishProgress()
+                    continue
+                }
+                val (request, result) = next
+                completed++
+
+                result.getOrNull()?.let { section -> loadedSections[request.cacheKey] = section }
+                if (firstErrorMessage == null) {
+                    firstErrorMessage = result.exceptionOrNull()?.message
+                }
+                attemptedKeys += request.cacheKey
                 cachedSections = loadedSections.toMap()
                 lastErrorMessage = firstErrorMessage
+                unpublishedChanges = true
+                val heroSourcesResolved = attemptedKeys.containsAll(heroSourceKeys)
                 if (
-                    batchIndex == 0 ||
-                    (batchIndex + 1) % HOME_CATALOG_PUBLISH_INTERVAL == 0 ||
-                    (heroSourcesResolved && !heroSourcesPublished)
+                    completed == 1 ||
+                    (heroSourcesResolved && !heroSourcesPublished) ||
+                    lastPublish.elapsedNow() >= HOME_CATALOG_PUBLISH_THROTTLE
                 ) {
-                    publishCurrentState(
-                        isLoading = true,
-                        requestKey = requestKey,
-                        heroSourcesResolved = heroSourcesResolved,
-                    )
-                    heroSourcesPublished = heroSourcesResolved
+                    publishProgress()
                 }
-                batchIndex++
             }
 
             if (activeRequestKey != requestKey) return@launch
@@ -493,9 +531,9 @@ object HomeRepository {
 private const val HOME_HERO_ITEM_LIMIT = 8
 private const val HOME_COLLECTION_HERO_SOURCE_LIMIT = 6
 private const val HOME_COLLECTION_HERO_SOURCE_ITEM_LIMIT = 8
-private const val HOME_CATALOG_FETCH_BATCH_SIZE = 4
+private const val HOME_CATALOG_FETCH_CONCURRENCY = 6
 private const val HOME_CATALOG_PREVIEW_FETCH_LIMIT = 18
-private const val HOME_CATALOG_PUBLISH_INTERVAL = 2
+private val HOME_CATALOG_PUBLISH_THROTTLE = 250.milliseconds
 
 private fun prioritizeDefinitions(
     definitions: List<HomeCatalogDefinition>,

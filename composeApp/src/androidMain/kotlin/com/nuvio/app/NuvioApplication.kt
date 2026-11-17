@@ -4,6 +4,7 @@ import android.app.Application
 import android.os.Build
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
+import coil3.disk.DiskCache
 import coil3.gif.AnimatedImageDecoder
 import coil3.gif.GifDecoder
 import coil3.network.cachecontrol.CacheControlCacheStrategy
@@ -11,12 +12,15 @@ import coil3.network.ktor3.KtorNetworkFetcherFactory
 import coil3.request.CachePolicy
 import coil3.request.crossfade
 import coil3.svg.SvgDecoder
+import com.nuvio.app.core.network.IPv4FirstDns
 import com.nuvio.app.core.network.NetworkErrorInterceptor
 import com.nuvio.app.core.poster.CustomPosterFallbackInterceptor
 import com.nuvio.app.features.servers.plex.PlexArtworkInterceptor
 import com.nuvio.app.features.servers.silo.SiloArtworkInterceptor
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
+import okhttp3.Dispatcher
+import okio.Path.Companion.toOkioPath
 
 /**
  * Custom Application class that implements [SingletonImageLoader.Factory] to guarantee
@@ -31,6 +35,14 @@ class NuvioApplication : Application(), SingletonImageLoader.Factory {
             .crossfade(true)
             .diskCachePolicy(CachePolicy.ENABLED)
             .memoryCachePolicy(CachePolicy.ENABLED)
+            // Keep more posters on disk so returning to the app rarely re-downloads artwork.
+            // Same directory as Coil's default, so the existing cache is kept.
+            .diskCache {
+                DiskCache.Builder()
+                    .directory(context.cacheDir.resolve("image_cache").toOkioPath())
+                    .maxSizeBytes(IMAGE_DISK_CACHE_BYTES)
+                    .build()
+            }
             .components {
                 add(CustomPosterFallbackInterceptor())
                 add(PlexArtworkInterceptor())
@@ -42,6 +54,19 @@ class NuvioApplication : Application(), SingletonImageLoader.Factory {
                             HttpClient(OkHttp) {
                                 engine {
                                     addInterceptor(NetworkErrorInterceptor())
+                                    config {
+                                        // Same IPv4-first lookup the addon client uses, to avoid
+                                        // stalls on networks with broken IPv6 routes.
+                                        dns(IPv4FirstDns())
+                                        // OkHttp allows only 5 parallel requests per host by default,
+                                        // so a catalog row of TMDB/metahub posters downloaded 5 at a time.
+                                        dispatcher(
+                                            Dispatcher().apply {
+                                                maxRequests = IMAGE_MAX_REQUESTS
+                                                maxRequestsPerHost = IMAGE_MAX_REQUESTS_PER_HOST
+                                            },
+                                        )
+                                    }
                                 }
                             }
                         },
@@ -57,3 +82,7 @@ class NuvioApplication : Application(), SingletonImageLoader.Factory {
             .build()
     }
 }
+
+private const val IMAGE_DISK_CACHE_BYTES = 512L * 1024L * 1024L
+private const val IMAGE_MAX_REQUESTS = 64
+private const val IMAGE_MAX_REQUESTS_PER_HOST = 16

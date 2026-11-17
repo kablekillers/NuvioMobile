@@ -128,7 +128,8 @@ fun CatalogScreen(
         snapshotFlow { gridState.layoutInfo }
             .map { layoutInfo ->
                 val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
-                lastVisible >= layoutInfo.totalItemsCount - 6
+                // Start the next page a few screens early so scrolling rarely reaches the end.
+                lastVisible >= layoutInfo.totalItemsCount - CATALOG_LOAD_MORE_DISTANCE
             }
             .distinctUntilChanged()
             .filter { it && uiState.canLoadMore && !uiState.isLoading }
@@ -166,6 +167,7 @@ fun CatalogScreen(
             .background(MaterialTheme.colorScheme.background),
     ) {
         val columns = remember(maxWidth) { catalogGridColumnsForWidth(maxWidth) }
+        val keyedItems = remember(uiState.items) { uiState.items.withDuplicateSafeLazyKeys { item -> item.stableKey() } }
 
         Box(modifier = Modifier.fillMaxSize()) {
             LazyVerticalGrid(
@@ -205,8 +207,9 @@ fun CatalogScreen(
                     }
                 } else {
                     items(
-                        items = uiState.items.withDuplicateSafeLazyKeys { item -> item.stableKey() },
+                        items = keyedItems,
                         key = { item -> item.lazyKey },
+                        contentType = { CatalogPosterContentType },
                     ) { keyedItem ->
                         val item = keyedItem.value
                         CatalogPosterTile(
@@ -428,3 +431,6 @@ private fun catalogGridColumnsForWidth(screenWidth: Dp): Int =
         screenWidth >= 840.dp -> 4
         else -> 3
     }
+
+private const val CATALOG_LOAD_MORE_DISTANCE = 24
+private object CatalogPosterContentType

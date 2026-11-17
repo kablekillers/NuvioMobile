@@ -13,7 +13,7 @@ internal object SupabaseEndpointConfig {
         endpointUrls("/rest/v1/")
 
     fun realtimeUrl(backendUrl: String): String {
-        val base = backendUrl.trim().trimEnd('/')
+        val base = backendUrl.normalizedBaseUrl()
         val socketBase = when {
             base.startsWith("https://", ignoreCase = true) -> "wss://" + base.substring("https://".length)
             base.startsWith("http://", ignoreCase = true) -> "ws://" + base.substring("http://".length)

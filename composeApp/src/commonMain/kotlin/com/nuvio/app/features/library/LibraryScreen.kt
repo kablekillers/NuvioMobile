@@ -73,6 +73,8 @@ import com.nuvio.app.core.ui.ScopedDisintegrationTracker
 import com.nuvio.app.core.ui.SkeletonBlock
 import com.nuvio.app.core.ui.nuvioConsumePointerEvents
 import com.nuvio.app.core.ui.shimmer
+import com.nuvio.app.core.ui.LocalVerticalBarPadding
+import com.nuvio.app.core.ui.nuvioHorizontalScrollBleed
 import com.nuvio.app.features.cloud.CloudLibraryFile
 import com.nuvio.app.features.cloud.CloudLibraryItem
 import com.nuvio.app.features.cloud.CloudLibraryItemType
@@ -90,6 +92,9 @@ import com.nuvio.app.features.profiles.ProfileRepository
 import com.nuvio.app.features.tracking.TrackingRefreshIntent
 import com.nuvio.app.features.watched.WatchedRepository
 import com.nuvio.app.features.watching.application.WatchingState
+import com.nuvio.app.core.poster.CustomPosterScreen
+import com.nuvio.app.core.poster.CustomPosterUrlRepository
+import com.nuvio.app.core.poster.withCustomPosterUrl
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
@@ -115,6 +120,14 @@ fun LibraryScreen(
         LibraryRepository.ensureLoaded()
         LibraryRepository.uiState
     }.collectAsStateWithLifecycle()
+    val libraryPosterPattern by remember {
+        CustomPosterUrlRepository.ensureLoaded()
+        CustomPosterUrlRepository.pattern
+    }.collectAsStateWithLifecycle()
+    val libraryPosterScreens by CustomPosterUrlRepository.enabledScreens.collectAsStateWithLifecycle()
+    val effectivePosterPattern = remember(libraryPosterPattern, libraryPosterScreens) {
+        if (CustomPosterScreen.LIBRARY in libraryPosterScreens) libraryPosterPattern else ""
+    }
     val cloudUiState by CloudLibraryRepository.uiState.collectAsStateWithLifecycle()
     val cloudSettings by remember {
         DebridSettingsRepository.ensureLoaded()
@@ -151,8 +164,12 @@ fun LibraryScreen(
         selectedTypeName?.let { runCatching { CloudLibraryItemType.valueOf(it) }.getOrNull() }
     }
     var selectedCloudItemKey by rememberSaveable { mutableStateOf<String?>(null) }
-    var selectedLibrarySectionKey by rememberSaveable { mutableStateOf<String?>(null) }
-    var selectedLibraryType by rememberSaveable { mutableStateOf<String?>(null) }
+    var libraryGenre by rememberSaveable { mutableStateOf<String?>(null) }
+    var libraryYear by rememberSaveable { mutableStateOf<String?>(null) }
+    var libraryWatchedFilterName by rememberSaveable { mutableStateOf(LibraryWatchedFilter.ALL.name) }
+    val libraryWatchedFilter = remember(libraryWatchedFilterName) {
+        runCatching { LibraryWatchedFilter.valueOf(libraryWatchedFilterName) }.getOrDefault(LibraryWatchedFilter.ALL)
+    }
     val coroutineScope = rememberCoroutineScope()
     val listState = rememberLazyListState()
     ScreenActivityEffect(listState) { screenActive ->
@@ -165,7 +182,7 @@ fun LibraryScreen(
     )
     val orderListKeys = if (sourceMode != LibraryViewMode.Saved) emptyList() else {
         if (displaySettings.layoutMode == LibraryLayoutMode.HORIZONTAL) uiState.sections.map { it.type }
-        else listOfNotNull(uiState.sections.firstOrNull { it.type == selectedLibrarySectionKey }?.type
+        else listOfNotNull(uiState.sections.firstOrNull { it.type == displaySettings.selectedSectionKey }?.type
             ?: uiState.sections.firstOrNull()?.type)
     }
     val providerOrders = rememberLibraryProviderOrders(uiState.sourceMode, orderListKeys, effectiveSortOption)
@@ -185,8 +202,11 @@ fun LibraryScreen(
     val verticalProjection = remember(
         uiState.sections,
         uiState.sourceMode,
-        selectedLibrarySectionKey,
-        selectedLibraryType,
+        libraryGenre,
+        libraryYear,
+        libraryWatchedFilter,
+        watchedUiState.watchedKeys,
+        fullyWatchedSeriesKeys,
         displaySettings,
         sourceMode,
         providerOrders,
@@ -195,10 +215,20 @@ fun LibraryScreen(
             buildLibraryVerticalProjection(
                 sections = uiState.sections,
                 sourceMode = uiState.sourceMode,
-                selectedSectionKey = selectedLibrarySectionKey,
-                selectedType = selectedLibraryType,
+                selectedSectionKey = displaySettings.selectedSectionKey,
+                selectedType = displaySettings.selectedType,
                 sortOption = visibleSortOption,
                 providerOrders = providerOrders.ranks,
+                selectedGenre = libraryGenre,
+                selectedYear = libraryYear,
+                watchedFilter = libraryWatchedFilter,
+                isWatched = { item ->
+                    WatchingState.isPosterWatched(
+                        watchedKeys = watchedUiState.watchedKeys,
+                        item = item.toMetaPreview(),
+                        fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                    )
+                },
             )
         } else {
             LibraryVerticalProjection(
@@ -290,7 +320,11 @@ fun LibraryScreen(
             listState = listState,
         ) {
             stickyHeader {
-                Box(modifier = Modifier.fillMaxWidth()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .nuvioHorizontalScrollBleed(LocalVerticalBarPadding.current),
+                ) {
                     Box(
                         modifier = Modifier
                             .matchParentSize()
@@ -298,7 +332,9 @@ fun LibraryScreen(
                             .nuvioConsumePointerEvents(),
                     )
                     androidx.compose.foundation.layout.Column(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(LocalVerticalBarPadding.current),
                     ) {
                         NuvioScreenHeader(
                             title = if (sourceMode != LibraryViewMode.Saved) {
@@ -475,11 +511,12 @@ fun LibraryScreen(
                                 sourceMode = uiState.sourceMode,
                                 sortOption = effectiveSortOption,
                                 verticalProjection = verticalProjection,
-                                onSectionSelected = { sectionKey ->
-                                    selectedLibrarySectionKey = sectionKey
-                                    selectedLibraryType = null
-                                },
-                                onTypeSelected = { type -> selectedLibraryType = type },
+                                watchedFilter = libraryWatchedFilter,
+                                onSectionSelected = LibraryDisplaySettingsRepository::setSelectedSection,
+                                onTypeSelected = LibraryDisplaySettingsRepository::setSelectedType,
+                                onGenreSelected = { genre -> libraryGenre = genre },
+                                onYearSelected = { year -> libraryYear = year },
+                                onWatchedFilterSelected = { filter -> libraryWatchedFilterName = filter.name },
                                 onSortSelected = LibraryDisplaySettingsRepository::setSortOption,
                                 modifier = libraryContentTransitionModifier()
                                     .padding(horizontal = 16.dp),
@@ -491,6 +528,7 @@ fun LibraryScreen(
                                 watchedKeys = watchedUiState.watchedKeys,
                                 fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
                                 sortOption = effectiveSortOption,
+                                posterPattern = effectivePosterPattern,
                                 onPosterClick = onPosterClick,
                                 onSectionViewAllClick = onSectionViewAllClick,
                                 onPosterLongClick = onPosterLongClick,
@@ -501,6 +539,7 @@ fun LibraryScreen(
                                 columns = gridColumns,
                                 watchedKeys = watchedUiState.watchedKeys,
                                 fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                                posterPattern = effectivePosterPattern,
                                 onPosterClick = onPosterClick,
                                 onPosterLongClick = onPosterLongClick,
                             )
@@ -1210,6 +1249,7 @@ private fun LazyListScope.librarySections(
     watchedKeys: Set<String>,
     fullyWatchedSeriesKeys: Set<String>,
     sortOption: LibrarySortOption,
+    posterPattern: String,
     onPosterClick: ((LibraryItem) -> Unit)?,
     onSectionViewAllClick: ((LibrarySection, LibrarySortOption) -> Unit)?,
     onPosterLongClick: ((LibraryItem, LibrarySection) -> Unit)?,
@@ -1220,7 +1260,7 @@ private fun LazyListScope.librarySections(
         key = { section -> "library-horizontal:${section.type}" },
     ) { section ->
         NuvioShelfSection(
-            title = section.displayTitle,
+            title = localizedLibrarySectionTitle(section.type, section.displayTitle),
             entries = section.previewEntries,
             modifier = libraryContentTransitionModifier(),
             headerHorizontalPadding = 16.dp,
@@ -1233,7 +1273,11 @@ private fun LazyListScope.librarySections(
             animatePlacement = true,
         ) { entry ->
             val item = entry.item
-            val posterItem = item.toMetaPreview()
+            val posterItem = remember(item, posterPattern) {
+                item.toMetaPreview().let {
+                    if (posterPattern.isNotBlank()) it.withCustomPosterUrl(posterPattern) else it
+                }
+            }
             val entrySource = entry.section
             DisintegratingContainer(
                 disintegrating = entry.exiting,

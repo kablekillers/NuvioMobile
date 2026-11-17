@@ -23,9 +23,13 @@ internal class FakeServerProvider(
     val movies = MOVIE_LIBRARY
     val shows = SERIES_LIBRARY
     val indexedIds = mutableMapOf<String, TrackingExternalIds>()
+    var indexRequests = 0
+    var titleLookup: (suspend (ServerLibrary, ServerTitleQuery) -> List<ServerIndexEntry>?)? = null
+    val titleQueries = mutableListOf<ServerTitleQuery>()
     val episodes = mutableMapOf<Pair<Int, Int>, ServerEpisode>()
     val reported = mutableListOf<ServerPlaybackEventType>()
     val playbackRequests = mutableListOf<ServerPlaybackRequest>()
+    val searches = mutableListOf<Pair<ServerMediaKind, List<String>>>()
     val playedChanges = mutableListOf<Pair<String, Boolean>>()
     val userStates = mutableMapOf<String, List<ServerUserState>>()
     val failingPlayed = mutableSetOf<String>()
@@ -57,10 +61,14 @@ internal class FakeServerProvider(
 
     override suspend fun search(
         session: ServerSession,
-        library: ServerLibrary,
+        kind: ServerMediaKind,
+        libraries: List<ServerLibrary>,
         query: String,
         limit: Int,
-    ): List<ServerTitle> = listOf(title(session, "7"))
+    ): List<ServerTitle> {
+        searches += kind to libraries.map { it.id }
+        return listOf(title(session, "7"))
+    }
 
     override suspend fun details(session: ServerSession, itemId: String): ServerItemDetails = ServerItemDetails(
         meta = MetaDetails(
@@ -136,10 +144,21 @@ internal class FakeServerProvider(
         start: Int,
         limit: Int,
     ): ServerPage<ServerIndexEntry> {
+        synchronized(lock) { indexRequests++ }
         val entries = indexedIds.entries
             .filter { (itemId, _) -> (itemId == SHOW_ID) == (library.kind == ServerMediaKind.SERIES) }
             .map { ServerIndexEntry(it.key, it.value) }
         return ServerPage(entries.drop(start).take(limit), entries.size)
+    }
+
+    override suspend fun lookupTitle(
+        session: ServerSession,
+        library: ServerLibrary,
+        query: ServerTitleQuery,
+    ): List<ServerIndexEntry>? {
+        val lookup = titleLookup ?: return null
+        synchronized(lock) { titleQueries += query }
+        return lookup(library, query)
     }
 
     override suspend fun findEpisode(session: ServerSession, seriesItemId: String, season: Int, episode: Int): ServerEpisode? =

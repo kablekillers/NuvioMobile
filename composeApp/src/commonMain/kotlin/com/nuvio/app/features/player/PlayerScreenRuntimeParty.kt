@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -39,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import co.touchlab.kermit.Logger
@@ -47,6 +49,7 @@ import com.nuvio.app.features.party.PartyAction
 import com.nuvio.app.core.sync.AppForegroundMonitor
 import com.nuvio.app.core.sync.AppVisibility
 import com.nuvio.app.core.ui.NuvioToastController
+import com.nuvio.app.features.party.PartyChat
 import com.nuvio.app.features.party.PartyCorrection
 import com.nuvio.app.features.party.PartyEvent
 import com.nuvio.app.features.party.PartyMedia
@@ -59,6 +62,7 @@ import com.nuvio.app.features.party.PartySource
 import com.nuvio.app.features.party.PartyStream
 import com.nuvio.app.features.party.isShareableStreamUrl
 import com.nuvio.app.features.party.PartySync
+import com.nuvio.app.features.party.UnreadBadge
 import com.nuvio.app.features.party.messageRes
 import com.nuvio.app.features.party.partyMediaKey
 import kotlinx.coroutines.delay
@@ -99,6 +103,12 @@ internal fun PlayerScreenRuntime.partyBlocksControl(): Boolean {
     return true
 }
 
+internal fun PlayerScreenRuntime.openPartyPanel() {
+    if (PartyChat.unread.value > 0) showPartyChat = true
+    showPartyPanel = true
+    controlsActivityTick += 1
+}
+
 internal fun PlayerScreenRuntime.toggleOwnPlayback() {
     controlsVisible = true
     when {
@@ -134,6 +144,7 @@ internal fun PlayerScreenRuntime.ownSeekTarget(targetMs: Long): Long? {
     }
 }
 
+/** Kable Killers: guest-initiated catch-up to the host's current playback position. */
 internal fun PlayerScreenRuntime.syncToPartyHost() {
     val party = PartyRepository.state.value.party ?: return
     val playback = PartyRepository.playback.value ?: return
@@ -169,25 +180,25 @@ internal fun PlayerScreenRuntime.currentPartyMedia(): PartyMedia = PartyMedia(
 )
 
 internal fun PlayerScreenRuntime.currentPartyStream(): PartyStream? {
-    // A player can be launched with a resolved URL without a StreamItem.
-    // The URL is sufficient for sharing; stream metadata is optional.
-    val stream = activeStream
+    val stream = activeStream ?: return null
     if (!isShareableStreamUrl(activeSourceUrl) || activeSourceAudioUrl != null) return null
+    // A media server stream that signs in through its headers would hand the server token to every member.
+    if (stream.serverTarget != null && activeSourceHeaders.isNotEmpty()) return null
     return PartyStream(
         mediaKey = partyKey,
         url = activeSourceUrl,
         headers = activeSourceHeaders,
         responseHeaders = activeSourceResponseHeaders,
-        name = stream?.name ?: activeStreamTitle,
-        description = stream?.description,
-        addonName = stream?.addonName ?: activeProviderName,
-        addonId = stream?.addonId ?: activeProviderAddonId.orEmpty(),
-        addonLogo = stream?.addonLogo,
-        filename = activeSourceFilename ?: stream?.behaviorHints?.filename,
-        videoSize = stream?.behaviorHints?.videoSize,
-        bingeGroup = stream?.behaviorHints?.bingeGroup ?: currentStreamBingeGroup,
+        name = stream.name,
+        description = stream.description,
+        addonName = stream.addonName,
+        addonId = stream.addonId,
+        addonLogo = stream.addonLogo,
+        filename = activeSourceFilename ?: stream.behaviorHints.filename,
+        videoSize = stream.behaviorHints.videoSize,
+        bingeGroup = stream.behaviorHints.bingeGroup,
         streamType = activeStreamType,
-        badges = stream?.badges ?: emptyList(),
+        badges = stream.badges,
     )
 }
 
@@ -240,16 +251,48 @@ private fun PlayerScreenRuntime.handlePartyMediaChange(media: PartyMedia) {
             return
         }
     }
+    showPartyChat = false
     showPartyPanel = true
 }
 
 @Composable
 internal fun PlayerScreenRuntime.BindPartyEffects() {
-    val partyState by PartyRepository.state.collectAsStateWithLifecycle()
+    // This binding belongs to the player session, including background PiP.
+    val partyState by PartyRepository.state.collectAsState()
     val partyId = partyState.party?.id
     val key = partyKey
     val sharing = partyState.party?.let { it.isHost && it.sharing } == true
     val sharedStream = if (sharing) currentPartyStream() else null
+
+    DisposableEffect(playerController) {
+        val source = playerController as? PlayerSystemControlSource
+        // System controls follow the same party rules as the in-player controls.
+        source?.setSystemControlHandler(object : PlayerSystemControlHandler {
+            override fun handleSetPlaying(playing: Boolean): Boolean {
+                if (!isPartySynced) return false
+                setPlaybackPlaying(playing)
+                return true
+            }
+
+            override fun handleSeekTo(positionMs: Long): Boolean {
+                if (!isPartySynced) return false
+                val targetMs = if (isPartyControlLocked) ownSeekTarget(positionMs) else positionMs
+                if (targetMs != null) {
+                    playerController?.seekTo(targetMs)
+                    scheduleProgressSyncAfterSeek()
+                    publishPartyPlayback(positionMs = targetMs)
+                }
+                return true
+            }
+
+            override fun handleSeekBy(offsetMs: Long): Boolean {
+                if (!isPartySynced) return false
+                this@BindPartyEffects.seekBy(offsetMs)
+                return true
+            }
+        })
+        onDispose { source?.setSystemControlHandler(null) }
+    }
 
     LaunchedEffect(sharing, sharedStream) {
         if (sharing) PartyRepository.shareStream(sharedStream)
@@ -298,6 +341,8 @@ internal fun PlayerScreenRuntime.BindPartyEffects() {
             delay(PARTY_TICK)
             val party = PartyRepository.state.value.party ?: break
             val snapshot = playbackSnapshot
+            val awayFromPlayback = partyAppInBackground &&
+                (playerController as? PlayerSystemControlSource)?.keepsPlaybackInBackground != true
             val resumedFromBackground = wasInBackground && !partyAppInBackground
             wasInBackground = partyAppInBackground
             if (resumedFromBackground) lastSeq = null
@@ -305,7 +350,7 @@ internal fun PlayerScreenRuntime.BindPartyEffects() {
                 ?.takeIf { partyBehind && party.media.key == partyKey }
                 ?.let { PartySync.expectedPositionMs(it, PartyRepository.nowMs(), snapshot.durationMs) - currentPlaybackPositionMs() }
             val status = when {
-                errorMessage != null || partyAppInBackground -> PartyMemberStatus.Browsing
+                errorMessage != null || awayFromPlayback -> PartyMemberStatus.Browsing
                 behindGap != null -> PartyMemberStatus.Behind
                 !initialLoadCompleted -> PartyMemberStatus.Loading
                 snapshot.isLoading && !snapshot.isEnded -> {
@@ -328,7 +373,7 @@ internal fun PlayerScreenRuntime.BindPartyEffects() {
             }
 
             val controller = playerController
-            if (party.media.key != partyKey || controller == null || errorMessage != null || partyAppInBackground) {
+            if (party.media.key != partyKey || controller == null || errorMessage != null || awayFromPlayback) {
                 clearPartyNudge()
                 continue
             }
@@ -467,9 +512,15 @@ private fun PlayerScreenRuntime.clearPartyNudge(playback: PartyPlayback? = Party
 }
 
 @Composable
-internal fun BoxScope.RenderParty(runtime: PlayerScreenRuntime) {
+internal fun BoxScope.RenderParty(
+    runtime: PlayerScreenRuntime,
+    panelWidth: Dp,
+    modal: Boolean,
+    panelVisible: Boolean,
+) {
     val partyState by PartyRepository.state.collectAsStateWithLifecycle()
     val playback by PartyRepository.playback.collectAsStateWithLifecycle()
+    val unread by PartyChat.unread.collectAsStateWithLifecycle()
     var notice by remember { mutableStateOf<PartyNotice?>(null) }
     LaunchedEffect(Unit) {
         PartyRepository.notices.collectLatest { next ->
@@ -491,6 +542,7 @@ internal fun BoxScope.RenderParty(runtime: PlayerScreenRuntime) {
                 visible = (controlsVisible || waitingNames.isNotEmpty() || !party.connected || noticeText != null || (partyBehind && !shouldPlay)) &&
                     !playerControlsLocked && !showPartyPanel,
                 members = party.members,
+                unread = unread,
                 message = when {
                     !party.connected -> stringResource(Res.string.party_reconnecting)
                     waitingNames.isNotEmpty() -> stringResource(Res.string.party_waiting_for, waitingNames.joinToString())
@@ -500,7 +552,7 @@ internal fun BoxScope.RenderParty(runtime: PlayerScreenRuntime) {
                     partyBehind -> partyBehindMs?.let { stringResource(Res.string.party_behind, formatPlaybackTime(it)) }
                     else -> null
                 },
-                onClick = { showPartyPanel = true },
+                onClick = { openPartyPanel() },
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .windowInsetsPadding(WindowInsets.safeContent.only(WindowInsetsSides.Top))
@@ -508,8 +560,12 @@ internal fun BoxScope.RenderParty(runtime: PlayerScreenRuntime) {
             )
         }
         PartyPanel(
-            visible = showPartyPanel,
+            visible = panelVisible,
+            width = panelWidth,
+            modal = modal,
             state = partyState,
+            showChat = showPartyChat,
+            onShowChatChange = { showPartyChat = it },
             playerMedia = currentPartyMedia(),
             isSupported = PartyRepository.available.collectAsStateWithLifecycle().value,
             canStart = PartyRepository.canUse,
@@ -563,6 +619,7 @@ private fun ActiveParty.waitingNames(): List<String> =
 private fun PartyStatusPill(
     visible: Boolean,
     members: List<PartyMember>,
+    unread: Int,
     message: String?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -587,6 +644,7 @@ private fun PartyStatusPill(
                 size = 28.dp,
                 ringColor = Color.Black.copy(alpha = 0.5f),
             )
+            UnreadBadge(count = unread, icon = true)
             AnimatedContent(
                 targetState = message,
                 transitionSpec = {

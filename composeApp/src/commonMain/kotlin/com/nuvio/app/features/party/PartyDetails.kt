@@ -431,6 +431,7 @@ private fun PartySwitch(
         description = description,
         checked = checked,
         isTablet = false,
+        horizontalPadding = 0.dp,
         onCheckedChange = { value ->
             haptic.performHapticFeedback(if (value) HapticFeedbackType.ToggleOn else HapticFeedbackType.ToggleOff)
             onCheckedChange(value)

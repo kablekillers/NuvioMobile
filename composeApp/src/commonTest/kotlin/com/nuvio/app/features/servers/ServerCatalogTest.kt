@@ -47,6 +47,31 @@ class ServerCatalogTest {
     }
 
     @Test
+    fun searchesEachTypeOnce() = runTest {
+        val provider = FakeServerProvider()
+        val connection = installFakeServer(provider)
+
+        val targets = ServerCatalog.searchTargets()
+        assertEquals(listOf(ServerMediaKind.MOVIE, ServerMediaKind.SERIES), targets.map { it.kind })
+
+        val items = ServerCatalog.search(targets.last(), "item")
+        assertEquals(listOf(ServerItemRef(connection.id, "7").encode()), items.map { it.id })
+        assertEquals(listOf(ServerMediaKind.SERIES to listOf(FakeServerProvider.SERIES_LIBRARY.id)), provider.searches)
+    }
+
+    @Test
+    fun mixedLibrariesServeBothSearches() = runTest {
+        val provider = FakeServerProvider()
+        val mixed = ServerLibrary("90", "Everything", ServerMediaKind.MIXED)
+        installFakeServer(provider, libraries = listOf(mixed))
+
+        val targets = ServerCatalog.searchTargets()
+        assertEquals(listOf(ServerMediaKind.MOVIE, ServerMediaKind.SERIES), targets.map { it.kind })
+        ServerCatalog.search(targets.first(), "item")
+        assertEquals(listOf(ServerMediaKind.MOVIE to listOf("90")), provider.searches)
+    }
+
+    @Test
     fun buildsAttributedHomeRowsForSelectedLibraries() {
         val connection = installFakeServer()
         ServerRepository.setLibrarySelected(connection.id, FakeServerProvider.SERIES_LIBRARY.id, false)
@@ -71,7 +96,7 @@ class ServerCatalogTest {
         )
         assertTrue(ServerCatalog.homeDefinitions().any { it.defaultTitle == "Box · Featured" && it.type == "collection" })
         assertTrue(ServerCatalog.titleLibraries().none { it.library.kind == ServerMediaKind.COLLECTION })
-        assertTrue(ServerMatcher.supports(connection, ServerMediaKind.MOVIE))
+        assertTrue(ServerMatcher.shared.supports(connection, ServerMediaKind.MOVIE))
 
         val card = MetaPreview(id = ServerItemRef(connection.id, "c-popular").encode(), type = "collection", name = "Popular")
         val target = assertNotNull(ServerCatalog.collectionTarget(card))

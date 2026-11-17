@@ -62,3 +62,6 @@
 -dontwarn org.conscrypt.**
 -dontwarn org.bouncycastle.**
 -dontwarn org.openjsse.**
+
+# Kable Killers: Watch Party models are sent over Supabase Realtime as JSON.
+-keep class com.nuvio.app.features.party.** { *; }

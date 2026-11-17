@@ -1,26 +1,86 @@
+name: Kable Killers Mobile - Release
 
-name: Kable Killers Mobile - Publish v0.5.20
-# Approved final release candidate: merged download controls and Kable Killers branding (post v0.5.19)
+# How to release:
+#   1. Bump MARKETING_VERSION and CURRENT_PROJECT_VERSION in iosApp/Configuration/Version.xcconfig.
+#   2. Merge to cmp-rewrite.
+#   3. Push a tag that matches the version:  git tag v0.5.21 && git push origin v0.5.21
+# The workflow builds signed APKs and publishes the GitHub release the in-app updater reads.
+#
+# To test a release build without publishing, run this workflow manually ("Run workflow")
+# and leave "publish" unchecked; the APKs are attached to the run as an artifact.
 
 on:
   push:
-    branches:
-      - cmp-rewrite
-    paths:
-      - ".github/workflows/kable-killers-mobile-release.yml"
+    tags:
+      - "v*"
   workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish a GitHub release (otherwise build only)
+        type: boolean
+        default: false
+      minify:
+        description: Shrink code and resources with R8 (recommended)
+        type: boolean
+        default: true
 
 permissions:
   contents: write
 
+concurrency:
+  group: kable-killers-mobile-release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   release:
-    name: Build Signed Mobile APK
+    name: Build signed APKs
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Read version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          config=iosApp/Configuration/Version.xcconfig
+          name="$(sed -n 's/^MARKETING_VERSION=//p' "$config" | tr -d '[:space:]')"
+          code="$(sed -n 's/^CURRENT_PROJECT_VERSION=//p' "$config" | tr -d '[:space:]')"
+          if [ -z "$name" ] || [ -z "$code" ]; then
+            echo "::error::Version.xcconfig is missing MARKETING_VERSION or CURRENT_PROJECT_VERSION"
+            exit 1
+          fi
+          if [ "${GITHUB_REF_TYPE}" = tag ] && [ "${GITHUB_REF_NAME}" != "v${name}" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match Version.xcconfig (v${name}). Bump the version or fix the tag."
+            exit 1
+          fi
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "tag=v$name" >> "$GITHUB_OUTPUT"
+          if [ "${GITHUB_REF_TYPE}" = tag ] || [ "${{ inputs.publish }}" = true ]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          fi
+          if [ "${{ inputs.minify }}" = false ]; then
+            echo "minify=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "minify=true" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Building Kable Killers Mobile v$name ($code)"
+
+      - name: Refuse to overwrite an existing release
+        if: steps.version.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::error::Release $TAG already exists. Bump the version in Version.xcconfig."
+            exit 1
+          fi
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -40,79 +100,83 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KABLE_KILLERS_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-
           for variable in KEYSTORE_BASE64 STORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
             if [ -z "${!variable}" ]; then
               echo "::error::Missing signing secret: $variable"
               exit 1
             fi
           done
-
           umask 077
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > kable-killers-mobile.jks
+          {
+            echo "NUVIO_RELEASE_STORE_FILE=kable-killers-mobile.jks"
+            echo "NUVIO_SUPABASE_URL=https://api.nuvio.tv"
+            echo "NUVIO_SUPABASE_ANON_KEY=sb_publishable_1Clq8rlTVACkdcZuqr6_AD__xUUC_EN"
+            printf 'NUVIO_RELEASE_STORE_PASSWORD=%s\n' "$STORE_PASSWORD"
+            printf 'NUVIO_RELEASE_KEY_ALIAS=%s\n' "$KEY_ALIAS"
+            printf 'NUVIO_RELEASE_KEY_PASSWORD=%s\n' "$KEY_PASSWORD"
+          } > local.properties
 
-          cat > local.properties <<'EOF'
-          NUVIO_RELEASE_STORE_FILE=kable-killers-mobile.jks
-          NUVIO_SUPABASE_URL=https://api.nuvio.tv
-          NUVIO_SUPABASE_ANON_KEY=sb_publishable_1Clq8rlTVACkdcZuqr6_AD__xUUC_EN
-          EOF
-
-          printf 'NUVIO_RELEASE_STORE_PASSWORD=%s\n' "$STORE_PASSWORD" >> local.properties
-          printf 'NUVIO_RELEASE_KEY_ALIAS=%s\n' "$KEY_ALIAS" >> local.properties
-          printf 'NUVIO_RELEASE_KEY_PASSWORD=%s\n' "$KEY_PASSWORD" >> local.properties
-
-      - name: Build signed universal release APK
+      - name: Build signed release APKs
         run: |
           chmod +x gradlew
           ./gradlew :androidApp:assembleFullRelease \
             -Pnuvio.android.distribution=full \
             -Pnuvio.ios.distribution=appstore \
-            -PreleaseMinifyEnabled=false \
+            -PreleaseMinifyEnabled=${{ steps.version.outputs.minify }} \
             --stacktrace
-
-      - name: Verify universal APK exists
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          APK="androidApp/build/outputs/apk/full/release/androidApp-full-universal-release.apk"
-
-          if [ ! -f "$APK" ]; then
-            echo "::error::Universal release APK not found"
-            ls -lah androidApp/build/outputs/apk/full/release/ || true
-            exit 1
-          fi
-
-          echo "Universal release APK generated successfully."
-
-      - name: Upload signed APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: Kable-Killers-Mobile-v0.5.20-Signed-Release
-          path: androidApp/build/outputs/apk/full/release/androidApp-full-universal-release.apk
-          if-no-files-found: error
-          retention-days: 30
 
       - name: Remove temporary signing files
         if: always()
-        run: |
-          rm -f kable-killers-mobile.jks local.properties
+        run: rm -f kable-killers-mobile.jks local.properties
 
-      - name: Publish Kable Killers Mobile v0.5.20
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Collect APKs
         shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.name }}
         run: |
           set -euo pipefail
-          TAG="v0.5.20"
-          APK="androidApp/build/outputs/apk/full/release/androidApp-full-universal-release.apk"
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "::error::Release $TAG already exists; refusing to overwrite."
-            exit 1
-          fi
-          cp "$APK" "Kable-Killers-Mobile-v0.5.20.apk"
-          gh release create "$TAG" "Kable-Killers-Mobile-v0.5.20.apk" \
+          out=androidApp/build/outputs/apk/full/release
+          mkdir -p dist
+          # Per-ABI APKs are much smaller; the in-app updater picks the one that matches the phone.
+          # x86 is left out on purpose: its name is a prefix of x86_64, and those rare devices
+          # fall back to the universal APK.
+          for abi in arm64-v8a armeabi-v7a x86_64 universal; do
+            src="$out/androidApp-full-$abi-release.apk"
+            if [ ! -f "$src" ]; then
+              echo "::error::Missing $src"
+              ls -lah "$out" || true
+              exit 1
+            fi
+            cp "$src" "dist/Kable-Killers-Mobile-v${VERSION}-${abi}.apk"
+          done
+          (cd dist && sha256sum *.apk > SHA256SUMS.txt)
+          ls -lah dist
+          {
+            echo "### Kable Killers Mobile v${VERSION}"
+            echo '| APK | Size |'
+            echo '|---|---|'
+            for f in dist/*.apk; do echo "| $(basename "$f") | $(du -h "$f" | cut -f1) |"; done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload APKs to the workflow run
+        uses: actions/upload-artifact@v4
+        with:
+          name: Kable-Killers-Mobile-v${{ steps.version.outputs.name }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish GitHub release
+        if: steps.version.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.name }}
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" dist/*.apk dist/SHA256SUMS.txt \
             --target "$GITHUB_SHA" \
-            --title "Kable Killers Mobile v0.5.20" \
-            --notes "Kable Killers Mobile branding refinements and tested bulk download Pause All / Resume All controls. Existing individual download management, interruption recovery, and retry preserved. Advanced experimental queue scheduling is not included." \
+            --title "Kable Killers Mobile v${VERSION}" \
+            --generate-notes \
             --latest

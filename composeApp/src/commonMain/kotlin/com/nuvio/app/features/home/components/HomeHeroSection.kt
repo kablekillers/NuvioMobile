@@ -1,6 +1,20 @@
 package com.nuvio.app.features.home.components
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material3.Icon
+import androidx.compose.ui.unit.sp
+import com.nuvio.app.core.ui.CinemaGold
+import com.nuvio.app.core.ui.CinemaGoldButton
+import com.nuvio.app.core.ui.isCinemaBlackTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.MutatePriority
@@ -42,7 +56,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
@@ -83,6 +101,9 @@ private const val HERO_SCROLL_MAX_SCALE = 1.3f
 private const val HERO_SWIPE_THRESHOLD_FRACTION = 0.16f
 private const val HERO_SWIPE_VELOCITY_THRESHOLD = 300f
 private const val HERO_AUTO_SCROLL_INTERVAL_MS = 8_000L
+private const val HERO_KEN_BURNS_MS = 16_000
+private const val HERO_KEN_BURNS_ZOOM = 0.09f
+private const val HERO_KEN_BURNS_PAN = 0.035f
 private const val MOBILE_HERO_VIEWPORT_RATIO = 0.82f
 private const val MOBILE_HERO_MIN_HEIGHT_DP = 360f
 private const val MOBILE_HERO_MAX_HEIGHT_DP = 760f
@@ -124,6 +145,23 @@ fun HomeHeroSection(
     }
     val coroutineScope = rememberCoroutineScope()
     val autoScrollPage = pagerState.settledPage
+    val cinema = isCinemaBlackTheme
+    // Cinema Black: a slow "Ken Burns" camera drift over the backdrop.
+    val kenBurnsTransition = rememberInfiniteTransition(label = "hero_ken_burns")
+    val kenBurnsState = kenBurnsTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(HERO_KEN_BURNS_MS, easing = LinearEasing), RepeatMode.Reverse),
+        label = "hero_ken_burns_progress",
+    )
+    // Cinema Black: the active dot fills up while the slide waits to auto-advance.
+    val slideTimer = remember { Animatable(0f) }
+    LaunchedEffect(autoScrollPage, cinema) {
+        slideTimer.snapTo(0f)
+        if (cinema && items.size > 1) {
+            slideTimer.animateTo(1f, tween(HERO_AUTO_SCROLL_INTERVAL_MS.toInt(), easing = LinearEasing))
+        }
+    }
 
     LaunchedEffect(pagerState) {
         pagerState.scrollToPage(pagerState.currentPage)
@@ -238,8 +276,11 @@ fun HomeHeroSection(
                                         alpha = layer.visibility * backdropFocus.revealAlpha
                                         translationX = -layer.offset * heroWidthPx * HERO_BACKGROUND_PARALLAX
                                         translationY = heroBackgroundScrollTranslationY(offset)
-                                        scaleX = HERO_BACKGROUND_SCALE * scrollScale
-                                        scaleY = HERO_BACKGROUND_SCALE * scrollScale
+                                        val kenBurns = if (cinema) kenBurnsState.value else 0f
+                                        val drift = 1f + HERO_KEN_BURNS_ZOOM * kenBurns
+                                        translationX += -kenBurns * heroWidthPx * HERO_KEN_BURNS_PAN
+                                        scaleX = HERO_BACKGROUND_SCALE * scrollScale * drift
+                                        scaleY = HERO_BACKGROUND_SCALE * scrollScale * drift
                                     },
                                 alignment = backdropFocus.focusedAlignment(
                                     if (layout.isTablet) Alignment.TopCenter else Alignment.Center,
@@ -309,11 +350,13 @@ fun HomeHeroSection(
                                     modifier = Modifier.graphicsLayer {
                                         alpha = layer.visibility
                                         translationX = -layer.offset * heroWidthPx * HERO_CONTENT_PARALLAX
+                                        if (cinema) translationY = abs(layer.offset) * 28.dp.toPx()
                                     },
                                 ) {
                                     HeroContentBlock(
                                         item = item,
                                         layout = layout,
+                                        cinema = cinema,
                                         showImdbRating = showImdbRating,
                                         showMdbListRatings = showMdbListRatings,
                                         onItemClick = onItemClick,
@@ -323,7 +366,22 @@ fun HomeHeroSection(
                         }
                     }
 
-                    if (!layout.isTablet) {
+                    if (cinema) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        CinemaGoldButton(
+                            text = stringResource(Res.string.home_view_details),
+                            onClick = { onItemClick?.invoke(currentItem) },
+                            enabled = onItemClick != null,
+                            leading = {
+                                Icon(
+                                    imageVector = Icons.Rounded.PlayArrow,
+                                    contentDescription = null,
+                                    tint = CinemaGold.Ink,
+                                    modifier = Modifier.width(20.dp).height(20.dp),
+                                )
+                            },
+                        )
+                    } else if (!layout.isTablet) {
                         Spacer(modifier = Modifier.height(14.dp))
                         Surface(
                             modifier = Modifier
@@ -353,6 +411,37 @@ fun HomeHeroSection(
                                 val activeFraction = visiblePages
                                     .firstOrNull { it.itemIndex == index }
                                     ?.visibility ?: 0f
+                                if (cinema) {
+                                    Box(
+                                        modifier = Modifier
+                                            .clickable {
+                                                coroutineScope.launch {
+                                                    pagerState.animateScrollToPage(
+                                                        heroPageForItem(pagerState.currentPage, index, items.size),
+                                                    )
+                                                }
+                                            }
+                                            .clip(CircleShape)
+                                            .background(Color.White.copy(alpha = 0.28f))
+                                            .width(6.dp + (24.dp * activeFraction))
+                                            .height(5.dp),
+                                    ) {
+                                        if (activeFraction > 0.5f) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxSize()
+                                                    .drawBehind {
+                                                        val fill = slideTimer.value.coerceIn(0f, 1f)
+                                                        drawRoundRect(
+                                                            brush = CinemaGold.barBrush,
+                                                            size = Size(size.width * fill, size.height),
+                                                            cornerRadius = CornerRadius(size.height / 2f),
+                                                        )
+                                                    },
+                                            )
+                                        }
+                                    }
+                                } else {
                                 Box(
                                     modifier = Modifier
                                         .clickable {
@@ -370,6 +459,7 @@ fun HomeHeroSection(
                                         .width(8.dp + (24.dp * activeFraction))
                                         .height(8.dp),
                                 )
+                                }
                             }
                         }
                     }
@@ -430,6 +520,7 @@ private fun HeroContentBlock(
     showImdbRating: Boolean,
     showMdbListRatings: Boolean,
     onItemClick: ((MetaPreview) -> Unit)?,
+    cinema: Boolean = false,
 ) {
     var logoLoadError by remember(item.type, item.id, item.logo) {
         mutableStateOf(false)
@@ -442,6 +533,16 @@ private fun HeroContentBlock(
             .animateContentSize(),
         horizontalAlignment = if (layout.isTablet) Alignment.Start else Alignment.CenterHorizontally,
     ) {
+        if (cinema) {
+            Text(
+                text = stringResource(Res.string.home_hero_featured).uppercase(),
+                color = CinemaGold.Base,
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 11.sp,
+                letterSpacing = 2.6.sp,
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+        }
         if (logoUrl != null && !logoLoadError) {
             AsyncImage(
                 model = logoUrl,

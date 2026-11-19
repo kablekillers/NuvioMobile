@@ -1,5 +1,6 @@
 package com.nuvio.app.features.player
 
+import androidx.media3.common.C
 import androidx.media3.common.MimeTypes
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -36,6 +37,31 @@ class PlaybackDashMimeTest {
                 streamType = "hls",
             ).localConfiguration?.mimeType,
         )
+    }
+
+    @Test
+    fun nebulaSportsDashUsesClearKeyAndLetsTheManifestChooseTheLicenseUrl() {
+        val url = "https://sports.nebulapro.xyz/private/example/event.mpd?player=exo"
+        val configuration = playbackMediaItemFromUrl(url).localConfiguration
+
+        assertEquals(MimeTypes.APPLICATION_MPD, configuration?.mimeType)
+        assertEquals(url, configuration?.uri.toString())
+        assertEquals(C.CLEARKEY_UUID, configuration?.drmConfiguration?.scheme)
+        assertNull(configuration?.drmConfiguration?.licenseUri)
+    }
+
+    @Test
+    fun otherDashUrlsKeepTheirExistingPlaybackConfiguration() {
+        for (url in listOf(
+            "https://example.com/private/event.mpd",
+            "https://sports.nebulapro.xyz.example.com/private/event.mpd",
+            "http://sports.nebulapro.xyz/private/event.mpd",
+            "https://sports.nebulapro.xyz/public/event.mpd",
+        )) {
+            val configuration = playbackMediaItemFromUrl(url).localConfiguration
+            assertEquals(MimeTypes.APPLICATION_MPD, configuration?.mimeType, url)
+            assertNull(configuration?.drmConfiguration, url)
+        }
     }
 
     @Test

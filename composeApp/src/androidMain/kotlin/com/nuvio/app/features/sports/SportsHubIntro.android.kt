@@ -41,10 +41,10 @@ internal actual fun SportsHubIntro(onFinished: () -> Unit) {
                 factory = { context ->
                     VideoView(context).apply {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                            setAudioFocusRequest(AudioManager.AUDIOFOCUS_NONE)
+                            setAudioFocusRequest(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
                         }
                         setOnPreparedListener { player ->
-                            player.setVolume(0f, 0f)
+                            player.setVolume(1f, 1f)
                             start()
                         }
                         setOnCompletionListener { finish() }

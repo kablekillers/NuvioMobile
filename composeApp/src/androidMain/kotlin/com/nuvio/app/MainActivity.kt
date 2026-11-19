@@ -142,6 +142,8 @@ open class MainActivity : AppCompatActivity() {
         PluginStorage.initialize(applicationContext)
         CollectionMobileSettingsStorage.initialize(applicationContext)
         CollectionStorage.initialize(applicationContext)
+        com.nuvio.app.features.sports.SportsPreferencesStorage.initialize(applicationContext)
+        com.nuvio.app.features.sports.SportsReminderPlatform.initialize(applicationContext)
         DownloadsStorage.initialize(applicationContext)
         DownloadsPlatformDownloader.initialize(applicationContext)
         DownloadsLiveStatusPlatform.initialize(applicationContext)

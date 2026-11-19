@@ -1503,6 +1503,10 @@ internal fun MainAppContent(
                                 onCollectionsSettingsClick = { navController.navigate(CollectionsRoute(collectionsTitle)) },
                                 onWatchPartySettingsClick = { navController.navigate(PartyRoute(title = watchPartyTitle)) },
                                 onSportsHubClick = { navController.navigate(SportsHubRoute) },
+                                onCalendarClick = { navController.navigate(CalendarRoute) },
+                                onCalendarEpisodeClick = { ep ->
+                                    navController.navigate(DetailRoute(type = ep.showType, id = ep.showId, title = ep.showName))
+                                },
                                 onFolderClick = { collectionId, folderId ->
                                     val folderTitle = CollectionRepository.collections.value
                                         .firstOrNull { it.id == collectionId }
@@ -1669,6 +1673,16 @@ internal fun MainAppContent(
                         SettingsDestination(route, navController) { onBack ->
                             PluginsSettingsScreen(onBack = onBack)
                         }
+                    }
+                }
+                entry<CalendarRoute> { route ->
+                    SettingsDestination(route, navController) { onBack ->
+                        com.nuvio.app.features.calendar.CalendarScreen(
+                            onBack = onBack,
+                            onOpenShow = { ep ->
+                                navController.navigate(DetailRoute(type = ep.showType, id = ep.showId, title = ep.showName))
+                            },
+                        )
                     }
                 }
                 entry<SportsHubRoute> { route ->

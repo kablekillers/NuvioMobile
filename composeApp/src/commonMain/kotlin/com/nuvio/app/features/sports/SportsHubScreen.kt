@@ -52,7 +52,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -99,8 +102,16 @@ private val HubCardBorder = Color.White.copy(alpha = 0.07f)
 private val HubLiveText = Color(0xFFFF7B86)
 
 private enum class SportsSection(val label: String) {
-    Live("Live Now"), Upcoming("Upcoming"), Final("Final"),
-    Replays("Replays"), Highlights("Highlights"),
+    Live("Live Now"), MyTeams("My Teams"), Upcoming("Upcoming"), Final("Final"),
+    Standings("Standings"), Replays("Replays"), Highlights("Highlights"),
+}
+
+private fun nowMillis(): Long = kotlin.time.Clock.System.now().toEpochMilliseconds()
+
+private fun delayLabel(seconds: Int): String = when {
+    seconds <= 0 -> "Live"
+    seconds < 60 -> "${seconds}s delay"
+    else -> "${seconds / 60} min delay"
 }
 
 @Composable
@@ -137,12 +148,52 @@ internal fun SportsHubScreen(
             }
         }
     }
+    val prefs by SportsPreferences.state.collectAsStateWithLifecycle()
+    // Score delay: keep recent scoreboards and show the one from [delay] ago, so scores on
+    // screen don't run ahead of a stream that lags behind live TV.
+    val history = remember(league) { mutableStateListOf<SportsScoreboard>() }
+    LaunchedEffect(board) {
+        val b = board ?: return@LaunchedEffect
+        if (history.lastOrNull()?.fetchedAtEpochMillis != b.fetchedAtEpochMillis) {
+            history.add(b)
+            while (history.size > 40) history.removeAt(0)
+        }
+    }
+    var clockNow by remember { mutableStateOf(nowMillis()) }
+    LaunchedEffect(prefs.scoreDelaySeconds) {
+        while (prefs.scoreDelaySeconds > 0) {
+            clockNow = nowMillis()
+            delay(5_000L)
+        }
+    }
+    val shownBoard = if (prefs.scoreDelaySeconds <= 0) board else {
+        val cutoff = clockNow - prefs.scoreDelaySeconds * 1_000L
+        history.lastOrNull { it.fetchedAtEpochMillis <= cutoff } ?: history.firstOrNull() ?: board
+    }
     PlatformBackHandler(enabled = selectedEvent != null) { selectedEvent = null }
     val currentEvent = selectedEvent?.let { selected ->
-        board?.events?.firstOrNull { it.id == selected.id } ?: selected
+        shownBoard?.events?.firstOrNull { it.id == selected.id } ?: selected
     }
     val activeAddons = addons.addons.filter { it.isActive }.map { it.copy(isRefreshing = false, errorMessage = null) }
-    val events = board?.events.orEmpty()
+    val events = shownBoard?.events.orEmpty()
+    // My Teams: games across every league that has a favorite team.
+    var myTeamGames by remember { mutableStateOf<List<SportsEvent>?>(null) }
+    LaunchedEffect(section, prefs.favoriteTeams, refresh) {
+        if (section != SportsSection.MyTeams) return@LaunchedEffect
+        myTeamGames = null
+        val found = SportsPreferences.favoriteLeagues(prefs).flatMap { lg ->
+            runCatching { repository.scoreboard(lg).events }.getOrDefault(emptyList())
+        }.filter { SportsPreferences.involvesFavorite(it, prefs) }
+        myTeamGames = SportsEventSections.live(found) + SportsEventSections.upcoming(found) + SportsEventSections.final(found)
+    }
+    // Standings for the selected league.
+    var standings by remember(league) { mutableStateOf<SportsStandings?>(null) }
+    var standingsLoaded by remember(league) { mutableStateOf(false) }
+    LaunchedEffect(section, league) {
+        if (section != SportsSection.Standings || standingsLoaded) return@LaunchedEffect
+        standings = runCatching { repository.standings(league) }.getOrNull()
+        standingsLoaded = true
+    }
     val vod = section == SportsSection.Replays || section == SportsSection.Highlights
     var recordings by remember(league, vod, activeAddons) { mutableStateOf<List<SportsCatalogMatch>?>(null) }
     LaunchedEffect(league, vod, activeAddons, events) {
@@ -156,7 +207,9 @@ internal fun SportsHubScreen(
         Box(Modifier.fillMaxSize().background(HubBackground)) {
             HubGlows()
             Column(Modifier.fillMaxSize().safeDrawingPadding()) {
-                HubHeader(title = "Sports Hub", liveCount = liveGames.size, onBack = onBack)
+                HubHeader(title = "Sports Hub", liveCount = liveGames.size, onBack = onBack) {
+                    ScoreDelayChip(prefs.scoreDelaySeconds)
+                }
                 ScoreTicker(events)
                 LazyRow(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
@@ -182,6 +235,7 @@ internal fun SportsHubScreen(
                 }
                 val games = when (section) {
                     SportsSection.Live -> liveGames
+                    SportsSection.MyTeams -> myTeamGames.orEmpty()
                     SportsSection.Upcoming -> SportsEventSections.upcoming(events)
                     SportsSection.Final -> SportsEventSections.final(events)
                     else -> emptyList()
@@ -195,6 +249,21 @@ internal fun SportsHubScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     when {
+                        section == SportsSection.Standings -> when {
+                            !standingsLoaded -> item { CircularProgressIndicator(color = HubAccent) }
+                            standings == null -> item { HubMessage("Standings aren't available for ${league.label}.") }
+                            else -> standings!!.groups.forEachIndexed { gi, group ->
+                                item(key = "standings_$gi") {
+                                    EnterAnimated(gi) { StandingsTable(league, group, prefs) }
+                                }
+                            }
+                        }
+                        section == SportsSection.MyTeams && prefs.favoriteTeams.isEmpty() ->
+                            item { HubMessage("Tap the star next to a team in any game or in Standings to follow it. Its games will show up here, across every league.") }
+                        section == SportsSection.MyTeams && myTeamGames == null ->
+                            item { CircularProgressIndicator(color = HubAccent) }
+                        section == SportsSection.MyTeams && games.isEmpty() ->
+                            item { HubMessage("No games for your teams on the current schedule.") }
                         vod && recordings == null || !vod && board == null && !error ->
                             item { CircularProgressIndicator(color = HubAccent) }
                         vod && clips.isEmpty() ->
@@ -254,7 +323,7 @@ private fun HubGlows() {
 }
 
 @Composable
-private fun HubHeader(title: String, liveCount: Int, onBack: () -> Unit) {
+private fun HubHeader(title: String, liveCount: Int, onBack: () -> Unit, trailing: @Composable () -> Unit = {}) {
     Row(
         Modifier.fillMaxWidth().padding(start = 4.dp, end = 16.dp, top = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -271,7 +340,11 @@ private fun HubHeader(title: String, liveCount: Int, onBack: () -> Unit) {
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
-        if (liveCount > 0) CinemaLivePill("$liveCount LIVE")
+        trailing()
+        if (liveCount > 0) {
+            Spacer(Modifier.width(8.dp))
+            CinemaLivePill("$liveCount LIVE")
+        }
     }
 }
 
@@ -511,8 +584,8 @@ private fun GameRow(event: SportsEvent, onClick: () -> Unit) {
         val home = event.home
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             if (away != null && home != null) {
-                TeamLine(away, event.status == SportsEventStatus.FINAL && away.isWinner)
-                TeamLine(home, event.status == SportsEventStatus.FINAL && home.isWinner)
+                TeamLine(away, event.status == SportsEventStatus.FINAL && away.isWinner, SportsPreferences.isFavorite(event.league, away))
+                TeamLine(home, event.status == SportsEventStatus.FINAL && home.isWinner, SportsPreferences.isFavorite(event.league, home))
             } else {
                 Text(event.title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 2)
             }
@@ -529,11 +602,14 @@ private fun GameRow(event: SportsEvent, onClick: () -> Unit) {
 }
 
 @Composable
-private fun TeamLine(team: SportsCompetitor, winner: Boolean) {
+private fun TeamLine(team: SportsCompetitor, winner: Boolean, favorite: Boolean = false) {
     Row(verticalAlignment = Alignment.CenterVertically) {
+        if (favorite) {
+            Text("★", color = CinemaGold.Base, fontSize = 13.sp, modifier = Modifier.padding(end = 6.dp))
+        }
         Text(
             team.name,
-            color = Color.White,
+            color = if (favorite) CinemaGold.Soft else Color.White,
             fontSize = 14.sp,
             fontWeight = if (winner) FontWeight.ExtraBold else FontWeight.Bold,
             modifier = Modifier.weight(1f),
@@ -601,6 +677,8 @@ private fun SportsGameDetail(
     LaunchedEffect(event.id, event.status, addons) {
         sources = SportsAddonDiscovery.find(event.league, listOf(event), addons, event.status == SportsEventStatus.FINAL)
             .filter { it.score > 0 }
+            // Finished games: full replays before highlights.
+            .sortedBy { if (event.status == SportsEventStatus.FINAL && it.kind != SportsContentKind.REPLAY) 1 else 0 }
     }
     LaunchedEffect(event.id, event.status, owner) {
         owner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -636,6 +714,8 @@ private fun SportsGameDetail(
                 }
                 event.venue?.let { HubMessage(it) }
                 if (event.broadcasts.isNotEmpty()) HubMessage("Watch on ${event.broadcasts.joinToString()}")
+                Spacer(Modifier.height(10.dp))
+                GameDetailActions(event)
             }
             item { HubHeading(if (event.status == SportsEventStatus.FINAL) "Replays and highlights" else "Watch game") }
             when {
@@ -778,3 +858,127 @@ private fun SportsEvent.displayStatus(): String =
 
 @Composable
 internal expect fun SportsHubIntro(onFinished: () -> Unit)
+
+/** Tap to step the score delay: Live → 30s → 1 min → 2 min → 5 min. */
+@Composable
+private fun ScoreDelayChip(delaySeconds: Int) {
+    val interaction = remember { MutableInteractionSource() }
+    val on = delaySeconds > 0
+    val shape = RoundedCornerShape(50)
+    Row(
+        Modifier
+            .cinemaPressScale(interaction)
+            .clip(shape)
+            .background(if (on) CinemaGold.Base.copy(alpha = 0.16f) else Color.White.copy(alpha = 0.06f))
+            .border(1.dp, if (on) CinemaGold.Base.copy(alpha = 0.6f) else HubCardBorder, shape)
+            .clickable(interactionSource = interaction, indication = null, role = Role.Button) {
+                val options = SportsPreferences.delayOptions
+                val next = options[(options.indexOf(delaySeconds).coerceAtLeast(0) + 1) % options.size]
+                SportsPreferences.setScoreDelay(next)
+            }
+            .padding(horizontal = 12.dp, vertical = 7.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text("⏱", fontSize = 12.sp)
+        Text(delayLabel(delaySeconds), color = if (on) CinemaGold.Soft else Color(0xFFCFC9BE), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+/** Follow either team, and get a reminder before an upcoming game. */
+@Composable
+private fun GameDetailActions(event: SportsEvent) {
+    val prefs by SportsPreferences.state.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
+    var reminderNote by remember(event.id) { mutableStateOf<String?>(null) }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOfNotNull(event.away, event.home).forEach { team ->
+                val fav = SportsPreferences.teamKey(event.league, team) in prefs.favoriteTeams
+                ActionPill(
+                    text = (if (fav) "★ " else "☆ ") + team.shortLabel,
+                    selected = fav,
+                ) { SportsPreferences.toggleFavorite(event.league, team) }
+            }
+        }
+        val start = event.startTimeEpochMillis
+        if (event.status == SportsEventStatus.SCHEDULED && start != null && start > nowMillis()) {
+            val on = event.id in prefs.reminders
+            ActionPill(text = if (on) "🔔 Reminder set · tap to cancel" else "🔔 Remind me 10 min before", selected = on) {
+                scope.launch {
+                    val scheduled = SportsReminders.toggle(event, nowMillis())
+                    reminderNote = when {
+                        scheduled -> "We'll remind you about 10 minutes before the start."
+                        event.id in SportsPreferences.state.value.reminders -> null
+                        on -> "Reminder cancelled."
+                        else -> "Allow notifications for Kable Killers to get game reminders."
+                    }
+                }
+            }
+            reminderNote?.let { Text(it, color = HubMuted, fontSize = 12.sp) }
+        }
+    }
+}
+
+@Composable
+private fun ActionPill(text: String, selected: Boolean, onClick: () -> Unit) {
+    val interaction = remember { MutableInteractionSource() }
+    val shape = RoundedCornerShape(50)
+    Box(
+        Modifier
+            .cinemaPressScale(interaction)
+            .clip(shape)
+            .then(
+                if (selected) Modifier.background(CinemaGold.Base.copy(alpha = 0.16f)).border(1.dp, CinemaGold.Base.copy(alpha = 0.7f), shape)
+                else Modifier.background(Color.White.copy(alpha = 0.05f)).border(1.dp, HubCardBorder, shape),
+            )
+            .clickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 9.dp),
+    ) {
+        Text(text, color = if (selected) CinemaGold.Soft else Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+/** One conference or division table. Tap a team's star to follow it. */
+@Composable
+private fun StandingsTable(league: SportsLeague, group: SportsStandingsGroup, prefs: SportsPrefs) {
+    val shape = RoundedCornerShape(18.dp)
+    Column(
+        Modifier.fillMaxWidth().clip(shape).background(HubCard).border(1.dp, HubCardBorder, shape).padding(vertical = 10.dp),
+    ) {
+        Row(Modifier.padding(horizontal = 14.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(group.name.uppercase(), color = CinemaGold.Base, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold,
+                letterSpacing = 1.2.sp, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            group.columns.forEach { col ->
+                Text(col, color = HubMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.width(42.dp),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.End)
+            }
+        }
+        group.entries.forEachIndexed { index, entry ->
+            val key = "${league.name}:${(entry.abbreviation ?: entry.teamName).uppercase()}"
+            val fav = key in prefs.favoriteTeams
+            Row(
+                Modifier.fillMaxWidth()
+                    .background(if (fav) CinemaGold.Base.copy(alpha = 0.08f) else Color.Transparent)
+                    .clickable { SportsPreferences.toggleFavoriteKey(key) }
+                    .padding(horizontal = 14.dp, vertical = 7.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("${index + 1}", color = HubMuted, fontSize = 12.sp, modifier = Modifier.width(22.dp))
+                Text(if (fav) "★" else "☆", color = if (fav) CinemaGold.Base else HubMuted, fontSize = 13.sp, modifier = Modifier.width(20.dp))
+                Box(Modifier.size(22.dp), contentAlignment = Alignment.Center) {
+                    entry.logoUrl?.let { url ->
+                        SubcomposeAsyncImage(model = url, contentDescription = null, contentScale = ContentScale.Fit, modifier = Modifier.size(20.dp))
+                    }
+                }
+                Spacer(Modifier.width(8.dp))
+                Text(entry.abbreviation ?: entry.teamName, color = if (fav) CinemaGold.Soft else Color.White, fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                entry.values.forEach { value ->
+                    Text(value, color = Color.White, fontSize = 13.sp, modifier = Modifier.width(42.dp),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.End, maxLines = 1)
+                }
+            }
+        }
+    }
+}

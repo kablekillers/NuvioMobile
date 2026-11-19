@@ -20,7 +20,7 @@ object ThemeSettingsRepository {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val _selectedThemePreference = MutableStateFlow<AppTheme?>(null)
     val selectedThemePreference: StateFlow<AppTheme?> = _selectedThemePreference.asStateFlow()
-    private val _selectedTheme = MutableStateFlow(AppTheme.WHITE)
+    private val _selectedTheme = MutableStateFlow(AppTheme.CINEMA_BLACK)
     val selectedTheme: StateFlow<AppTheme> = _selectedTheme.asStateFlow()
 
     private val _customThemePreference = MutableStateFlow(CustomThemeColors.Default)
@@ -59,12 +59,12 @@ object ThemeSettingsRepository {
     fun clearLocalState() {
         hasLoaded = false
         _selectedThemePreference.value = null
-        _selectedTheme.value = AppTheme.WHITE
+        _selectedTheme.value = AppTheme.CINEMA_BLACK
         _customThemePreference.value = CustomThemeColors.Default
         _customThemeColors.value = CustomThemeColors.solid(CustomThemeColors.Default.second)
         _amoledEnabled.value = false
         _liquidGlassNativeTabBarEnabled.value = false
-        NativeTabBridge.publishAccentColor(ThemeColors.White.nativeAccentHex)
+        NativeTabBridge.publishAccentColor(ThemeColors.CinemaBlack.nativeAccentHex)
         NativeTabBridge.publishLiquidGlassEnabled(false)
         _selectedAppLanguage.value = AppLanguage.DEVICE
         _navBarGlowEnabled.value = true

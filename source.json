@@ -22,6 +22,15 @@
       "screenshots": [],
       "versions": [
         {
+          "version": "0.7.0",
+          "buildVersion": "154",
+          "date": "2026-11-19T16:24:11Z",
+          "localizedDescription": "Kable Killers Mobile v0.7.0. Full notes: https://github.com/kablekillers/NuvioMobile/releases/tag/v0.7.0",
+          "downloadURL": "https://github.com/kablekillers/NuvioMobile/releases/download/v0.7.0/Kable-Killers-Mobile-v0.7.0.ipa",
+          "size": 73048265,
+          "minOSVersion": "16.1"
+        },
+        {
           "version": "0.6.0",
           "buildVersion": "153",
           "date": "2026-11-17T22:01:51Z",

@@ -2,6 +2,7 @@ package com.nuvio.app.features.player
 
 import android.net.Uri
 import android.os.Looper
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import kotlinx.coroutines.Dispatchers
@@ -25,8 +26,24 @@ internal fun playbackMediaItemFromUrl(
         url = url,
         responseHeaders = responseHeaders,
         streamType = streamType,
-    )?.let(builder::setMimeType)
+    )?.let { mimeType ->
+        builder.setMimeType(mimeType)
+        if (mimeType == MimeTypes.APPLICATION_MPD && isNebulaSportsDashUrl(url)) {
+            // The provider's DASH manifest declares the ClearKey license URI. Let Media3
+            // read it and use its normal license request flow.
+            builder.setDrmConfiguration(MediaItem.DrmConfiguration.Builder(C.CLEARKEY_UUID).build())
+        }
+    }
     return builder.build()
+}
+
+private fun isNebulaSportsDashUrl(url: String): Boolean {
+    val uri = Uri.parse(url)
+    val path = uri.path ?: return false
+    return uri.scheme.equals("https", ignoreCase = true) &&
+        uri.host.equals("sports.nebulapro.xyz", ignoreCase = true) &&
+        uri.userInfo == null && (uri.port == -1 || uri.port == 443) &&
+        path.startsWith("/private/") && path.endsWith(".mpd", ignoreCase = true)
 }
 
 private fun inferPlaybackMimeType(

@@ -26,6 +26,7 @@ internal val navigationSavedStateConfiguration = SavedStateConfiguration {
     serializersModule = SerializersModule {
         polymorphic(NavKey::class) {
             subclass(TabsRoute::class, TabsRoute.serializer())
+            subclass(SportsHubRoute::class, SportsHubRoute.serializer())
             subclass(DetailRoute::class, DetailRoute.serializer())
             subclass(PersonDetailRoute::class, PersonDetailRoute.serializer())
             subclass(EntityBrowseRoute::class, EntityBrowseRoute.serializer())

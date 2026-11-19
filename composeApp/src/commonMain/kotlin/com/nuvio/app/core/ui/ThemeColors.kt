@@ -173,6 +173,25 @@ object ThemeColors {
         backgroundCard = Color(0xFF222222),
     )
 
+    /** Kable Killers default: near-black cinema backdrop with a polished gold accent. */
+    val CinemaBlack = ThemeColorPalette(
+        secondary = Color(0xFFE8B44A),
+        secondaryVariant = Color(0xFFB57A12),
+        accentGradient = listOf(
+            Color(0xFFFFE08A),
+            Color(0xFFE8B44A),
+            Color(0xFFB57A12),
+        ),
+        nativeAccentHex = "#E8B44A",
+        onSecondary = Color(0xFF16110A),
+        onSecondaryVariant = Color(0xFF16110A),
+        focusRing = Color(0xFFFFD27A),
+        focusBackground = Color(0xFF2A1E0C),
+        background = Color(0xFF08080A),
+        backgroundElevated = Color(0xFF141317),
+        backgroundCard = Color(0xFF1B1A1E),
+    )
+
     fun getColorPalette(
         theme: AppTheme,
         customColors: CustomThemeColors = CustomThemeColors.Default,
@@ -190,5 +209,6 @@ object ThemeColors {
         AppTheme.AMBER -> Amber
         AppTheme.ROSE -> Rose
         AppTheme.WHITE -> White
+        AppTheme.CINEMA_BLACK -> CinemaBlack
     }
 }

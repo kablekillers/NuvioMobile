@@ -119,6 +119,7 @@ import com.nuvio.app.features.home.components.homeSectionHorizontalPaddingForWid
 import com.nuvio.app.features.home.components.rememberContinueWatchingLayout
 import kotlinx.coroutines.CancellationException
 import nuvio.composeapp.generated.resources.*
+import com.nuvio.app.features.sports.SportsHubHomeButton
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -127,6 +128,7 @@ fun HomeScreen(
     animateCollectionGifs: Boolean = true,
     scrollToTopRequests: Flow<Unit> = emptyFlow(),
     onCatalogClick: ((HomeCatalogSection) -> Unit)? = null,
+    onSportsHubClick: (() -> Unit)? = null,
     onPosterClick: ((MetaPreview) -> Unit)? = null,
     onPosterLongClick: ((MetaPreview) -> Unit)? = null,
     onContinueWatchingClick: ((ContinueWatchingItem) -> Unit)? = null,
@@ -1038,6 +1040,12 @@ fun HomeScreen(
                             )
                         }
                     }
+                }
+            }
+
+            if (onSportsHubClick != null) {
+                item(key = "home_sports_hub") {
+                    SportsHubHomeButton(onClick = onSportsHubClick, modifier = Modifier.padding(horizontal = 16.dp))
                 }
             }
 

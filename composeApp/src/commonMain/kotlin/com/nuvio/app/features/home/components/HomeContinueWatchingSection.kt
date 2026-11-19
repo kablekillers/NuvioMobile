@@ -74,6 +74,15 @@ import kotlin.math.roundToInt
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 import com.nuvio.app.core.i18n.localizedEpisodeTitle
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import com.nuvio.app.core.ui.CinemaGold
+import com.nuvio.app.core.ui.isCinemaBlackTheme
+import com.nuvio.app.core.ui.nuvio
+import androidx.compose.runtime.LaunchedEffect
 
 private val ContinueWatchingStatusBadgeShape = RoundedCornerShape(4.dp)
 private val ContinueWatchingNewEpisodeBadgeColor = Color(0xFF1D4ED8)
@@ -837,13 +846,17 @@ private fun ContinueWatchingCard(
                     .height(cardMetrics.progressHeight)
                     .background(Color.Black.copy(alpha = 0.30f)),
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(item.progressFraction.coerceIn(0f, 1f))
-                        .fillMaxHeight()
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(MaterialTheme.colorScheme.primary),
-                )
+                if (isCinemaBlackTheme) {
+                    CinemaProgressFill(item.progressFraction)
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(item.progressFraction.coerceIn(0f, 1f))
+                            .fillMaxHeight()
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(MaterialTheme.colorScheme.primary),
+                    )
+                }
             }
         }
     }
@@ -1000,6 +1013,7 @@ private fun ContinueWatchingWideCard(
                         modifier = Modifier.fillMaxWidth(),
                         height = layout.progressHeight,
                         trackColor = Color.White.copy(alpha = 0.10f),
+                        fillColor = if (isCinemaBlackTheme) CinemaGold.Base else MaterialTheme.nuvio.colors.playerTimelineFill,
                     )
                     Text(
                         text = stringResource(
@@ -1106,6 +1120,7 @@ private fun ContinueWatchingPosterCard(
                         modifier = Modifier.width(layout.posterCardWidth - 32.dp),
                         height = layout.progressHeight,
                         trackColor = MaterialTheme.colorScheme.surfaceTint.copy(alpha = 0.16f),
+                        fillColor = if (isCinemaBlackTheme) CinemaGold.Base else MaterialTheme.nuvio.colors.playerTimelineFill,
                     )
                 }
             }
@@ -1318,4 +1333,32 @@ internal fun rememberContinueWatchingLayout(
             posterBadgeTextSize = 10.sp,
         )
     }
+}
+
+/** Cinema Black progress: a glowing gold bar that grows in when the card first appears. */
+@Composable
+private fun CinemaProgressFill(progressFraction: Float) {
+    val target = progressFraction.coerceIn(0f, 1f)
+    val grow = remember { Animatable(0f) }
+    LaunchedEffect(target) {
+        grow.animateTo(target, tween(1_200, delayMillis = 250, easing = FastOutSlowInEasing))
+    }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .drawBehind {
+                val w = size.width * grow.value
+                if (w <= 0f) return@drawBehind
+                drawRoundRect(
+                    color = CinemaGold.Base.copy(alpha = 0.35f),
+                    size = Size(w, size.height),
+                    cornerRadius = CornerRadius(size.height),
+                )
+                drawRoundRect(
+                    brush = CinemaGold.barBrush,
+                    size = Size(w, size.height),
+                    cornerRadius = CornerRadius(size.height / 2f),
+                )
+            },
+    )
 }

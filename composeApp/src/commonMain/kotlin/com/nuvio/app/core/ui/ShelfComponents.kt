@@ -161,6 +161,12 @@ fun NuvioPosterCard(
                     shape = cardShape,
                     surface = NuvioCardDepthSurface.Posters,
                 )
+                .cinemaShine(
+                    enabled = isCinemaBlackTheme,
+                    periodMillis = 7_000,
+                    delayMillis = (title.hashCode() and 0x7fffffff) % 6_000,
+                    strength = 0.16f,
+                )
                 .posterCardClickable(
                     onClick = onClick,
                     onLongClick = onLongClick,

@@ -5,6 +5,9 @@ import kotlinx.serialization.json.JsonObject
 internal expect object ThemeSettingsStorage {
     fun loadSelectedTheme(): String?
     fun saveSelectedTheme(themeName: String)
+    /** Device-local and never synced: true once this profile picked a theme in a Cinema Black build. */
+    fun loadThemeChosenByUser(): Boolean
+    fun markThemeChosenByUser()
     fun loadCustomThemeColors(): String?
     fun saveCustomThemeColors(colors: String)
     fun loadAmoledEnabled(): Boolean?

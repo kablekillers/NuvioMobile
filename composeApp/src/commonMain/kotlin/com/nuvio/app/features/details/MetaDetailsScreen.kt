@@ -806,6 +806,20 @@ fun MetaDetailsScreen(
                 }
                 val primaryVideoId = seriesStreamVideoId ?: seriesAction?.videoId ?: meta.id
                 val shufflePoolEmpty = shuffleSettings.enabled && seriesAction == null
+                // Start finding sources for what Play would start once the viewer lingers here, so
+                // pressing Play shows them right away. The search is shared and kept for 15 minutes.
+                val prefetchCanStream = !shufflePoolEmpty && playbackAvailability.canStream(meta.type, primaryVideoId)
+                LaunchedEffect(meta.type, primaryVideoId, prefetchCanStream) {
+                    if (!prefetchCanStream) return@LaunchedEffect
+                    if ((meta.type == "series" || hasEpisodes) && seriesAction == null) return@LaunchedEffect
+                    delay(1_500L)
+                    com.nuvio.app.features.player.PlayerStreamsRepository.prefetchSources(
+                        type = meta.type,
+                        videoId = primaryVideoId,
+                        season = seriesAction?.seasonNumber,
+                        episode = seriesAction?.episodeNumber,
+                    )
+                }
                 val isPrimaryPlayEnabled = shufflePoolEmpty || playbackAvailability.canPlay(
                     type = meta.type,
                     videoId = primaryVideoId,

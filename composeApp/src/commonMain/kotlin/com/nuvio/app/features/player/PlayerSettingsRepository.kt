@@ -55,7 +55,7 @@ data class PlayerSettingsUiState(
     val streamReuseLastLinkCacheHours: Int = 24,
     val androidPlaybackEngine: AndroidPlaybackEngine = AndroidPlaybackEngine.ExoPlayer,
     val autoSwitchPlaybackEngineOnError: Boolean = true,
-    val streamAutoPlayFallbackOnFailure: Boolean = false,
+    val streamAutoPlayFallbackOnFailure: Boolean = true,
     val streamAutoPlayFallbackMaxSources: Int = DEFAULT_SOURCE_FALLBACK_MAX_SOURCES,
     val streamAutoPlayFallbackStartupTimeoutSeconds: Int = DEFAULT_SOURCE_STARTUP_TIMEOUT_SECONDS,
     val androidLibmpvVideoOutput: AndroidLibmpvVideoOutput = AndroidLibmpvVideoOutput.GpuNext,
@@ -135,13 +135,11 @@ val SOURCE_STARTUP_TIMEOUT_SECONDS_RANGE = 5..45
 const val SOURCE_STARTUP_TIMEOUT_SECONDS_STEP = 5
 
 /**
- * Falling back to the next matching source applies only while auto source selection picks the
- * stream and the internal player plays it.
+ * Falling back to the next good source applies whenever the internal player plays the stream,
+ * whether auto selection or the viewer picked it.
  */
 val PlayerSettingsUiState.streamAutoPlayFallbackActive: Boolean
-    get() = streamAutoPlayFallbackOnFailure &&
-        streamAutoPlayMode != StreamAutoPlayMode.MANUAL &&
-        !externalPlayerEnabled
+    get() = streamAutoPlayFallbackOnFailure && !externalPlayerEnabled
 
 object PlayerSettingsRepository {
     private val _uiState = MutableStateFlow(PlayerSettingsUiState())
@@ -170,7 +168,7 @@ object PlayerSettingsRepository {
     private var streamReuseLastLinkCacheHours = 24
     private var androidPlaybackEngine = AndroidPlaybackEngine.ExoPlayer
     private var autoSwitchPlaybackEngineOnError = true
-    private var streamAutoPlayFallbackOnFailure = false
+    private var streamAutoPlayFallbackOnFailure = true
     private var streamAutoPlayFallbackMaxSources = DEFAULT_SOURCE_FALLBACK_MAX_SOURCES
     private var streamAutoPlayFallbackStartupTimeoutSeconds = DEFAULT_SOURCE_STARTUP_TIMEOUT_SECONDS
     private var androidLibmpvVideoOutput = AndroidLibmpvVideoOutput.GpuNext
@@ -272,7 +270,7 @@ object PlayerSettingsRepository {
         streamReuseLastLinkCacheHours = 24
         androidPlaybackEngine = AndroidPlaybackEngine.ExoPlayer
         autoSwitchPlaybackEngineOnError = true
-        streamAutoPlayFallbackOnFailure = false
+        streamAutoPlayFallbackOnFailure = true
         streamAutoPlayFallbackMaxSources = DEFAULT_SOURCE_FALLBACK_MAX_SOURCES
         streamAutoPlayFallbackStartupTimeoutSeconds = DEFAULT_SOURCE_STARTUP_TIMEOUT_SECONDS
         androidLibmpvVideoOutput = AndroidLibmpvVideoOutput.GpuNext
@@ -403,7 +401,7 @@ object PlayerSettingsRepository {
             ?.let { runCatching { AndroidPlaybackEngine.valueOf(it) }.getOrNull() }
             ?: AndroidPlaybackEngine.ExoPlayer
         autoSwitchPlaybackEngineOnError = PlayerSettingsStorage.loadAutoSwitchPlaybackEngineOnError() ?: true
-        streamAutoPlayFallbackOnFailure = PlayerSettingsStorage.loadStreamAutoPlayFallbackOnFailure() ?: false
+        streamAutoPlayFallbackOnFailure = PlayerSettingsStorage.loadStreamAutoPlayFallbackOnFailure() ?: true
         streamAutoPlayFallbackMaxSources = PlayerSettingsStorage.loadStreamAutoPlayFallbackMaxSources()
             ?.coerceIn(SOURCE_FALLBACK_MAX_SOURCES_RANGE)
             ?: DEFAULT_SOURCE_FALLBACK_MAX_SOURCES

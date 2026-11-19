@@ -78,6 +78,35 @@ object PlayerStreamsRepository {
         )
     }
 
+    // background prefetch from the details page; joins the shared search the stream screen uses
+    private val _prefetchState = MutableStateFlow(StreamsUiState())
+    private var prefetchJob: Job? = null
+    private var prefetchRequestKey: String? = null
+
+    /**
+     * Starts (or joins) the shared source search for what the details page's Play would start,
+     * so the stream screen finds results already waiting. Results stay in the shared search only.
+     */
+    fun prefetchSources(
+        type: String,
+        videoId: String,
+        season: Int? = null,
+        episode: Int? = null,
+    ) {
+        fetchStreams(
+            type = type,
+            videoId = videoId,
+            season = season,
+            episode = episode,
+            forceRefresh = false,
+            stateFlow = _prefetchState,
+            requestKeyHolder = { prefetchRequestKey },
+            setRequestKey = { prefetchRequestKey = it },
+            jobHolder = { prefetchJob },
+            setJob = { prefetchJob = it },
+        )
+    }
+
     fun loadEpisodeStreams(
         type: String,
         videoId: String,

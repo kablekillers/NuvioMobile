@@ -18,6 +18,7 @@ actual object ThemeSettingsStorage {
     private const val selectedAppLanguageKey = "selected_app_language"
     private const val navBarStyleKey = "nav_bar_style"
     private const val navBarGlowEnabledKey = "nav_bar_glow_enabled"
+    private const val themeChosenByUserKey = "theme_chosen_by_user"
     private val profileScopedSyncKeys = listOf(
         selectedThemeKey,
         customThemeColorsKey,
@@ -32,6 +33,13 @@ actual object ThemeSettingsStorage {
 
     actual fun saveSelectedTheme(themeName: String) {
         NSUserDefaults.standardUserDefaults.setObject(themeName, forKey = ProfileScopedKey.of(selectedThemeKey))
+    }
+
+    actual fun loadThemeChosenByUser(): Boolean =
+        NSUserDefaults.standardUserDefaults.boolForKey(ProfileScopedKey.of(themeChosenByUserKey))
+
+    actual fun markThemeChosenByUser() {
+        NSUserDefaults.standardUserDefaults.setBool(true, forKey = ProfileScopedKey.of(themeChosenByUserKey))
     }
 
     actual fun loadCustomThemeColors(): String? =

@@ -83,7 +83,14 @@ object ThemeSettingsRepository {
         } else {
             null
         }
-        _selectedThemePreference.value = theme
+        // White was the old default. Until this profile picks a theme in a Cinema Black build,
+        // show Cinema Black instead. Not saved, so a synced White from another device can't undo it
+        // and other apps reading the synced setting never see a theme they don't know.
+        _selectedThemePreference.value = if (theme == AppTheme.WHITE && !ThemeSettingsStorage.loadThemeChosenByUser()) {
+            AppTheme.CINEMA_BLACK
+        } else {
+            theme
+        }
         _customThemePreference.value = CustomThemeColors.decode(ThemeSettingsStorage.loadCustomThemeColors())
         applyEffectiveTheme()
         _amoledEnabled.value = ThemeSettingsStorage.loadAmoledEnabled() ?: false
@@ -103,6 +110,7 @@ object ThemeSettingsRepository {
         if (theme !in availableAppThemes(access.entitlements)) return
         if (_selectedThemePreference.value == theme) return
         _selectedThemePreference.value = theme
+        ThemeSettingsStorage.markThemeChosenByUser()
         ThemeSettingsStorage.saveSelectedTheme(theme.name)
         applyEffectiveTheme()
     }
@@ -112,6 +120,7 @@ object ThemeSettingsRepository {
         val access = MemberAccessRepository.access.value
         val selectedColors = resolveCustomThemeColors(colors, access.tier)
         ThemeSettingsStorage.saveCustomThemeColors(selectedColors.encode())
+        ThemeSettingsStorage.markThemeChosenByUser()
         ThemeSettingsStorage.saveSelectedTheme(AppTheme.CUSTOM.name)
         _customThemePreference.value = selectedColors
         _selectedThemePreference.value = AppTheme.CUSTOM

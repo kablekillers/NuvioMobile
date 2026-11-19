@@ -1,0 +1,43 @@
+{
+  "name": "Kable Killers",
+  "identifier": "com.kablekillers.source",
+  "subtitle": "Kable Killers Mobile for iPhone",
+  "description": "Kable Killers Mobile for iPhone and iPad.\n\nBring your own addons and sources, with artwork, ratings, subtitles, downloads, watch parties and your place saved across devices.",
+  "iconURL": "https://raw.githubusercontent.com/kablekillers/NuvioMobile/cmp-rewrite/iosApp/iosApp/Assets.xcassets/AppIcon.appiconset/app-icon-1024.png",
+  "website": "https://github.com/kablekillers/NuvioMobile",
+  "tintColor": "#1E88E5",
+  "featuredApps": [
+    "com.kablekillers.mobile"
+  ],
+  "apps": [
+    {
+      "name": "Kable Killers Mobile",
+      "bundleIdentifier": "com.kablekillers.mobile",
+      "developerName": "Kable Killers",
+      "subtitle": "Your media, your sources.",
+      "localizedDescription": "Kable Killers Mobile for iPhone and iPad.\n\nBring your own addons and sources, with artwork, ratings, subtitles, downloads, watch parties and your place saved across devices.",
+      "iconURL": "https://raw.githubusercontent.com/kablekillers/NuvioMobile/cmp-rewrite/iosApp/iosApp/Assets.xcassets/AppIcon.appiconset/app-icon-1024.png",
+      "tintColor": "#1E88E5",
+      "category": "entertainment",
+      "screenshots": [],
+      "versions": [
+        {
+          "version": "0.6.0",
+          "buildVersion": "153",
+          "date": "2026-11-17T22:01:51Z",
+          "localizedDescription": "Kable Killers Mobile v0.6.0. Full notes: https://github.com/kablekillers/NuvioMobile/releases/tag/v0.6.0",
+          "downloadURL": "https://github.com/kablekillers/NuvioMobile/releases/download/v0.6.0/Kable-Killers-Mobile-v0.6.0.ipa",
+          "size": 72783165,
+          "minOSVersion": "16.1"
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {
+          "NSLocalNetworkUsageDescription": "Kable Killers connects to media servers on your local network."
+        }
+      }
+    }
+  ],
+  "news": []
+}

@@ -290,6 +290,9 @@ internal actual object EpisodeReleaseNotificationPlatform {
             .toEpochMilli()
     }.getOrNull()
 
+    /** Makes sure the notification channel exists, for other reminders that reuse it. */
+    internal fun ensureChannel() = ensureNotificationChannel()
+
     private fun ensureNotificationChannel() {
         val context = appContext ?: return
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return

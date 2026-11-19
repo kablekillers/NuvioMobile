@@ -9,6 +9,9 @@ import com.nuvio.app.features.debrid.DirectDebridPlaybackResolver
 import com.nuvio.app.features.streams.StreamAutoPlaySelector
 import com.nuvio.app.features.streams.StreamItem
 import com.nuvio.app.isIos
+import nuvio.composeapp.generated.resources.player_source_fallback_trying
+import nuvio.composeapp.generated.resources.Res
+import com.nuvio.app.features.streams.StreamAutoPlayMode
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -62,9 +65,9 @@ internal fun PlayerScreenRuntime.showErrorUnlessSourceFallback(message: String?)
 }
 
 /**
- * When the auto-selected source fails before playback starts, quietly plays the next source that
- * auto source selection would pick, up to the configured number of further sources. It never
- * applies to a source the user picked, and it excludes the engine switch on error.
+ * When a source fails before playback starts, plays the next good source, up to the configured
+ * number of further sources. Runs after the engine switch on error has had its turn, and for
+ * sources the viewer picked as well as auto-selected ones.
  *
  * Returns `true` when a fallback was started and the error must not be shown yet.
  */
@@ -72,10 +75,9 @@ internal fun PlayerScreenRuntime.tryFallbackToNextSourceAfterError(message: Stri
     if (sourceFallbackJob?.isActive == true) return true
     val settings = playerSettingsUiState
     if (!settings.streamAutoPlayFallbackActive) return false
-    if (!isIos && settings.autoSwitchPlaybackEngineOnError) return false
     if (initialLoadCompleted) return false
     val failedUrl = activeSourceUrl
-    if (failedUrl.isBlank() || failedUrl != autoSelectedSourceUrl) return false
+    if (failedUrl.isBlank()) return false
     if (sourceFallbackAttempts >= settings.streamAutoPlayFallbackMaxSources) return false
     val videoId = activeVideoId ?: return false
 
@@ -127,6 +129,12 @@ internal fun PlayerScreenRuntime.tryFallbackToNextSourceAfterError(message: Stri
                     continue
                 }
                 log.i { "Source failed to start, falling back to ${playable.streamLabel} from ${playable.addonName}" }
+                showGestureFeedback(
+                    GestureFeedbackState(
+                        messageRes = Res.string.player_source_fallback_trying,
+                        messageArgs = listOf(playable.addonName),
+                    ),
+                )
                 playReplacementSource(playable, url, videoId)
                 return@launch
             }
@@ -161,9 +169,15 @@ internal fun nextSourceFallbackCandidate(
             (failedInfoHash != null && stream.addonId == failedAddonId &&
                 stream.p2pInfoHash.equals(failedInfoHash, ignoreCase = true))
     }
+    // When the viewer picks sources by hand, fall back to the best remaining one in list order.
+    val mode = if (settings.streamAutoPlayMode == StreamAutoPlayMode.MANUAL) {
+        StreamAutoPlayMode.FIRST_STREAM
+    } else {
+        settings.streamAutoPlayMode
+    }
     return StreamAutoPlaySelector.evaluateAutoPlayStream(
         streams = untried,
-        mode = settings.streamAutoPlayMode,
+        mode = mode,
         regexPattern = settings.streamAutoPlayRegex,
         source = settings.streamAutoPlaySource,
         installedAddonNames = installedAddonNames,

@@ -68,6 +68,32 @@ internal fun PlaybackStreamSettings(
     val hapticFeedback = LocalHapticFeedback.current
     Column(verticalArrangement = Arrangement.spacedBy(if (isTablet) 18.dp else 12.dp)) {
         SettingsSection(
+            title = stringResource(Res.string.settings_playback_recommended_title),
+            isTablet = isTablet,
+        ) {
+            SettingsGroup(isTablet = isTablet) {
+                val applied = com.nuvio.app.features.player.RecommendedPlaybackSettings.isApplied(settings)
+                val canUndo = com.nuvio.app.features.player.RecommendedPlaybackSettings.canUndo(settings)
+                SettingsNavigationRow(
+                    title = stringResource(
+                        when {
+                            canUndo -> Res.string.settings_playback_recommended_undo
+                            applied -> Res.string.settings_playback_recommended_applied
+                            else -> Res.string.settings_playback_recommended_apply
+                        },
+                    ),
+                    description = stringResource(Res.string.settings_playback_recommended_description),
+                    isTablet = isTablet,
+                    onClick = {
+                        when {
+                            canUndo -> com.nuvio.app.features.player.RecommendedPlaybackSettings.undo()
+                            !applied -> com.nuvio.app.features.player.RecommendedPlaybackSettings.apply(settings)
+                        }
+                    },
+                )
+            }
+        }
+        SettingsSection(
             title = stringResource(Res.string.settings_playback_section_stream_selection),
             isTablet = isTablet,
         ) {
@@ -112,11 +138,9 @@ internal fun PlaybackStreamSettings(
                         onClick = { showAutoPlayRegexDialog = true },
                     )
                 }
-                if (settings.streamAutoPlayMode != StreamAutoPlayMode.MANUAL) {
-                    // Excludes the engine switch on error (Android only): both react to the same failure.
-                    // Only the switch that is off is locked, so both stay reachable if both ended up on.
-                    val blockedByEngineSwitch = !isIos && settings.autoSwitchPlaybackEngineOnError &&
-                        !settings.streamAutoPlayFallbackOnFailure
+                run {
+                    // Works with every selection mode, after the engine switch on error has had its turn.
+                    val blockedByEngineSwitch = false
                     SettingsGroupDivider(isTablet = isTablet)
                     SettingsSwitchRow(
                         title = stringResource(Res.string.settings_playback_fallback_next_source),

@@ -264,12 +264,12 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi(
                         if (message != null && tryRefreshExpiredLinkAfterError(message)) {
                             return@PlatformPlayerSurface
                         }
-                        if (message != null && tryFallbackToNextSourceAfterError(message)) {
+                        // Engine failover first (its own setting; the engine's decoder/MIME retries have
+                        // already been tried), then the next good source, then the error.
+                        if (message != null && maybeFailoverPlaybackEngine(resolvedAutoEngine)) {
                             return@PlatformPlayerSurface
                         }
-                        // Engine failover is decided here, driven by its own player setting;
-                        // the engine's own decoder/MIME retries have already been tried.
-                        if (message != null && maybeFailoverPlaybackEngine(resolvedAutoEngine)) {
+                        if (message != null && tryFallbackToNextSourceAfterError(message)) {
                             return@PlatformPlayerSurface
                         }
                         errorMessage = message
@@ -622,6 +622,12 @@ private fun BoxScope.RenderPlaybackOverlays(
             onDismissError = {
                 flushWatchProgress()
                 args.onBack()
+            },
+            onChooseSourceAfterError = activeVideoId?.let {
+                {
+                    errorMessage = null
+                    openSourcesPanel()
+                }
             },
         )
     }

@@ -34,6 +34,12 @@ sealed interface SettingsDestinationRoute : AppRoute {
 data object TabsRoute : AppRoute
 
 @Serializable
+data object CalendarRoute : AppRoute {
+    override val title: String = "Calendar"
+    override val hidesNavigationBar: Boolean = true
+}
+
+@Serializable
 data object SportsHubRoute : AppRoute {
     override val title: String = "Sports Hub"
     override val hidesNavigationBar: Boolean = true

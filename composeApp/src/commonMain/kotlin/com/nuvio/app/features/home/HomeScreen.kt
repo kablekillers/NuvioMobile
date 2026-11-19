@@ -129,6 +129,8 @@ fun HomeScreen(
     scrollToTopRequests: Flow<Unit> = emptyFlow(),
     onCatalogClick: ((HomeCatalogSection) -> Unit)? = null,
     onSportsHubClick: (() -> Unit)? = null,
+    onCalendarClick: (() -> Unit)? = null,
+    onCalendarEpisodeClick: ((com.nuvio.app.features.calendar.CalendarEpisode) -> Unit)? = null,
     onPosterClick: ((MetaPreview) -> Unit)? = null,
     onPosterLongClick: ((MetaPreview) -> Unit)? = null,
     onContinueWatchingClick: ((ContinueWatchingItem) -> Unit)? = null,
@@ -1046,6 +1048,15 @@ fun HomeScreen(
             if (onSportsHubClick != null) {
                 item(key = "home_sports_hub") {
                     SportsHubHomeButton(onClick = onSportsHubClick, modifier = Modifier.padding(horizontal = 16.dp))
+                }
+            }
+            if (onCalendarClick != null && onCalendarEpisodeClick != null) {
+                item(key = "home_coming_up") {
+                    com.nuvio.app.features.calendar.ComingUpRow(
+                        onOpenShow = onCalendarEpisodeClick,
+                        onSeeAll = onCalendarClick,
+                        modifier = Modifier.padding(top = 18.dp),
+                    )
                 }
             }
 

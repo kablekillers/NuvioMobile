@@ -1,5 +1,6 @@
 package com.nuvio.app.features.home
 
+import com.nuvio.app.features.profiles.KableKillersAccountPolicy
 import co.touchlab.kermit.Logger
 import com.nuvio.app.core.auth.AuthRepository
 import com.nuvio.app.core.auth.AuthState
@@ -147,6 +148,7 @@ object HomeCatalogSettingsSyncService {
     }
 
     private suspend fun pushToRemote(token: PullToken) {
+        if (!KableKillersAccountPolicy.canPushConfiguration(token.profileId)) return
         runCatching {
             val payload = HomeCatalogSettingsRepository.exportToSyncPayload()
             val jsonElement = mergedSharedPayloadJson(token, payload)
@@ -196,7 +198,8 @@ object HomeCatalogSettingsSyncService {
         profileId: Int,
     ): SupabaseHomeCatalogSettingsBlob? {
         val params = buildJsonObject {
-            put("p_profile_id", profileId)
+            // Household profiles on the customer account inherit Profile 1's rows.
+            put("p_profile_id", KableKillersAccountPolicy.remoteReadProfileId(profileId))
             put("p_platform", HOME_CATALOG_SHARED_SYNC_PLATFORM)
         }
         val result = SupabaseProvider.client.postgrest.rpc("sync_pull_home_catalog_settings", params)

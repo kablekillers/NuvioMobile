@@ -1,5 +1,6 @@
 package com.nuvio.app.core.sync
 
+import com.nuvio.app.features.profiles.KableKillersAccountPolicy
 import co.touchlab.kermit.Logger
 import com.nuvio.app.core.auth.AuthRepository
 import com.nuvio.app.core.auth.AuthState
@@ -132,6 +133,8 @@ object MediaServerSync {
 
     private fun canSync(profileId: Int): Boolean {
         val state = AuthRepository.state.value as? AuthState.Authenticated ?: return false
+        // Same as TV: only Profile 1 syncs media servers on the customer account.
+        if (KableKillersAccountPolicy.isHouseholdProfile(profileId)) return false
         return !state.isAnonymous && ProfileRepository.activeProfileId == profileId
     }
 }

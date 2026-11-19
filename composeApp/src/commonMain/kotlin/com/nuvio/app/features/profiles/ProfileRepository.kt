@@ -2,6 +2,7 @@ package com.nuvio.app.features.profiles
 
 import co.touchlab.kermit.Logger
 import com.nuvio.app.core.auth.AuthRepository
+import com.nuvio.app.core.auth.AuthStorage
 import com.nuvio.app.core.auth.AuthState
 import com.nuvio.app.core.auth.isAnonymous
 import com.nuvio.app.core.network.SupabaseProvider
@@ -130,7 +131,12 @@ object ProfileRepository {
         }
         try {
             val result = SupabaseProvider.client.postgrest.rpc("sync_pull_profiles")
-            val profiles = result.decodeList<NuvioProfile>()
+            val remoteProfiles = result.decodeList<NuvioProfile>()
+            val profiles = if (KableKillersAccountPolicy.isHouseholdAccount()) {
+                householdProfiles(remoteProfiles)
+            } else {
+                remoteProfiles
+            }
             _state.value = _state.value.copy(
                 profiles = profiles.sortedBy { it.profileIndex },
                 isLoaded = true,
@@ -195,7 +201,9 @@ object ProfileRepository {
     }
 
     suspend fun pushProfiles(profiles: List<ProfilePushPayload>) {
-        if (AuthRepository.state.value.isAnonymous) {
+        // Customer account: household profiles stay on this phone. Nothing about
+        // them (or Profile 1) is uploaded, same as the TV app.
+        if (AuthRepository.state.value.isAnonymous || KableKillersAccountPolicy.isHouseholdAccount()) {
             applyPayloadsLocally(profiles)
             return
         }
@@ -239,12 +247,62 @@ object ProfileRepository {
             profileIndex = nextIndex,
             name = name,
             avatarColorHex = avatarColorHex,
-            usesPrimaryAddons = usesPrimaryAddons,
+            // Kable Killers: every new profile copies Profile 1's add-ons and plugins.
+            usesPrimaryAddons = true,
+            usesPrimaryPlugins = true,
             avatarId = avatarId,
             avatarUrl = avatarUrl,
         )
 
         pushProfiles(allPayloads)
+        copyPrimarySetupInCloud(nextIndex)
+    }
+
+    /**
+     * Cloud accounts: copy Profile 1's phone settings to the new profile so it
+     * starts as a clone. Household profiles read Profile 1 directly instead.
+     */
+    private suspend fun copyPrimarySetupInCloud(targetIndex: Int) {
+        if (targetIndex == KableKillersAccountPolicy.PRIMARY_PROFILE_INDEX) return
+        if (AuthRepository.state.value.isAnonymous || KableKillersAccountPolicy.isHouseholdAccount()) return
+        if (_state.value.profiles.none { it.profileIndex == targetIndex }) return
+        try {
+            val params = buildJsonObject {
+                put("p_source_profile_id", KableKillersAccountPolicy.PRIMARY_PROFILE_INDEX)
+                put("p_target_profile_id", targetIndex)
+                put("p_copy_tv", false)
+                put("p_copy_mobile", true)
+                put("p_copy_desktop", false)
+                put("p_copy_provider_credentials", false)
+                put("p_replace_provider_credentials", false)
+                putSyncOriginClientId()
+            }
+            SupabaseProvider.client.postgrest.rpc("sync_copy_profile_setup", params)
+        } catch (e: Throwable) {
+            log.e(e) { "Could not copy Profile 1 setup to profile $targetIndex" }
+        }
+    }
+
+    /**
+     * Customer account list: Profile 1 from the cloud plus the profiles that
+     * live on this phone. The first time, profiles that came from the old shared
+     * cloud list are dropped except the one this phone is using.
+     */
+    private fun householdProfiles(remoteProfiles: List<NuvioProfile>): List<NuvioProfile> {
+        val authState = AuthRepository.state.value as? AuthState.Authenticated
+        val primaryIndex = KableKillersAccountPolicy.PRIMARY_PROFILE_INDEX
+        var local = _state.value.profiles
+        val migrationKey = authState?.let { "kk_household_profiles_${it.userId}" }
+        if (migrationKey != null && !AuthStorage.loadFlag(migrationKey)) {
+            local = local.filter { it.profileIndex == primaryIndex || it.profileIndex == activeProfileIndex }
+                .map { it.copy(usesPrimaryAddons = true, usesPrimaryPlugins = true) }
+            AuthStorage.saveFlag(migrationKey, true)
+        }
+        val primary = remoteProfiles.find { it.profileIndex == primaryIndex }
+            ?: local.find { it.profileIndex == primaryIndex }
+            ?: remoteProfiles.firstOrNull()?.copy(profileIndex = primaryIndex)
+        val others = local.filter { it.profileIndex != primaryIndex }
+        return (listOfNotNull(primary) + others).sortedBy { it.profileIndex }
     }
 
     suspend fun updateProfile(
@@ -263,7 +321,9 @@ object ProfileRepository {
                     profileIndex = profileIndex,
                     name = name,
                     avatarColorHex = avatarColorHex,
-                    usesPrimaryAddons = usesPrimaryAddons,
+                    // Profiles other than Profile 1 always keep using its add-ons.
+                    usesPrimaryAddons = usesPrimaryAddons || profileIndex != 1,
+                    usesPrimaryPlugins = profileIndex != 1,
                     avatarId = avatarId,
                     avatarUrl = avatarUrl,
                     profileBackgroundId = profileBackgroundId,
@@ -288,7 +348,10 @@ object ProfileRepository {
     }
 
     suspend fun deleteProfile(profileIndex: Int) {
-        if (AuthRepository.state.value.isAnonymous) {
+        // Customer account: deleting a household profile must not touch the
+        // shared cloud data that other phones may use under the same index.
+        if (AuthRepository.state.value.isAnonymous || KableKillersAccountPolicy.isHouseholdAccount()) {
+            if (profileIndex == KableKillersAccountPolicy.PRIMARY_PROFILE_INDEX) return
             val remaining = _state.value.profiles.filter { it.profileIndex != profileIndex }
             ProfilePinCacheStorage.removePayload(profileIndex)
             ServerRepository.removeProfile(profileIndex)

@@ -1,5 +1,6 @@
 package com.nuvio.app.core.sync
 
+import com.nuvio.app.features.profiles.KableKillersAccountPolicy
 import co.touchlab.kermit.Logger
 import com.nuvio.app.core.auth.AuthRepository
 import com.nuvio.app.core.auth.AuthState
@@ -119,7 +120,8 @@ object ProfileSettingsSync {
                 val localSignature = buildSignature(localBlob)
 
                 val params = buildJsonObject {
-                    put("p_profile_id", profileId)
+                    // Household profiles on the customer account inherit Profile 1's settings.
+                    put("p_profile_id", KableKillersAccountPolicy.remoteReadProfileId(profileId))
                     put("p_platform", MOBILE_SYNC_PLATFORM)
                 }
                 val result = SupabaseProvider.client.postgrest.rpc("sync_pull_profile_settings_blob", params)
@@ -225,6 +227,8 @@ object ProfileSettingsSync {
     }
 
     private suspend fun pushToRemoteLocked(profileId: Int, blob: MobileProfileSettingsBlob) {
+        // Customer household profiles are device-local: never upload under their index.
+        if (!KableKillersAccountPolicy.canPushConfiguration(profileId)) return
         val params = buildJsonObject {
             put("p_profile_id", profileId)
             put("p_platform", MOBILE_SYNC_PLATFORM)

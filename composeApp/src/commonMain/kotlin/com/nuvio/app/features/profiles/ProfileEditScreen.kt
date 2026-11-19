@@ -504,12 +504,8 @@ private fun ProfileIdentityCard(
                 placeholder = stringResource(Res.string.profile_name_placeholder),
             )
 
-            ProfileOptionRow(
-                title = stringResource(Res.string.profile_use_primary_addons),
-                description = stringResource(Res.string.profile_use_primary_addons_description),
-                checked = usesPrimaryAddons,
-                onCheckedChange = onUsesPrimaryAddonsChange,
-            )
+            // Kable Killers: profiles always copy Profile 1's add-ons, so the
+            // "use primary add-ons" switch is hidden.
         }
     }
 }

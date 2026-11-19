@@ -3,6 +3,7 @@ package com.nuvio.app.features.addons
 import co.touchlab.kermit.Logger
 import com.nuvio.app.core.network.SupabaseProvider
 import com.nuvio.app.core.sync.putSyncOriginClientId
+import com.nuvio.app.features.profiles.KableKillersAccountPolicy
 import com.nuvio.app.features.profiles.ProfileRepository
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
@@ -445,11 +446,14 @@ object AddonRepository {
     }
 
     private fun resolveEffectiveProfileId(profileId: Int): Int {
+        // Kable Killers household profiles always use Profile 1's add-ons.
+        if (KableKillersAccountPolicy.isHouseholdProfile(profileId)) return 1
         val active = ProfileRepository.state.value.activeProfile
         return if (active != null && active.profileIndex != 1 && active.usesPrimaryAddons) 1 else profileId
     }
 
     private fun isUsingPrimaryAddonsFromSecondaryProfile(): Boolean {
+        if (KableKillersAccountPolicy.isHouseholdProfile()) return true
         val active = ProfileRepository.state.value.activeProfile
         return active != null && active.profileIndex != 1 && active.usesPrimaryAddons
     }

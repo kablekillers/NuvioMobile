@@ -1,5 +1,6 @@
 package com.nuvio.app.core.sync
 
+import com.nuvio.app.features.profiles.KableKillersAccountPolicy
 import co.touchlab.kermit.Logger
 import com.nuvio.app.core.auth.AuthRepository
 import com.nuvio.app.core.auth.AuthState
@@ -285,6 +286,8 @@ object ProviderCredentialSync {
     private fun currentScope(profileId: Int): ProviderCredentialScope? {
         val state = AuthRepository.state.value as? AuthState.Authenticated ?: return null
         if (state.isAnonymous || ProfileRepository.activeProfileId != profileId) return null
+        // Same as TV: only Profile 1 shares provider logins on the customer account.
+        if (KableKillersAccountPolicy.isHouseholdProfile(profileId)) return null
         return ProviderCredentialScope(state.userId, profileId)
     }
 

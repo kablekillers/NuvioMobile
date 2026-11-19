@@ -1,5 +1,6 @@
 package com.nuvio.app.features.collection
 
+import com.nuvio.app.features.profiles.KableKillersAccountPolicy
 import co.touchlab.kermit.Logger
 import com.nuvio.app.core.auth.AuthRepository
 import com.nuvio.app.core.auth.AuthState
@@ -48,7 +49,8 @@ object CollectionSyncService {
         if (ProfileRepository.activeProfileId != profileId) return
         runCatching {
             val params = buildJsonObject {
-                put("p_profile_id", profileId)
+                // Household profiles on the customer account inherit Profile 1's collections.
+                put("p_profile_id", KableKillersAccountPolicy.remoteReadProfileId(profileId))
             }
             val result = SupabaseProvider.client.postgrest.rpc("sync_pull_collections", params)
             if (ProfileRepository.activeProfileId != profileId) return@runCatching
@@ -107,6 +109,7 @@ object CollectionSyncService {
     }
 
     private suspend fun pushToRemote(profileId: Int) {
+        if (!KableKillersAccountPolicy.canPushConfiguration(profileId)) return
         runCatching {
             if (ProfileRepository.activeProfileId != profileId) return@runCatching
             val collectionsJson = CollectionRepository.exportToJson()

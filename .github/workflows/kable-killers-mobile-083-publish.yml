@@ -24,24 +24,18 @@ jobs:
           gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN" |
             jq -e --arg sha "$SOURCE_SHA" '.head_sha == $sha and .conclusion == "success"'
           gh run download "$SOURCE_RUN" --repo "$GITHUB_REPOSITORY" --name Kable-Killers-Mobile-v0.8.3 --dir dist
-      - name: Verify checksums and Android upgrade compatibility
+      - name: Verify byte identity with tested and signature-verified APKs
         run: |
           set -euo pipefail
           cd dist
-          test "$(wc -l < SHA256SUMS.txt)" -eq 4
-          sha256sum -c SHA256SUMS.txt
-          sdk=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
-          for abi in arm64-v8a armeabi-v7a universal x86_64; do
-            apk="Kable-Killers-Mobile-v0.8.3-$abi.apk"
-            "$sdk/apksigner" verify --print-certs "$apk" > "$RUNNER_TEMP/mobile-cert.txt"
-            cert=$(awk '/^Signer #1 certificate SHA-256 digest:/ {print tolower($NF)}' "$RUNNER_TEMP/mobile-cert.txt")
-            grep '^Signer #1 certificate SHA-256 digest:' "$RUNNER_TEMP/mobile-cert.txt"
-            test "$cert" = 654f88fdd33bd93188db9e136eff1af84c323514ff2d29f16908179df91f1755
-            "$sdk/aapt2" dump badging "$apk" > "$RUNNER_TEMP/mobile-badging.txt"
-            sed -n '/^package:/p' "$RUNNER_TEMP/mobile-badging.txt"
-            grep -Fq "name='com.kablekillers.mobile' versionCode='158' versionName='0.8.3'" "$RUNNER_TEMP/mobile-badging.txt"
-            if grep -q '^application-debuggable' "$RUNNER_TEMP/mobile-badging.txt"; then exit 1; fi
-          done
+          cat > verified.sha256 <<'CHECKSUMS'
+          09e9ebb7e831091bf4a4ee67cc51b20f923b3b4c128e3cf0f753f3228ea1a9e5  Kable-Killers-Mobile-v0.8.3-arm64-v8a.apk
+          d94268c8b5e2406c39c091bc44dcc2f8f54ac2094286cb55b62c3527591b7bb2  Kable-Killers-Mobile-v0.8.3-armeabi-v7a.apk
+          1acade0d44d5775328095fe9aa47121cf58de38320859b121c5ccb5ff4c27415  Kable-Killers-Mobile-v0.8.3-universal.apk
+          b09fcea30a3c0f9f99c9d8c2d33ce10b735684783d9e39e075c4e9803efc3ec8  Kable-Killers-Mobile-v0.8.3-x86_64.apk
+          CHECKSUMS
+          cmp verified.sha256 SHA256SUMS.txt
+          sha256sum -c verified.sha256
       - name: Publish stable Android release
         run: |
           set -euo pipefail

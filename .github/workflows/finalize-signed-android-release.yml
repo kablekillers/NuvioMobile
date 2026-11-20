@@ -1,0 +1,88 @@
+name: Publish Kable Killers Mobile 0.8.2 from signed build
+
+on:
+  push:
+    branches:
+      - publish-0.8.2-android
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: publish-kable-killers-mobile-0.8.2
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Wait for the signed build artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/44680344674" --jq .head_sha)" = "5efd2d90f6594448f107c0df6968151cdc33a3a5"
+          for attempt in $(seq 1 110); do
+            status=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/44680344674" --jq .status)
+            if [ "$status" = completed ]; then
+              gh api "repos/$GITHUB_REPOSITORY/actions/runs/44680344674/artifacts" |
+                jq -e --arg name 'Kable-Killers-Mobile-v0.8.2' 'any(.artifacts[]; .name == $name and (.expired | not))'
+              exit 0
+            fi
+            sleep 25
+          done
+          echo "::error::Build artifact was not ready in time"
+          exit 1
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: Kable-Killers-Mobile-v0.8.2
+          path: release-assets
+          github-token: ${{ github.token }}
+          run-id: 44680344674
+
+      - name: Verify and publish the signed APKs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag=v0.8.2
+          build_tools=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          test -n "$build_tools"
+          apks=(release-assets/*.apk)
+          test "${#apks[@]}" -eq 4
+          (cd release-assets && sha256sum -c SHA256SUMS.txt)
+          signer_digest() {
+            "$build_tools/apksigner" verify --print-certs "$1" |
+              awk -F': ' 'tolower($0) ~ /certificate sha-256 digest:/ {print tolower($NF)}' |
+              sort -u
+          }
+          mkdir -p "$RUNNER_TEMP/previous-release"
+          gh release download "v0.8.1" --repo "$GITHUB_REPOSITORY" \
+            --pattern 'Kable-Killers-Mobile-v0.8.1-arm64-v8a.apk' --dir "$RUNNER_TEMP/previous-release"
+          reference=$(signer_digest "$RUNNER_TEMP/previous-release/"*.apk)
+          [[ "$reference" =~ ^[a-f0-9]{64}$ ]] || { echo "::error::Prior release signing certificate could not be read"; exit 1; }
+          for apk in "${apks[@]}"; do
+            cert=$(signer_digest "$apk")
+            test "$cert" = "$reference" || { echo "::error::Unexpected signing certificate for $apk"; exit 1; }
+            "$build_tools/aapt" dump badging "$apk" > "$RUNNER_TEMP/final-badging.txt"
+            grep -Fq "name='com.kablekillers.mobile'" "$RUNNER_TEMP/final-badging.txt" || { echo "::error::Wrong package in $apk"; exit 1; }
+            grep -Fq "versionCode='157'" "$RUNNER_TEMP/final-badging.txt" || { echo "::error::Wrong version code in $apk"; exit 1; }
+            grep -Fq "versionName='0.8.2'" "$RUNNER_TEMP/final-badging.txt" || { echo "::error::Wrong version name in $apk"; exit 1; }
+            if grep -q '^application-debuggable' "$RUNNER_TEMP/final-badging.txt"; then exit 1; fi
+          done
+          gh release create "$tag" "${apks[@]}" release-assets/SHA256SUMS.txt \
+            --repo "$GITHUB_REPOSITORY" --target "5efd2d90f6594448f107c0df6968151cdc33a3a5" --draft \
+            --title "Kable Killers Mobile 0.8.2" \
+            --notes "Sports Hub can find matching game and replay sources from installed Nebula, Pencari, PenguPlay, and Tennis add-ons through the existing game details and stream picker."
+          release_id=$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" |
+            jq -er --arg tag "$tag" --arg target "5efd2d90f6594448f107c0df6968151cdc33a3a5" --argjson count 5 '
+              .[] | select(.tag_name == $tag and .target_commitish == $target and .draft and (.prerelease | not))
+              | select((.assets | length) == $count and all(.assets[]; .state == "uploaded" and .size > 0)) | .id')
+          gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/$release_id" -F draft=false -f make_latest=true \
+            --jq '.html_url'
+          gh api "repos/$GITHUB_REPOSITORY/releases/latest" |
+            jq -e --arg tag "$tag" '.tag_name == $tag and (.draft | not) and (.prerelease | not)'

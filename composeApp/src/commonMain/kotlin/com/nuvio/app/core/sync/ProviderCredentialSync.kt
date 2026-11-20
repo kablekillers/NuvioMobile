@@ -131,7 +131,8 @@ object ProviderCredentialSync {
 
     private suspend fun pullRows(profileId: Int): List<SupabaseProviderCredential> {
         val params = buildJsonObject {
-            put("p_profile_id", profileId)
+            // Created profiles use Profile 1's provider logins.
+            put("p_profile_id", KableKillersAccountPolicy.remoteReadProfileId(profileId))
         }
         return SupabaseProvider.client.postgrest
             .rpc("sync_pull_provider_credentials", params)
@@ -268,6 +269,7 @@ object ProviderCredentialSync {
                 baselineSnapshots.getOrPut(credentialScope) { previous }
             }
             if (baseline == snapshot) return@withLock
+            if (!KableKillersAccountPolicy.canPushConfiguration(snapshot.profileId)) return@withLock
 
             try {
                 pushSnapshot(snapshot)
@@ -286,8 +288,6 @@ object ProviderCredentialSync {
     private fun currentScope(profileId: Int): ProviderCredentialScope? {
         val state = AuthRepository.state.value as? AuthState.Authenticated ?: return null
         if (state.isAnonymous || ProfileRepository.activeProfileId != profileId) return null
-        // Same as TV: only Profile 1 shares provider logins on the customer account.
-        if (KableKillersAccountPolicy.isHouseholdProfile(profileId)) return null
         return ProviderCredentialScope(state.userId, profileId)
     }
 

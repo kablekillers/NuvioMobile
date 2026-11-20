@@ -105,7 +105,8 @@ object MediaServerSync {
     }
 
     private suspend fun pull(profileId: Int): List<SyncedServer>? {
-        val params = buildJsonObject { put("p_profile_id", profileId) }
+        // Created profiles use Profile 1's media servers.
+        val params = buildJsonObject { put("p_profile_id", KableKillersAccountPolicy.remoteReadProfileId(profileId)) }
         return SupabaseProvider.client.postgrest
             .rpc("sync_pull_media_servers", params)
             .decodeList<SupabaseMediaServers>()
@@ -114,6 +115,7 @@ object MediaServerSync {
     }
 
     private suspend fun push(snapshot: ServerSyncSnapshot) {
+        if (!KableKillersAccountPolicy.canPushConfiguration(snapshot.profileId)) return
         val uploaded = refusedTypes.upload(snapshot) { allowed ->
             SupabaseProvider.client.postgrest.rpc(
                 function = "sync_push_media_servers",
@@ -133,8 +135,6 @@ object MediaServerSync {
 
     private fun canSync(profileId: Int): Boolean {
         val state = AuthRepository.state.value as? AuthState.Authenticated ?: return false
-        // Same as TV: only Profile 1 syncs media servers on the customer account.
-        if (KableKillersAccountPolicy.isHouseholdProfile(profileId)) return false
         return !state.isAnonymous && ProfileRepository.activeProfileId == profileId
     }
 }

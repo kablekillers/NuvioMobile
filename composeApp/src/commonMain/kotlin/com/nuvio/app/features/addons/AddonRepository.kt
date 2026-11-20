@@ -446,14 +446,14 @@ object AddonRepository {
     }
 
     private fun resolveEffectiveProfileId(profileId: Int): Int {
-        // Kable Killers household profiles always use Profile 1's add-ons.
-        if (KableKillersAccountPolicy.isHouseholdProfile(profileId)) return 1
+        // Kable Killers: created profiles always use Profile 1's add-ons.
+        if (KableKillersAccountPolicy.inheritsPrimaryConfig(profileId)) return 1
         val active = ProfileRepository.state.value.activeProfile
         return if (active != null && active.profileIndex != 1 && active.usesPrimaryAddons) 1 else profileId
     }
 
     private fun isUsingPrimaryAddonsFromSecondaryProfile(): Boolean {
-        if (KableKillersAccountPolicy.isHouseholdProfile()) return true
+        if (KableKillersAccountPolicy.inheritsPrimaryConfig()) return true
         val active = ProfileRepository.state.value.activeProfile
         return active != null && active.profileIndex != 1 && active.usesPrimaryAddons
     }

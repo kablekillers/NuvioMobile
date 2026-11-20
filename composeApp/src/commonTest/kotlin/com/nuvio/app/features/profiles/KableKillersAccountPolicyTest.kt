@@ -28,4 +28,12 @@ class KableKillersAccountPolicyTest {
         assertFalse(KableKillersAccountPolicy.isHouseholdAccount(AuthState.Authenticated("u", null, isAnonymous = true)))
         assertFalse(KableKillersAccountPolicy.isHouseholdAccount(AuthState.Unauthenticated))
     }
+
+    @Test
+    fun createdProfilesMirrorPrimaryOnEveryAccount() {
+        assertTrue(KableKillersAccountPolicy.inheritsPrimaryConfig(2, account("millertime42085@gmail.com")))
+        assertTrue(KableKillersAccountPolicy.inheritsPrimaryConfig(2, account("kablekillers6@gmail.com")))
+        assertFalse(KableKillersAccountPolicy.inheritsPrimaryConfig(1, account("millertime42085@gmail.com")))
+        assertFalse(KableKillersAccountPolicy.inheritsPrimaryConfig(2, AuthState.Authenticated("u", null, isAnonymous = true)))
+    }
 }

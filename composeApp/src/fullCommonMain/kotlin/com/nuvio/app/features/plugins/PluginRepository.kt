@@ -1,5 +1,6 @@
 package com.nuvio.app.features.plugins
 
+import com.nuvio.app.features.profiles.KableKillersAccountPolicy
 import co.touchlab.kermit.Logger
 import com.nuvio.app.core.network.SupabaseProvider
 import com.nuvio.app.features.addons.httpGetText
@@ -503,6 +504,8 @@ actual object PluginRepository {
     }
 
     private fun pushToServer() {
+        // Created profiles mirror Profile 1 and never upload plugins themselves.
+        if (KableKillersAccountPolicy.inheritsPrimaryConfig()) return
         scope.launch {
             runCatching {
                 val repos = _uiState.value.repositories.mapIndexed { index, repo ->
@@ -661,6 +664,8 @@ actual object PluginRepository {
     }
 
     private fun resolveEffectiveProfileId(profileId: Int): Int {
+        // Kable Killers: created profiles always use Profile 1's plugins.
+        if (KableKillersAccountPolicy.inheritsPrimaryConfig(profileId)) return 1
         val active = ProfileRepository.state.value.activeProfile
         return if (active != null && !active.id.isBlank() && active.usesPrimaryPlugins) 1 else profileId
     }

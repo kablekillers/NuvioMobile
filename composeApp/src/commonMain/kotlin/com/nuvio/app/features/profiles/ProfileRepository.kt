@@ -256,32 +256,6 @@ object ProfileRepository {
         )
 
         pushProfiles(allPayloads)
-        copyPrimarySetupInCloud(nextIndex)
-    }
-
-    /**
-     * Cloud accounts: copy Profile 1's phone settings to the new profile so it
-     * starts as a clone. Household profiles read Profile 1 directly instead.
-     */
-    private suspend fun copyPrimarySetupInCloud(targetIndex: Int) {
-        if (targetIndex == KableKillersAccountPolicy.PRIMARY_PROFILE_INDEX) return
-        if (AuthRepository.state.value.isAnonymous || KableKillersAccountPolicy.isHouseholdAccount()) return
-        if (_state.value.profiles.none { it.profileIndex == targetIndex }) return
-        try {
-            val params = buildJsonObject {
-                put("p_source_profile_id", KableKillersAccountPolicy.PRIMARY_PROFILE_INDEX)
-                put("p_target_profile_id", targetIndex)
-                put("p_copy_tv", false)
-                put("p_copy_mobile", true)
-                put("p_copy_desktop", false)
-                put("p_copy_provider_credentials", false)
-                put("p_replace_provider_credentials", false)
-                putSyncOriginClientId()
-            }
-            SupabaseProvider.client.postgrest.rpc("sync_copy_profile_setup", params)
-        } catch (e: Throwable) {
-            log.e(e) { "Could not copy Profile 1 setup to profile $targetIndex" }
-        }
     }
 
     /**

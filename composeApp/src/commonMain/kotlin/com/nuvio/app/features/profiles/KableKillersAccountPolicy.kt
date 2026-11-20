@@ -10,6 +10,10 @@ import com.nuvio.app.core.auth.AuthState
  *   on the phone they were made on. Only Profile 1 talks to the cloud; other
  *   profiles copy Profile 1's add-ons, rows and settings and never upload them.
  * - Any other signed-in account keeps every profile in the cloud, like normal Nuvio.
+ * - On every signed-in account, profiles other than Profile 1 always match
+ *   Profile 1: add-ons, plugins, rows (order and hidden), collections, settings,
+ *   provider logins and media servers are read from Profile 1 and never uploaded
+ *   under the profile's own index.
  * - Guest (anonymous) sessions keep their existing local-only behaviour.
  *
  * A signed-in account whose email is unknown is treated as the customer
@@ -32,11 +36,21 @@ object KableKillersAccountPolicy {
         state: AuthState = AuthRepository.state.value,
     ): Boolean = profileIndex != PRIMARY_PROFILE_INDEX && isHouseholdAccount(state)
 
-    /** Cloud profile id to read shared configuration from. Household profiles read Profile 1. */
-    fun remoteReadProfileId(profileIndex: Int = ProfileRepository.activeProfileId): Int =
-        if (isHouseholdProfile(profileIndex)) PRIMARY_PROFILE_INDEX else profileIndex
+    /** True when [profileIndex] mirrors Profile 1's whole setup (any signed-in account). */
+    fun inheritsPrimaryConfig(
+        profileIndex: Int = ProfileRepository.activeProfileId,
+        state: AuthState = AuthRepository.state.value,
+    ): Boolean {
+        if (profileIndex == PRIMARY_PROFILE_INDEX) return false
+        val account = state as? AuthState.Authenticated ?: return false
+        return !account.isAnonymous
+    }
 
-    /** Household profiles never upload configuration under their own (reused) index. */
+    /** Cloud profile id to read configuration from. Created profiles read Profile 1. */
+    fun remoteReadProfileId(profileIndex: Int = ProfileRepository.activeProfileId): Int =
+        if (inheritsPrimaryConfig(profileIndex)) PRIMARY_PROFILE_INDEX else profileIndex
+
+    /** Created profiles never upload configuration under their own index. */
     fun canPushConfiguration(profileIndex: Int = ProfileRepository.activeProfileId): Boolean =
-        !isHouseholdProfile(profileIndex)
+        !inheritsPrimaryConfig(profileIndex)
 }

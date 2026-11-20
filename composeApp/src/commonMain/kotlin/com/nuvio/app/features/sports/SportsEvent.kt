@@ -118,6 +118,8 @@ data class SportsEvent(
 interface SportsEventProvider {
     suspend fun events(league: SportsLeague): List<SportsEvent>
 
+    suspend fun recentResults(league: SportsLeague, nowEpochMillis: Long): List<SportsEvent> = emptyList()
+
     /** Individual player stats for a game, or null when the provider has none (e.g. not started). */
     suspend fun boxScore(event: SportsEvent): SportsBoxScore? = null
 

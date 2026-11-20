@@ -24,6 +24,7 @@ internal object SportsAddonDiscovery {
         replays: Boolean,
     ): List<SportsCatalogMatch> = withContext(Dispatchers.Default) {
         val matcher = SportsEventMatcher.Prepared(events)
+        val useRecordingMetadata = replays && !isIos && SportsRecordingClassifier.appliesTo(league)
         val requests = addons.filter { it.isActive }.flatMap { addon ->
             val manifest = requireNotNull(addon.manifest)
             SportsAddonCatalogs.routes(manifest, league, replays, expanded = !isIos).map { catalog ->
@@ -56,9 +57,12 @@ internal object SportsAddonDiscovery {
                             ensureActive()
                             if (!manifest.supportsResource("stream", item.type, item.id)) return@mapNotNull null
                             val score = matcher.score(item.name)
-                            if (score == 0 && !unscoredAllowed) return@mapNotNull null
+                            if (useRecordingMetadata) {
+                                if (!SportsRecordingClassifier.accepts(manifest.id, catalog, item, league, score)) return@mapNotNull null
+                            } else if (score == 0 && !unscoredAllowed) return@mapNotNull null
                             val kind = when {
                                 !replays -> SportsContentKind.EVENT
+                                useRecordingMetadata -> SportsRecordingClassifier.kind(manifest.id, catalog, item)
                                 "recap" in catalog.id || HighlightTitle.containsMatchIn(item.name) -> SportsContentKind.HIGHLIGHT
                                 else -> SportsContentKind.REPLAY
                             }
@@ -72,9 +76,10 @@ internal object SportsAddonDiscovery {
                 }
             }
         }
-        requests.awaitAll().flatten().sortedByDescending { it.score }
+        val matches = requests.awaitAll().flatten().sortedByDescending { it.score }
             .distinctBy { Triple(it.addonName, it.item.type, it.item.id) }
-            .take(40)
+        if (useRecordingMetadata) matches.groupBy { it.kind }.values.flatMap { it.take(40) }
+        else matches.take(40)
     }
 
     private val HighlightTitle = Regex("\\b(highlights?|recap)\\b", RegexOption.IGNORE_CASE)

@@ -5,18 +5,25 @@ import com.nuvio.app.features.addons.ManagedAddon
 import com.nuvio.app.features.addons.supportsResource
 import com.nuvio.app.features.catalog.fetchCatalogPage
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
 internal object SportsAddonDiscovery {
+    private val catalogRequests = Semaphore(3)
+
     suspend fun find(
         league: SportsLeague,
         events: List<SportsEvent>,
         addons: List<ManagedAddon>,
         replays: Boolean,
-    ): List<SportsCatalogMatch> = coroutineScope {
+    ): List<SportsCatalogMatch> = withContext(Dispatchers.Default) {
+        val matcher = SportsEventMatcher.Prepared(events)
         val requests = addons.filter { it.isActive }.flatMap { addon ->
             val manifest = requireNotNull(addon.manifest)
             SportsAddonCatalogs.routes(manifest, league, replays, expanded = !isIos).map { catalog ->
@@ -28,24 +35,27 @@ internal object SportsAddonDiscovery {
                         val genreValue = genre?.options?.firstOrNull { it.equals("all", ignoreCase = true) }
                         if (genre != null && genreValue == null) return@async emptyList()
                         val skipRequired = required.any { it.name == "skip" }
-                        val page = withTimeoutOrNull(10_000) {
-                            fetchCatalogPage(
-                                manifestUrl = manifest.transportUrl,
-                                type = catalog.type,
-                                catalogId = catalog.id,
-                                genre = genreValue,
-                                skip = if (skipRequired) 0 else null,
-                                includeInitialSkip = skipRequired,
-                            )
-                        } ?: return@async emptyList()
-                        page.items.mapNotNull { item ->
-                            if (!manifest.supportsResource("stream", item.type, item.id)) return@mapNotNull null
-                            val score = events.maxOfOrNull { SportsEventMatcher.score(it, item.name) } ?: 0
-                            val unscoredAllowed = if (league.scoreboardPath == null) {
-                                SportsAddonCatalogs.isScopedCatalog(catalog, league)
-                            } else {
-                                replays && isLeagueCatalog(catalog.id, league)
+                        val page = catalogRequests.withPermit {
+                            withTimeoutOrNull(10_000) {
+                                fetchCatalogPage(
+                                    manifestUrl = manifest.transportUrl,
+                                    type = catalog.type,
+                                    catalogId = catalog.id,
+                                    genre = genreValue,
+                                    skip = if (skipRequired) 0 else null,
+                                    includeInitialSkip = skipRequired,
+                                )
                             }
+                        } ?: return@async emptyList()
+                        val unscoredAllowed = if (league.scoreboardPath == null) {
+                            SportsAddonCatalogs.isScopedCatalog(catalog, league)
+                        } else {
+                            replays && isLeagueCatalog(catalog.id, league)
+                        }
+                        page.items.mapNotNull { item ->
+                            ensureActive()
+                            if (!manifest.supportsResource("stream", item.type, item.id)) return@mapNotNull null
+                            val score = matcher.score(item.name)
                             if (score == 0 && !unscoredAllowed) return@mapNotNull null
                             val kind = when {
                                 !replays -> SportsContentKind.EVENT

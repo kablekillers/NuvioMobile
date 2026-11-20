@@ -7,6 +7,8 @@ import io.ktor.client.request.parameter
 import io.ktor.client.request.prepareGet
 import io.ktor.client.statement.bodyAsChannel
 import io.ktor.http.contentLength
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -26,7 +28,8 @@ class EspnSportsEventProvider : SportsEventProvider {
     override suspend fun events(league: SportsLeague): List<SportsEvent> {
         val path = league.scoreboardPath ?: return emptyList()
         val query = if (league.isCollegeBasketball) "?groups=50&limit=100" else ""
-        return parseScoreboard(get("https://site.api.espn.com/apis/site/v2/sports/$path/scoreboard$query"), league)
+        val payload = get("https://site.api.espn.com/apis/site/v2/sports/$path/scoreboard$query")
+        return withContext(Dispatchers.Default) { parseScoreboard(payload, league) }
     }
 
     override suspend fun boxScore(event: SportsEvent): SportsBoxScore? {

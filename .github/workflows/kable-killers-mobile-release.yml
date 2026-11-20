@@ -26,9 +26,9 @@ on:
         type: boolean
         default: true
       ios:
-        description: Also build the iPhone IPA
+        description: Also build the iPhone IPA (off; iPhone updates are paused)
         type: boolean
-        default: true
+        default: false
 
 permissions:
   contents: write

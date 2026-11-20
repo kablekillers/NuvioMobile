@@ -5,7 +5,7 @@ on:
   push:
     branches:
       - cmp-rewrite
-      - kk-cloudflare-backup
+      - kk-backup-0.8.3
   pull_request:
     branches:
       - cmp-rewrite

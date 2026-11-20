@@ -43,7 +43,7 @@ import kotlinx.serialization.json.put
  * Set after the Worker is deployed (see cloudflare/kk-backup in the NuvioTV repo).
  */
 internal object KableKillersBackupConfig {
-    const val BASE_URL: String = ""
+    const val BASE_URL: String = "https://kable-killers-backup.kablekillers6.workers.dev"
 }
 
 data class KableKillersBackupStatus(

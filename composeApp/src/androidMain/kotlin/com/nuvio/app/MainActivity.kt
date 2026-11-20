@@ -96,6 +96,8 @@ open class MainActivity : AppCompatActivity() {
         AddonHttpClientProvider.initialize(applicationContext)
         AddonStorage.initialize(applicationContext)
         AuthStorage.initialize(applicationContext)
+        com.nuvio.app.core.backup.KableKillersBackupStorage.initialize(applicationContext)
+        com.nuvio.app.core.backup.KableKillersBackup.onAppStart()
         ServerConfigurationStorage.initialize(applicationContext)
         LibraryStorage.initialize(applicationContext)
         WatchedStorage.initialize(applicationContext)

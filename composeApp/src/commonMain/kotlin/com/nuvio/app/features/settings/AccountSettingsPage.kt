@@ -112,6 +112,8 @@ private fun AccountSettingsBody(
             }
         }
 
+        KableKillersBackupCard(authState = authState)
+
         NuvioPrimaryButton(
             text = stringResource(Res.string.settings_account_sign_out),
             onClick = { showSignOutConfirm = true },

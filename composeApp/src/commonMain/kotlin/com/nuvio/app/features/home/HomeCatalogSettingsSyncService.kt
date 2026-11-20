@@ -132,6 +132,18 @@ object HomeCatalogSettingsSyncService {
         }
     }
 
+    /**
+     * Kable Killers backup restore: applies saved Profile 1 Home row settings like
+     * a Nuvio pull would. Returns how many rows were restored.
+     */
+    suspend fun restoreFromBackup(settingsJson: JsonObject): Int {
+        val localPayload = HomeCatalogSettingsRepository.exportToSyncPayload()
+        val payload = decodePayloadPreservingLocalDefaults(settingsJson, localPayload) ?: return 0
+        if (payload.items.isEmpty()) return 0
+        applyRemotePayload(payload)
+        return payload.items.size
+    }
+
     fun triggerPush() {
         val requestedToken = currentPullToken()
         if (requestedToken == null || !hasCompletedInitialPull(requestedToken)) {

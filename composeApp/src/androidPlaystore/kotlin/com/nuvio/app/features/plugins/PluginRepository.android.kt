@@ -20,6 +20,8 @@ actual object PluginRepository {
 
     actual suspend fun pullFromServer(profileId: Int) = Unit
 
+    actual suspend fun restoreFromBackup(profileId: Int, rows: kotlinx.serialization.json.JsonArray): Int = 0
+
     actual suspend fun addRepository(rawUrl: String): AddPluginRepositoryResult =
         AddPluginRepositoryResult.Error(getString(Res.string.plugins_error_unavailable_build))
 

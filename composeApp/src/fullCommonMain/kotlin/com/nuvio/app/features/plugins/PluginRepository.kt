@@ -27,7 +27,9 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.put
@@ -128,51 +130,64 @@ actual object PluginRepository {
                     order("sort_order", Order.ASCENDING)
                 }
                 .decodeList<PluginRow>()
-
-            val urls = dedupeManifestUrls(rows.map { it.url })
-            val existingState = _uiState.value
-            val existingReposByUrl = existingState.repositories.associateBy { it.manifestUrl }
-            val nowEpochMs = currentEpochMillis()
-            val nextRepos = urls.map { url ->
-                val existing = existingReposByUrl[url]
-                if (existing == null) {
-                    PluginRepositoryItem(
-                        manifestUrl = url,
-                        name = url.substringBefore("?").substringAfterLast('/'),
-                        isRefreshing = true,
-                    )
-                } else {
-                    val shouldRefresh = shouldRefreshRepository(
-                        repository = existing,
-                        scrapers = existingState.scrapers,
-                        nowEpochMs = nowEpochMs,
-                    )
-                    existing.copy(
-                        isRefreshing = shouldRefresh,
-                        errorMessage = if (shouldRefresh) null else existing.errorMessage,
-                    )
-                }
-            }
-            val nextScrapers = existingState.scrapers.filter { scraper ->
-                urls.contains(scraper.repositoryUrl)
-            }
-
-            _uiState.value = PluginsUiState(
-                pluginsEnabled = _uiState.value.pluginsEnabled,
-                groupStreamsByRepository = _uiState.value.groupStreamsByRepository,
-                repositories = nextRepos,
-                scrapers = nextScrapers,
-            )
-            persist()
-
-            nextRepos.filter(PluginRepositoryItem::isRefreshing).forEach { repository ->
-                refreshRepository(repository.manifestUrl, pushAfterRefresh = false)
-            }
-
-            initialized = true
+            applyServerRows(rows)
         }.onFailure { error ->
             log.e(error) { "pullFromServer failed" }
         }
+    }
+
+    /** Kable Killers backup restore: applies saved Profile 1 plugin rows like a Nuvio pull. */
+    actual suspend fun restoreFromBackup(profileId: Int, rows: JsonArray): Int {
+        val decoded = json.decodeFromJsonElement(ListSerializer(PluginRow.serializer()), rows)
+            .sortedBy { it.sortOrder }
+        if (decoded.isEmpty()) return 0
+        ensureStateLoadedForProfile(resolveEffectiveProfileId(profileId))
+        applyServerRows(decoded)
+        return decoded.size
+    }
+
+    private suspend fun applyServerRows(rows: List<PluginRow>) {
+        val urls = dedupeManifestUrls(rows.map { it.url })
+        val existingState = _uiState.value
+        val existingReposByUrl = existingState.repositories.associateBy { it.manifestUrl }
+        val nowEpochMs = currentEpochMillis()
+        val nextRepos = urls.map { url ->
+            val existing = existingReposByUrl[url]
+            if (existing == null) {
+                PluginRepositoryItem(
+                    manifestUrl = url,
+                    name = url.substringBefore("?").substringAfterLast('/'),
+                    isRefreshing = true,
+                )
+            } else {
+                val shouldRefresh = shouldRefreshRepository(
+                    repository = existing,
+                    scrapers = existingState.scrapers,
+                    nowEpochMs = nowEpochMs,
+                )
+                existing.copy(
+                    isRefreshing = shouldRefresh,
+                    errorMessage = if (shouldRefresh) null else existing.errorMessage,
+                )
+            }
+        }
+        val nextScrapers = existingState.scrapers.filter { scraper ->
+            urls.contains(scraper.repositoryUrl)
+        }
+
+        _uiState.value = PluginsUiState(
+            pluginsEnabled = _uiState.value.pluginsEnabled,
+            groupStreamsByRepository = _uiState.value.groupStreamsByRepository,
+            repositories = nextRepos,
+            scrapers = nextScrapers,
+        )
+        persist()
+
+        nextRepos.filter(PluginRepositoryItem::isRefreshing).forEach { repository ->
+            refreshRepository(repository.manifestUrl, pushAfterRefresh = false)
+        }
+
+        initialized = true
     }
 
     actual suspend fun addRepository(rawUrl: String): AddPluginRepositoryResult {

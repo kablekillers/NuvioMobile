@@ -50,7 +50,9 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.put
@@ -154,6 +156,33 @@ object ProfileRepository {
                 _state.value = _state.value.copy(isLoaded = true)
             }
         }
+    }
+
+    /**
+     * Kable Killers backup restore of the profile list. Logins with cloud profiles
+     * get their whole list back; the shared customer login keeps household profiles
+     * local and only takes Profile 1's name and look (same as a normal pull).
+     */
+    internal fun restoreFromBackup(rows: JsonArray, cloudProfiles: Boolean): Int {
+        val remoteProfiles = runCatching {
+            json.decodeFromJsonElement(ListSerializer(NuvioProfile.serializer()), rows)
+        }.getOrNull().orEmpty()
+        if (remoteProfiles.none { it.profileIndex == KableKillersAccountPolicy.PRIMARY_PROFILE_INDEX }) return 0
+        val profiles = if (cloudProfiles) {
+            val restoredIds = remoteProfiles.map { it.profileIndex }.toSet()
+            val localOnly = _state.value.profiles.filter { it.profileIndex !in restoredIds }
+            (remoteProfiles + localOnly).take(MAX_PROFILES)
+        } else {
+            householdProfiles(remoteProfiles)
+        }
+        _state.value = _state.value.copy(
+            profiles = profiles.sortedBy { it.profileIndex },
+            isLoaded = true,
+            activeProfile = profiles.find { it.profileIndex == activeProfileIndex } ?: profiles.firstOrNull(),
+        )
+        _state.value.activeProfile?.let { activeProfileIndex = it.profileIndex }
+        persist()
+        return if (cloudProfiles) remoteProfiles.size else 1
     }
 
     fun selectProfile(profileIndex: Int) {

@@ -160,14 +160,17 @@ jobs:
           mkdir -p "$RUNNER_TEMP/previous-release"
           gh release download "v0.8.3" --repo "$GITHUB_REPOSITORY" \
             --pattern 'Kable-Killers-Mobile-v0.8.3-arm64-v8a.apk' --dir "$RUNNER_TEMP/previous-release"
+          ls -la "$RUNNER_TEMP/previous-release"
+          "$build_tools/apksigner" verify --print-certs "$RUNNER_TEMP/previous-release/"*.apk | grep -i 'SHA-256' || true
           reference=$("$build_tools/apksigner" verify --print-certs "$RUNNER_TEMP/previous-release/"*.apk |
-            awk '/^Signer #1 certificate SHA-256 digest:/ {print $NF}')
+            awk '/certificate SHA-256 digest:/ {print tolower($NF)}' | sort -u | head -1)
           test -n "$reference"
           echo "Previous release certificate: $reference"
           for apk in "${artifacts[@]}"; do
             echo "Checking $apk"
             cert=$("$build_tools/apksigner" verify --print-certs "$apk" |
-              awk '/^Signer #1 certificate SHA-256 digest:/ {print $NF}')
+              awk '/certificate SHA-256 digest:/ {print tolower($NF)}' | sort -u | head -1)
+            echo "  certificate: $cert"
             test "$cert" = "$reference"
             "$build_tools/aapt2" dump badging "$apk" > "$RUNNER_TEMP/final-badging.txt"
             grep -Fq "name='com.kablekillers.mobile'" "$RUNNER_TEMP/final-badging.txt"

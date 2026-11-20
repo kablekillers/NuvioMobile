@@ -869,16 +869,23 @@ internal fun SportsHubHomeButton(onClick: () -> Unit, modifier: Modifier = Modif
 
 @Composable
 private fun LeagueLogo(league: SportsLeague, modifier: Modifier) {
-    val path = league.logoPath
-    if (path == null) {
+    val isTennisTour = league == SportsLeague.ATP || league == SportsLeague.WTA
+    val logoUrl = when (league) {
+        SportsLeague.ATP -> "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3f/ATP_Tour_logo.svg/330px-ATP_Tour_logo.svg.png"
+        SportsLeague.WTA -> "https://www.wtatennis.com/resources/v7.55.15/i/elements/wta-publisher-logo.png"
+        else -> league.logoPath?.let { "https://a.espncdn.com/$it" }
+    }
+    if (logoUrl == null) {
         SportIcon(league.glyph(), modifier = modifier, color = HubAccent, size = 22.dp)
         return
     }
     SubcomposeAsyncImage(
-        model = "https://a.espncdn.com/$path",
+        model = logoUrl,
         contentDescription = "${league.label} logo",
         contentScale = ContentScale.Fit,
-        modifier = modifier,
+        modifier = if (isTennisTour) {
+            modifier.background(Color(0xFFF5EFE9), CircleShape).padding(2.dp)
+        } else modifier,
         loading = { SportIcon(league.glyph(), color = HubAccent, size = 22.dp) },
         error = { SportIcon(league.glyph(), color = HubAccent, size = 22.dp) },
     )

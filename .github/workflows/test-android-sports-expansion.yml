@@ -148,5 +148,6 @@ jobs:
 
       - name: Verify Sports Hub feed and catalog routing
         run: |
+          touch local.properties
           ./gradlew :composeApp:testAndroidHostTest --tests 'com.nuvio.app.features.sports.*' \
             -Pnuvio.android.distribution=full -Pnuvio.ios.distribution=appstore --stacktrace --no-daemon

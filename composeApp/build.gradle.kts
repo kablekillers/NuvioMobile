@@ -355,6 +355,13 @@ kotlin {
         }
     }
     
+    // Kable Killers for Windows (Compose Desktop on the JVM).
+    jvm("desktop") {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
+        }
+    }
+
     val iosTargets = listOf(
         iosArm64(),
         iosSimulatorArm64()
@@ -527,6 +534,16 @@ kotlin {
             implementation(libs.supabase.realtime)
             implementation(libs.reorderable)
         }
+        val desktopMain by getting {
+            dependencies {
+                implementation(compose.desktop.currentOs)
+                implementation(libs.ktor.client.okhttp)
+                implementation("com.squareup.okhttp3:okhttp:4.12.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:${libs.versions.kotlinx.coroutines.get()}")
+                // Windows DPAPI for the encrypted credential store.
+                implementation("net.java.dev.jna:jna-platform:5.15.0")
+            }
+        }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${libs.versions.kotlinx.coroutines.get()}")
@@ -566,5 +583,40 @@ composeCompiler {
     if (providers.gradleProperty("composeCompilerReports").orNull == "true") {
         metricsDestination = layout.buildDirectory.dir("compose_metrics")
         reportsDestination = layout.buildDirectory.dir("compose_reports")
+    }
+}
+
+// ---- Kable Killers for Windows: installer ----
+val kkWindowsVersion: String = providers.gradleProperty("kkWindowsVersion").orNull ?: "1.0.0"
+
+compose.desktop {
+    application {
+        mainClass = "com.nuvio.app.MainKt"
+        jvmArgs += listOf("-Xmx1536m", "-Dsun.java2d.uiScale.enabled=true")
+        nativeDistributions {
+            targetFormats(
+                org.jetbrains.compose.desktop.application.dsl.TargetFormat.Msi,
+                org.jetbrains.compose.desktop.application.dsl.TargetFormat.Exe,
+            )
+            packageName = "Kable Killers"
+            packageVersion = kkWindowsVersion
+            description = "Kable Killers media app for Windows"
+            vendor = "Kable Killers"
+            copyright = "Kable Killers"
+            modules("java.net.http", "java.sql", "jdk.unsupported", "jdk.crypto.ec", "java.naming", "java.management")
+            windows {
+                iconFile.set(project.file("desktop-icons/kk_icon.ico"))
+                menuGroup = "Kable Killers"
+                shortcut = true
+                menu = true
+                dirChooser = false
+                perUserInstall = true
+                // Fixed so new versions install over old ones.
+                upgradeUuid = "7d1f6a52-3b0e-4c8e-9a43-6b2f0e5c9b17"
+            }
+        }
+        buildTypes.release.proguard {
+            isEnabled.set(false)
+        }
     }
 }

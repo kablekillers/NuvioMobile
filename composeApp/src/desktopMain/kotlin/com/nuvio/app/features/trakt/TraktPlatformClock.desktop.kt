@@ -1,0 +1,8 @@
+package com.nuvio.app.features.trakt
+
+internal actual object TraktPlatformClock {
+    actual fun nowEpochMs(): Long = System.currentTimeMillis()
+    actual fun parseIsoDateTimeToEpochMs(value: String): Long? =
+        parseTraktIsoDateTimeToEpochMs(value)
+    actual fun availableProcessors(): Int = Runtime.getRuntime().availableProcessors()
+}

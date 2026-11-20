@@ -1,13 +1,18 @@
 package com.nuvio.app.features.sports
 
 import com.nuvio.app.core.network.createApiHttpClient
+import com.nuvio.app.core.time.EpisodeReleaseDatePlatform
 import com.nuvio.app.core.network.readBoundedResponseBody
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 import io.ktor.client.request.prepareGet
 import io.ktor.client.statement.bodyAsChannel
 import io.ktor.http.contentLength
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.Json
@@ -25,9 +30,32 @@ import kotlin.time.Instant
  * Endpoint availability and usage terms must be reviewed before a production release.
  */
 class EspnSportsEventProvider : SportsEventProvider {
-    override suspend fun events(league: SportsLeague): List<SportsEvent> {
+    override suspend fun events(league: SportsLeague): List<SportsEvent> = scoreboard(league)
+
+    override suspend fun recentResults(league: SportsLeague, nowEpochMillis: Long): List<SportsEvent> = coroutineScope {
+        (1L..3L).mapNotNull { days ->
+            EpisodeReleaseDatePlatform.localIsoDateAtEpochMs(nowEpochMillis - days * 86_400_000L)
+                ?.replace("-", "")
+        }.distinct().map { date ->
+            async {
+                try {
+                    SportsEventSections.final(scoreboard(league, date))
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    emptyList()
+                }
+            }
+        }.awaitAll().flatten()
+    }
+
+    private suspend fun scoreboard(league: SportsLeague, date: String? = null): List<SportsEvent> {
         val path = league.scoreboardPath ?: return emptyList()
-        val query = if (league.isCollegeBasketball) "?groups=50&limit=100" else ""
+        val options = buildList {
+            if (league.isCollegeBasketball) add("groups=50&limit=100")
+            if (date != null) add("dates=$date")
+        }
+        val query = options.joinToString("&", prefix = if (options.isEmpty()) "" else "?")
         val payload = get("https://site.api.espn.com/apis/site/v2/sports/$path/scoreboard$query")
         return withContext(Dispatchers.Default) { parseScoreboard(payload, league) }
     }

@@ -202,7 +202,12 @@ internal fun SportsHubScreen(
     val catalogSection = vod || section == SportsSection.Events
     var recordings by remember(league, catalogSection, vod, activeAddons) { mutableStateOf<List<SportsCatalogMatch>?>(null) }
     LaunchedEffect(league, catalogSection, vod, activeAddons, events) {
-        if (catalogSection) recordings = SportsAddonDiscovery.find(league, events, activeAddons, replays = vod)
+        if (catalogSection) {
+            val replaySchedule = if (vod && !isIos && activeAddons.isNotEmpty() && SportsRecordingClassifier.appliesTo(league)) {
+                (events + repository.recentResults(league)).distinctBy { it.id }
+            } else events
+            recordings = SportsAddonDiscovery.find(league, replaySchedule, activeAddons, replays = vod)
+        }
     }
 
     if (currentEvent != null) {

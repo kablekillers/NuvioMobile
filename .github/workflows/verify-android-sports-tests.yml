@@ -1,0 +1,58 @@
+name: Verify Android Sports Hub candidate
+
+on:
+  push:
+    branches:
+      - verify/android-sports-tests
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Run Sports Hub unit tests
+        run: |
+          touch local.properties
+          ./gradlew :composeApp:testAndroidHostTest --tests 'com.nuvio.app.features.sports.*' \
+            -Pnuvio.android.distribution=full -Pnuvio.ios.distribution=appstore \
+            "-Dorg.gradle.jvmargs=-Xmx5g -XX:MaxMetaspaceSize=1536m -Dfile.encoding=UTF-8" \
+            -Pkotlin.compiler.execution.strategy=in-process --max-workers=2 --stacktrace --no-daemon
+
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Kable-Killers-Mobile-v0.8.3
+          path: apk
+          github-token: ${{ github.token }}
+          run-id: 44751668140
+      - name: Verify signed Android upgrade and checksums
+        run: |
+          set -euo pipefail
+          tools=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          (cd apk && sha256sum -c SHA256SUMS.txt)
+          curl -fLsS --retry 2 'https://github.com/kablekillers/NuvioMobile/releases/download/v0.8.2/Kable-Killers-Mobile-v0.8.2-arm64-v8a.apk' -o "$RUNNER_TEMP/previous.apk"
+          digest() {
+            "$tools/apksigner" verify --print-certs "$1" |
+              awk -F': ' 'tolower($0) ~ /certificate sha-256 digest:/ {print tolower($NF)}' | sort -u
+          }
+          expected=$(digest "$RUNNER_TEMP/previous.apk")
+          [[ "$expected" =~ ^[a-f0-9]{64}$ ]]
+          files=(apk/*.apk)
+          test "${#files[@]}" -eq 4
+          for file in "${files[@]}"; do
+            test "$(digest "$file")" = "$expected"
+            "$tools/aapt" dump badging "$file" > "$RUNNER_TEMP/badging.txt"
+            grep -F "name='com.kablekillers.mobile' versionCode='158' versionName='0.8.3'" "$RUNNER_TEMP/badging.txt"
+            if grep -q '^application-debuggable' "$RUNNER_TEMP/badging.txt"; then exit 1; fi
+          done

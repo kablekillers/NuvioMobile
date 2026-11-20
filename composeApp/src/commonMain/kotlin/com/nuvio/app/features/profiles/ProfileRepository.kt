@@ -70,6 +70,10 @@ private data class StoredProfilePayload(
 )
 
 object ProfileRepository {
+    private const val HOUSEHOLD_PIN_KEY_OFFSET = 100
+    private const val HOUSEHOLD_PIN_MAX_ATTEMPTS = 5
+    private const val HOUSEHOLD_PIN_LOCKOUT_MS = 30_000L
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val log = Logger.withTag("ProfileRepository")
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
@@ -260,6 +264,8 @@ object ProfileRepository {
     ) {
         val existing = _state.value.profiles
         val nextIndex = ((1..MAX_PROFILES).toSet() - existing.map { it.profileIndex }.toSet()).minOrNull() ?: return
+        // A reused profile number must never inherit a deleted profile's device PIN.
+        ProfilePinCacheStorage.removePayload(householdPinKey(nextIndex))
 
         val allPayloads = existing.map { profile ->
             ProfilePushPayload(
@@ -358,6 +364,7 @@ object ProfileRepository {
             if (profileIndex == KableKillersAccountPolicy.PRIMARY_PROFILE_INDEX) return
             val remaining = _state.value.profiles.filter { it.profileIndex != profileIndex }
             ProfilePinCacheStorage.removePayload(profileIndex)
+            ProfilePinCacheStorage.removePayload(householdPinKey(profileIndex))
             ServerRepository.removeProfile(profileIndex)
             _state.value = _state.value.copy(
                 profiles = remaining,
@@ -384,6 +391,9 @@ object ProfileRepository {
     }
 
     suspend fun verifyPin(profileIndex: Int, pin: String): PinVerifyResult {
+        if (KableKillersAccountPolicy.isHouseholdProfile(profileIndex)) {
+            return verifyHouseholdPinOrOwner(profileIndex, pin)
+        }
         if (AuthRepository.state.value !is AuthState.Authenticated) {
             return verifyPinLocally(profileIndex, pin)
         }
@@ -408,8 +418,7 @@ object ProfileRepository {
 
     suspend fun setPin(profileIndex: Int, pin: String, currentPin: String? = null): PinVerifyResult {
         if (KableKillersAccountPolicy.isHouseholdProfile(profileIndex)) {
-            // Household profiles on the customer login never get cloud PINs (see policy).
-            return PinVerifyResult(unlocked = false, message = getString(Res.string.profile_pin_set_failed))
+            return setHouseholdPin(profileIndex, pin, currentPin)
         }
         if (AuthRepository.state.value !is AuthState.Authenticated) {
             return PinVerifyResult(unlocked = false, message = getString(Res.string.profile_pin_set_requires_internet))
@@ -433,6 +442,9 @@ object ProfileRepository {
     }
 
     suspend fun clearPin(profileIndex: Int, currentPin: String? = null): PinVerifyResult {
+        if (KableKillersAccountPolicy.isHouseholdProfile(profileIndex)) {
+            return clearHouseholdPin(profileIndex, currentPin)
+        }
         if (AuthRepository.state.value !is AuthState.Authenticated) {
             return PinVerifyResult(unlocked = false, message = getString(Res.string.profile_pin_clear_requires_internet))
         }
@@ -479,8 +491,14 @@ object ProfileRepository {
 
     private fun applyPayloadsLocally(payloads: List<ProfilePushPayload>) {
         val authState = AuthRepository.state.value as? AuthState.Authenticated ?: return
+        // Keep each profile's lock state: the payload has no PIN fields, and
+        // dropping them would leave Profile 1 (or a parent's profile) unlocked.
+        val existingByIndex = _state.value.profiles.associateBy { it.profileIndex }
         val profiles = payloads.map { p ->
+            val existing = existingByIndex[p.profileIndex]
             NuvioProfile(
+                pinEnabled = existing?.pinEnabled ?: false,
+                updatedAt = existing?.updatedAt.orEmpty(),
                 id = "",
                 userId = authState.userId,
                 profileIndex = p.profileIndex,
@@ -527,6 +545,101 @@ object ProfileRepository {
         )
         _state.value.activeProfile?.let { activeProfileIndex = it.profileIndex }
         syncPinCache(profiles)
+    }
+
+    // ---- Household (customer) profile PINs: saved on this phone only ----
+    //
+    // The cloud stores PINs by profile number for the whole login, so a cloud PIN
+    // on one customer's "Profile 2" would lock every customer's Profile 2. On the
+    // shared customer login, household PINs are kept on the phone instead (salted
+    // hash, under a separate key range from the cloud PIN cache), and the owner's
+    // Profile 1 PIN also unlocks them as a recovery path.
+
+    private fun householdPinKey(profileIndex: Int): Int = HOUSEHOLD_PIN_KEY_OFFSET + profileIndex
+
+    private val householdPinFailures = mutableMapOf<Int, Int>()
+    private val householdPinLockedUntil = mutableMapOf<Int, Long>()
+
+    private fun nowMs(): Long = kotlin.time.Clock.System.now().toEpochMilliseconds()
+
+    private fun checkHouseholdPin(profileIndex: Int, pin: String): PinVerifyResult {
+        val profile = _state.value.profiles.find { it.profileIndex == profileIndex }
+        val raw = ProfilePinCacheStorage.loadPayload(householdPinKey(profileIndex)).orEmpty().trim()
+        if (profile?.pinEnabled != true && raw.isEmpty()) return PinVerifyResult(unlocked = true)
+        val until = householdPinLockedUntil[profileIndex] ?: 0L
+        val now = nowMs()
+        if (until > now) {
+            val seconds = ((until - now + 999) / 1000).toInt()
+            return PinVerifyResult(unlocked = false, retryAfterSeconds = seconds, message = localizedString(Res.string.pin_incorrect))
+        }
+        val cached = runCatching { json.decodeFromString<CachedProfilePinPayload>(raw) }.getOrNull()
+        val ok = cached != null &&
+            hashProfilePin(profileIndex = profileIndex, salt = cached.salt, pin = pin) == cached.digest
+        if (ok) {
+            householdPinFailures.remove(profileIndex)
+            return PinVerifyResult(unlocked = true)
+        }
+        val count = (householdPinFailures[profileIndex] ?: 0) + 1
+        householdPinFailures[profileIndex] = count
+        if (count >= HOUSEHOLD_PIN_MAX_ATTEMPTS) {
+            householdPinFailures.remove(profileIndex)
+            householdPinLockedUntil[profileIndex] = now + HOUSEHOLD_PIN_LOCKOUT_MS
+        }
+        return PinVerifyResult(unlocked = false, message = localizedString(Res.string.pin_incorrect))
+    }
+
+    private suspend fun verifyHouseholdPinOrOwner(profileIndex: Int, pin: String): PinVerifyResult {
+        val local = checkHouseholdPin(profileIndex, pin)
+        if (local.unlocked) return local
+        val primary = _state.value.profiles.find { it.profileIndex == KableKillersAccountPolicy.PRIMARY_PROFILE_INDEX }
+        if (primary?.pinEnabled == true && verifyPin(KableKillersAccountPolicy.PRIMARY_PROFILE_INDEX, pin).unlocked) {
+            return PinVerifyResult(unlocked = true)
+        }
+        return local
+    }
+
+    private fun setHouseholdLockFlag(profileIndex: Int, enabled: Boolean) {
+        val profiles = _state.value.profiles.map {
+            if (it.profileIndex == profileIndex) it.copy(pinEnabled = enabled) else it
+        }
+        _state.value = _state.value.copy(
+            profiles = profiles,
+            activeProfile = profiles.find { it.profileIndex == activeProfileIndex } ?: _state.value.activeProfile,
+        )
+        persist()
+    }
+
+    private suspend fun setHouseholdPin(profileIndex: Int, pin: String, currentPin: String?): PinVerifyResult {
+        val profile = _state.value.profiles.find { it.profileIndex == profileIndex }
+            ?: return PinVerifyResult(unlocked = false, message = getString(Res.string.profile_pin_set_failed))
+        if (profile.pinEnabled) {
+            if (currentPin == null || !verifyHouseholdPinOrOwner(profileIndex, currentPin).unlocked) {
+                return PinVerifyResult(unlocked = false, message = localizedString(Res.string.pin_incorrect))
+            }
+        }
+        val salt = generateProfilePinSalt()
+        val payload = CachedProfilePinPayload(
+            salt = salt,
+            digest = hashProfilePin(profileIndex = profileIndex, salt = salt, pin = pin),
+            profileUpdatedAt = "",
+        )
+        ProfilePinCacheStorage.savePayload(householdPinKey(profileIndex), json.encodeToString(payload))
+        householdPinFailures.remove(profileIndex)
+        householdPinLockedUntil.remove(profileIndex)
+        setHouseholdLockFlag(profileIndex, true)
+        return PinVerifyResult(unlocked = true)
+    }
+
+    private suspend fun clearHouseholdPin(profileIndex: Int, currentPin: String?): PinVerifyResult {
+        val profile = _state.value.profiles.find { it.profileIndex == profileIndex }
+        if (profile?.pinEnabled == true) {
+            if (currentPin == null || !verifyHouseholdPinOrOwner(profileIndex, currentPin).unlocked) {
+                return PinVerifyResult(unlocked = false, message = localizedString(Res.string.pin_incorrect))
+            }
+        }
+        ProfilePinCacheStorage.removePayload(householdPinKey(profileIndex))
+        setHouseholdLockFlag(profileIndex, false)
+        return PinVerifyResult(unlocked = true)
     }
 
     private fun rememberVerifiedPin(profileIndex: Int, pin: String) {

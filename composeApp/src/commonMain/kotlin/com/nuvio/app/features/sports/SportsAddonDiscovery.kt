@@ -1,5 +1,6 @@
 package com.nuvio.app.features.sports
 
+import com.nuvio.app.isIos
 import com.nuvio.app.features.addons.ManagedAddon
 import com.nuvio.app.features.addons.supportsResource
 import com.nuvio.app.features.catalog.fetchCatalogPage
@@ -18,7 +19,7 @@ internal object SportsAddonDiscovery {
     ): List<SportsCatalogMatch> = coroutineScope {
         val requests = addons.filter { it.isActive }.flatMap { addon ->
             val manifest = requireNotNull(addon.manifest)
-            SportsAddonCatalogs.routes(manifest, league, replays).map { catalog ->
+            SportsAddonCatalogs.routes(manifest, league, replays, expanded = !isIos).map { catalog ->
                 async {
                     try {
                         val required = catalog.extra.filter { it.isRequired }
@@ -40,9 +41,12 @@ internal object SportsAddonDiscovery {
                         page.items.mapNotNull { item ->
                             if (!manifest.supportsResource("stream", item.type, item.id)) return@mapNotNull null
                             val score = events.maxOfOrNull { SportsEventMatcher.score(it, item.name) } ?: 0
-                            if (score == 0 && (!replays || !isLeagueCatalog(catalog.id, league))) {
-                                return@mapNotNull null
+                            val unscoredAllowed = if (league.scoreboardPath == null) {
+                                SportsAddonCatalogs.isScopedCatalog(catalog, league)
+                            } else {
+                                replays && isLeagueCatalog(catalog.id, league)
                             }
+                            if (score == 0 && !unscoredAllowed) return@mapNotNull null
                             val kind = when {
                                 !replays -> SportsContentKind.EVENT
                                 "recap" in catalog.id || HighlightTitle.containsMatchIn(item.name) -> SportsContentKind.HIGHLIGHT

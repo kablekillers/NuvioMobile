@@ -13,10 +13,17 @@ import com.nuvio.app.features.addons.AddonManifest
  */
 object SportsAddonCatalogs {
     const val SPORTS_STREAMS = "community.sports.streamed.premium"
+    private const val FREE_SPORTS_STREAMS = "community.sports.fly"
     const val NUVIO_LIVE = "community.nuvio.live-sports"
     const val STREMVERSE = "com.stremverse.org"
 
-    fun routes(addon: AddonManifest, league: SportsLeague, replays: Boolean = false): List<AddonCatalog> {
+    fun routes(
+        addon: AddonManifest,
+        league: SportsLeague,
+        replays: Boolean = false,
+        expanded: Boolean = league.androidOnly,
+    ): List<AddonCatalog> {
+        if (expanded) return expandedRoutes(addon, league, replays)
         val candidates = when (addon.id) {
             SPORTS_STREAMS -> if (replays) listOf("sports_recaps") else listOfNotNull(
                 when (league) {
@@ -25,6 +32,7 @@ object SportsAddonCatalogs {
                     SportsLeague.MLB -> "sports_baseball"
                     SportsLeague.NHL -> "sports_hockey"
                     SportsLeague.UFC -> "sports_fight"
+                    else -> null
                 }, "sports_live", "sports_today"
             )
             NUVIO_LIVE -> if (replays) when (league) {
@@ -33,6 +41,7 @@ object SportsAddonCatalogs {
                 SportsLeague.MLB -> listOf("nuvio_sports_replays_baseball")
                 SportsLeague.NHL -> listOf("nuvio_sports_replays_hockey")
                 SportsLeague.UFC -> listOf("nuvio_sports_replays")
+                else -> emptyList()
             } else listOfNotNull(
                 when (league) {
                     SportsLeague.NFL, SportsLeague.COLLEGE_FOOTBALL -> "nuvio_sports_american_football"
@@ -40,6 +49,7 @@ object SportsAddonCatalogs {
                     SportsLeague.MLB -> "nuvio_sports_baseball"
                     SportsLeague.NHL -> "nuvio_sports_hockey"
                     SportsLeague.UFC -> "nuvio_sports_mma"
+                    else -> null
                 }, "nuvio_sports_live", "nuvio_sports_upcoming"
             )
             STREMVERSE -> if (replays) listOf("stremverse_replays")
@@ -53,6 +63,38 @@ object SportsAddonCatalogs {
         }
         return catalogs
     }
+    private val expandedProviders = setOf(SPORTS_STREAMS, FREE_SPORTS_STREAMS, NUVIO_LIVE, STREMVERSE)
+    private val generalCatalogs = setOf(
+        "sports_live", "sports_today", "sports_recaps",
+        "nuvio_sports_live", "nuvio_sports_today", "nuvio_sports_upcoming", "nuvio_sports_replays",
+        "stremverse_xtra_events", "stremverse_live_events", "stremverse_replays",
+    )
+
+    private fun expandedRoutes(addon: AddonManifest, league: SportsLeague, replays: Boolean): List<AddonCatalog> {
+        if (addon.id !in expandedProviders) {
+            return additionalCatalogs(addon, replays).filter {
+                league.scoreboardPath != null || isScopedCatalog(it, league)
+            }
+        }
+        return addon.catalogs.filter { catalog ->
+            catalog.type in eventTypes &&
+                replayCatalog.containsMatchIn("${catalog.id} ${catalog.name}") == replays &&
+                (isScopedCatalog(catalog, league) || league.scoreboardPath != null && catalog.id in generalCatalogs)
+        }
+    }
+
+    internal fun isScopedCatalog(catalog: AddonCatalog, league: SportsLeague): Boolean {
+        val sport = catalog.id.lowercase().replace('-', '_')
+            .removePrefix("nuvio_").removePrefix("sports_").removePrefix("replays_")
+        return sport == league.catalogSport || when (league.catalogSport) {
+            "motor_sports" -> sport in setOf("motorsport", "motorsports", "motor_sport")
+            "fight" -> sport in setOf("mma", "boxing", "mma_boxing")
+            "football" -> sport == "soccer"
+            "other" -> sport in setOf("others", "other_sports")
+            else -> false
+        }
+    }
+
     private val additionalProviders = listOf("nebula", "pencari", "penguplay", "tennis")
     private val eventTypes = setOf("sport", "sports", "tv", "channel", "livetv", "live-tv", "live_tv")
     private val replayCatalog = Regex(

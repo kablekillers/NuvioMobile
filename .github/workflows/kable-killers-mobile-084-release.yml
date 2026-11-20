@@ -1,0 +1,184 @@
+name: Kable Killers Mobile 0.8.4 Stable Release
+
+on:
+  push:
+    branches:
+      - release-0.8.4
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kable-killers-mobile-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build signed APKs
+    runs-on: ubuntu-latest
+    outputs:
+      name: ${{ steps.version.outputs.name }}
+      code: ${{ steps.version.outputs.code }}
+      tag: ${{ steps.version.outputs.tag }}
+      publish: ${{ steps.version.outputs.publish }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Read version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          config=iosApp/Configuration/Version.xcconfig
+          name="$(sed -n 's/^MARKETING_VERSION=//p' "$config" | tr -d '[:space:]')"
+          code="$(sed -n 's/^CURRENT_PROJECT_VERSION=//p' "$config" | tr -d '[:space:]')"
+          if [ -z "$name" ] || [ -z "$code" ]; then
+            echo "::error::Version.xcconfig is missing MARKETING_VERSION or CURRENT_PROJECT_VERSION"
+            exit 1
+          fi
+          if [ "${GITHUB_REF_TYPE}" = tag ] && [ "${GITHUB_REF_NAME}" != "v${name}" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match Version.xcconfig (v${name}). Bump the version or fix the tag."
+            exit 1
+          fi
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "tag=v$name" >> "$GITHUB_OUTPUT"
+          if [ "${GITHUB_REF_TYPE}" = tag ] || [ "${{ inputs.publish }}" = true ]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          fi
+          if [ "${{ inputs.minify }}" = false ]; then
+            echo "minify=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "minify=true" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Building Kable Killers Mobile v$name ($code)"
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Prepare signing and app configuration
+        shell: bash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KABLE_KILLERS_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.KABLE_KILLERS_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KABLE_KILLERS_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KABLE_KILLERS_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          for variable in KEYSTORE_BASE64 STORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            if [ -z "${!variable}" ]; then
+              echo "::error::Missing signing secret: $variable"
+              exit 1
+            fi
+          done
+          umask 077
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > kable-killers-mobile.jks
+          {
+            echo "NUVIO_RELEASE_STORE_FILE=kable-killers-mobile.jks"
+            echo "NUVIO_SUPABASE_URL=https://api.nuvio.tv"
+            echo "NUVIO_SUPABASE_ANON_KEY=sb_publishable_1Clq8rlTVACkdcZuqr6_AD__xUUC_EN"
+            printf 'NUVIO_RELEASE_STORE_PASSWORD=%s\n' "$STORE_PASSWORD"
+            printf 'NUVIO_RELEASE_KEY_ALIAS=%s\n' "$KEY_ALIAS"
+            printf 'NUVIO_RELEASE_KEY_PASSWORD=%s\n' "$KEY_PASSWORD"
+          } > local.properties
+
+      - name: Build signed release APKs
+        run: |
+          chmod +x gradlew
+          ./gradlew :androidApp:assembleFullRelease \
+            -Pnuvio.android.distribution=full \
+            -Pnuvio.ios.distribution=appstore \
+            -PreleaseMinifyEnabled=${{ steps.version.outputs.minify }} \
+            "-Dorg.gradle.jvmargs=-Xmx7g -XX:MaxMetaspaceSize=1536m -Dfile.encoding=UTF-8" \
+            -Pkotlin.compiler.execution.strategy=in-process \
+            --max-workers=2 \
+            --no-daemon \
+            --stacktrace
+
+      - name: Remove temporary signing files
+        if: always()
+        run: rm -f kable-killers-mobile.jks local.properties
+
+      - name: Collect APKs
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.name }}
+        run: |
+          set -euo pipefail
+          out=androidApp/build/outputs/apk/full/release
+          mkdir -p dist
+          # Per-ABI APKs are much smaller; the in-app updater picks the one that matches the phone.
+          # x86 is left out on purpose: its name is a prefix of x86_64, and those rare devices
+          # fall back to the universal APK.
+          for abi in arm64-v8a armeabi-v7a x86_64 universal; do
+            src="$out/androidApp-full-$abi-release.apk"
+            if [ ! -f "$src" ]; then
+              echo "::error::Missing $src"
+              ls -lah "$out" || true
+              exit 1
+            fi
+            cp "$src" "dist/Kable-Killers-Mobile-v${VERSION}-${abi}.apk"
+          done
+          (cd dist && sha256sum *.apk > SHA256SUMS.txt)
+          ls -lah dist
+          {
+            echo "### Kable Killers Mobile v${VERSION}"
+            echo '| APK | Size |'
+            echo '|---|---|'
+            for f in dist/*.apk; do echo "| $(basename "$f") | $(du -h "$f" | cut -f1) |"; done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload APKs to the workflow run
+        uses: actions/upload-artifact@v4
+        with:
+          name: Kable-Killers-Mobile-v${{ steps.version.outputs.name }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Verify and publish stable release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag=v0.8.4
+          build_tools=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          test -n "$build_tools"
+          artifacts=( dist/*.apk )
+          test "${#artifacts[@]}" -eq 4
+          (cd dist && sha256sum -c SHA256SUMS.txt)
+          mkdir -p "$RUNNER_TEMP/previous-release"
+          gh release download "v0.8.3" --repo "$GITHUB_REPOSITORY" \
+            --pattern 'Kable-Killers-Mobile-v0.8.3-arm64-v8a.apk' --dir "$RUNNER_TEMP/previous-release"
+          reference=$("$build_tools/apksigner" verify --print-certs "$RUNNER_TEMP/previous-release/"*.apk |
+            awk '/^Signer #1 certificate SHA-256 digest:/ {print $NF}')
+          test -n "$reference"
+          for apk in "${artifacts[@]}"; do
+            cert=$("$build_tools/apksigner" verify --print-certs "$apk" |
+              awk '/^Signer #1 certificate SHA-256 digest:/ {print $NF}')
+            test "$cert" = "$reference"
+            "$build_tools/aapt" dump badging "$apk" > "$RUNNER_TEMP/final-badging.txt"
+            grep -Fq "name='com.kablekillers.mobile'" "$RUNNER_TEMP/final-badging.txt"
+            grep -Fq "versionCode='159'" "$RUNNER_TEMP/final-badging.txt"
+            grep -Fq "versionName='0.8.4'" "$RUNNER_TEMP/final-badging.txt"
+            if grep -q '^application-debuggable' "$RUNNER_TEMP/final-badging.txt"; then exit 1; fi
+          done
+          gh release create "$tag" "${artifacts[@]}" dist/SHA256SUMS.txt \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft \
+            --title "Kable Killers Mobile 0.8.4" \
+            --notes "Adds the Kable Killers backup: Profile 1 (add-ons, plugins, rows and settings) is copied to a Kable Killers server outside Nuvio after every sync, and can be restored from Settings > Account if Nuvio is down. New phones can be set up from the backup with the restore PIN. Profiles, Continue Watching and the library work exactly as before."
+          gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json assets,isDraft,isPrerelease |
+            jq -e --argjson count 5 '.isDraft and (.isPrerelease | not) and ((.assets | length) == $count) and all(.assets[]; .size > 0)'
+          gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --draft=false --latest
+          gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json tagName,isDraft,isPrerelease,url |
+            jq -e --arg tag "$tag" '.tagName == $tag and (.isDraft | not) and (.isPrerelease | not)'

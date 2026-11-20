@@ -1,14 +1,10 @@
 
-name: Kable Killers Mobile - Build APK
+name: Sports Hub Add-ons Test APK
 
 on:
   push:
     branches:
-      - cmp-rewrite
-  pull_request:
-    branches:
-      - cmp-rewrite
-  workflow_dispatch:
+      - verify/sports-addon-catalogs
 
 permissions:
   contents: read

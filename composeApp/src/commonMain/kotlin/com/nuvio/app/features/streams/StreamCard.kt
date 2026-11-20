@@ -43,6 +43,8 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.nuvio.app.core.ui.SkeletonBlock
 import com.nuvio.app.features.debrid.DebridProviders
+import com.nuvio.app.features.sports.SportsRecordingClassifier
+import com.nuvio.app.isIos
 
 internal val LocalStreamHighlight = staticCompositionLocalOf<(StreamItem) -> String?> { { null } }
 
@@ -246,7 +248,12 @@ private fun StreamNameWithInstantService(
         null
     }
     val showInstantLabel = instantLabel != null
-    val visibleState = remember(stream.streamLabel) {
+    val streamLabel = if (isIos) {
+        stream.streamLabel
+    } else {
+        SportsRecordingClassifier.streamLabel(stream.addonId, stream.streamLabel, stream.streamSubtitle)
+    }
+    val visibleState = remember(streamLabel) {
         MutableTransitionState(showInstantLabel)
     }
     visibleState.targetState = showInstantLabel
@@ -256,7 +263,7 @@ private fun StreamNameWithInstantService(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = stream.streamLabel,
+            text = streamLabel,
             modifier = Modifier.weight(1f, fill = false),
             style = nameStyle,
             color = MaterialTheme.colorScheme.onSurface,

@@ -49,6 +49,47 @@ class SportsRecordingClassifierTest {
         assertEquals(SportsContentKind.REPLAY, SportsRecordingClassifier.kind(SportsAddonCatalogs.SPORTS_STREAMS, recaps, basketball))
     }
 
+    @Test
+    fun hockeyRecapsCannotEnterNbaWithMatchingCityNames() {
+        val hockeyRecaps = listOf(
+            item("recap:streamed_hockey_toronto_los_angeles", "Toronto Maple Leafs vs Los Angeles Kings",
+                runtime = "4h 14m"),
+            item("untyped", "Boston Bruins vs Los Angeles Kings", genres = listOf("hockey")),
+        )
+        assertTrue(SportsRecordingClassifier.appliesTo(SportsLeague.NBA))
+        for (recording in hockeyRecaps) {
+            assertFalse(SportsRecordingClassifier.accepts(SportsAddonCatalogs.SPORTS_STREAMS, recaps, recording, SportsLeague.NBA, 90))
+            assertTrue(SportsRecordingClassifier.accepts(SportsAddonCatalogs.SPORTS_STREAMS, recaps, recording, SportsLeague.NHL, 0))
+        }
+    }
+
+    @Test
+    fun nbaRecapsUseDurationAndRejectOtherBasketballLeagues() {
+        val replay = item("recap:streamed_basketball_boston_los_angeles", "Boston Celtics vs Los Angeles Lakers Recap",
+            genres = listOf("NBA"), runtime = "3h 14m")
+        val addonId = SportsAddonCatalogs.SPORTS_STREAMS
+        assertTrue(SportsRecordingClassifier.accepts(addonId, recaps, replay, SportsLeague.NBA, 0))
+        assertEquals(SportsContentKind.REPLAY, SportsRecordingClassifier.kind(addonId, recaps, replay))
+        assertEquals(SportsContentKind.HIGHLIGHT, SportsRecordingClassifier.kind(addonId, recaps, replay.copy(runtime = "9m 23s")))
+        for (otherLeague in listOf("NCAAM", "NCAAW", "WNBA")) {
+            assertFalse(SportsRecordingClassifier.accepts(addonId, recaps, replay.copy(genres = listOf(otherLeague)), SportsLeague.NBA, 90))
+        }
+        val nuvioBasketball = AddonCatalog("tv", "nuvio_sports_replays_basketball", "Basketball Replays")
+        assertTrue(SportsRecordingClassifier.accepts(SportsAddonCatalogs.NUVIO_LIVE, nuvioBasketball,
+            replay.copy(genres = emptyList()), SportsLeague.NBA, 0))
+    }
+
+    @Test
+    fun onlyFullSportsStreamsRecordingsGetTheReplayDisplayLabel() {
+        val addonId = "addon:${SportsAddonCatalogs.SPORTS_STREAMS}:https://addon.example/manifest.json"
+        val label = "Recap (CA EN: SPORTSNET EAST)"
+        val subtitle = "Recorded · 4h 14m"
+        assertEquals("Replay (CA EN: SPORTSNET EAST)", SportsRecordingClassifier.streamLabel(addonId, label, subtitle))
+        assertEquals(label, SportsRecordingClassifier.streamLabel(addonId, label, "Recorded · 9m 23s"))
+        assertEquals(label, SportsRecordingClassifier.streamLabel(addonId, label, null))
+        assertEquals(label, SportsRecordingClassifier.streamLabel("addon:other:manifest", label, subtitle))
+    }
+
     private fun item(id: String, name: String, genres: List<String> = emptyList(), runtime: String? = null, description: String? = null) =
         MetaPreview(id = id, type = "sport", name = name, genres = genres, runtime = runtime, description = description)
 }

@@ -163,11 +163,13 @@ jobs:
           reference=$("$build_tools/apksigner" verify --print-certs "$RUNNER_TEMP/previous-release/"*.apk |
             awk '/^Signer #1 certificate SHA-256 digest:/ {print $NF}')
           test -n "$reference"
+          echo "Previous release certificate: $reference"
           for apk in "${artifacts[@]}"; do
+            echo "Checking $apk"
             cert=$("$build_tools/apksigner" verify --print-certs "$apk" |
               awk '/^Signer #1 certificate SHA-256 digest:/ {print $NF}')
             test "$cert" = "$reference"
-            "$build_tools/aapt" dump badging "$apk" > "$RUNNER_TEMP/final-badging.txt"
+            "$build_tools/aapt2" dump badging "$apk" > "$RUNNER_TEMP/final-badging.txt"
             grep -Fq "name='com.kablekillers.mobile'" "$RUNNER_TEMP/final-badging.txt"
             grep -Fq "versionCode='159'" "$RUNNER_TEMP/final-badging.txt"
             grep -Fq "versionName='0.8.4'" "$RUNNER_TEMP/final-badging.txt"

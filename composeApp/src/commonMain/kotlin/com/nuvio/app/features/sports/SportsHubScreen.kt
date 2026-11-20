@@ -103,7 +103,7 @@ private val HubLiveText = Color(0xFFFF7B86)
 
 private enum class SportsSection(val label: String) {
     Live("Live Now"), MyTeams("My Teams"), Upcoming("Upcoming"), Final("Final"),
-    Standings("Standings"), Replays("Replays"), Highlights("Highlights"),
+    Standings("Standings"), Replays("Replays"), Highlights("Highlights"), Addons("Add-ons"),
 }
 
 private fun nowMillis(): Long = kotlin.time.Clock.System.now().toEpochMilliseconds()
@@ -227,7 +227,7 @@ internal fun SportsHubScreen(
                         SectionPill(tab.label, selected = section == tab) { section = tab }
                     }
                 }
-                if (error) {
+                if (error && section != SportsSection.Addons) {
                     Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(if (board == null) "Scoreboard unavailable." else "Showing the last available scores.", color = HubMuted)
                         TextButton(onClick = { refresh++ }) { Text("Retry", color = HubAccent) }
@@ -243,7 +243,9 @@ internal fun SportsHubScreen(
                 val clips = recordings.orEmpty().filter {
                     it.kind == if (section == SportsSection.Highlights) SportsContentKind.HIGHLIGHT else SportsContentKind.REPLAY
                 }
-                LazyColumn(
+                if (section == SportsSection.Addons) {
+                    SportsCatalogBrowser(activeAddons, onOpenStream)
+                } else LazyColumn(
                     modifier = Modifier.fillMaxWidth(),
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 120.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -291,6 +293,71 @@ internal fun SportsHubScreen(
         }
     }
     if (showIntro) SportsHubIntro { showIntro = false }
+}
+
+@Composable
+private fun SportsCatalogBrowser(addons: List<ManagedAddon>, onOpenStream: (MetaPreview) -> Unit) {
+    val available = remember(addons) { SportsAddonDiscovery.catalogs(addons) }
+    if (available.isEmpty()) {
+        Box(Modifier.padding(16.dp)) {
+            HubMessage("Enable an add-on with a sports catalog in Add-ons settings.")
+        }
+        return
+    }
+
+    var selected by remember { mutableStateOf<SportsAddonDiscovery.CatalogSource?>(null) }
+    val source = selected?.takeIf { it in available } ?: available.first()
+    val providers = available.groupBy { it.addon.manifestUrl }
+    val providerCatalogs = providers.getValue(source.addon.manifestUrl)
+    var entries by remember(source) { mutableStateOf<List<SportsCatalogMatch>?>(null) }
+    var error by remember(source) { mutableStateOf(false) }
+    var retry by remember(source) { mutableStateOf(0) }
+    LaunchedEffect(source, retry) {
+        error = false
+        try {
+            entries = SportsAddonDiscovery.browse(source)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            error = true
+        }
+    }
+
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(providers.values.toList()) { catalogs ->
+            val first = catalogs.first()
+            SectionPill(first.addon.displayTitle, selected = catalogs == providerCatalogs) {
+                if (catalogs != providerCatalogs) selected = first
+            }
+        }
+    }
+    if (providerCatalogs.size > 1) {
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            items(providerCatalogs) { entry ->
+                SectionPill(entry.catalog.name, selected = entry == source) { selected = entry }
+            }
+        }
+    }
+    LazyColumn(
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 120.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        when {
+            error -> item {
+                HubMessage("Could not load ${source.catalog.name}.")
+                TextButton(onClick = { retry++ }) { Text("Retry", color = HubAccent) }
+            }
+            entries == null -> item { CircularProgressIndicator(color = HubAccent) }
+            entries.orEmpty().isEmpty() -> item { HubMessage("No entries available in ${source.catalog.name}.") }
+            else -> items(entries.orEmpty()) { entry -> SourceCard(entry, onOpenStream) }
+        }
+    }
 }
 
 /** Two slow-breathing glows (gold and ember) behind the hub. */

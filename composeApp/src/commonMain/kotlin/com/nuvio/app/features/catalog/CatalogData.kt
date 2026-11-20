@@ -76,6 +76,7 @@ suspend fun fetchCatalogPage(
     skip: Int? = null,
     maxItems: Int? = null,
     forceRefresh: Boolean = false,
+    includeInitialSkip: Boolean = false,
 ): CatalogPage {
     val url = buildCatalogUrl(
         manifestUrl = manifestUrl,
@@ -84,6 +85,7 @@ suspend fun fetchCatalogPage(
         genre = genre,
         search = search,
         skip = skip,
+        includeInitialSkip = includeInitialSkip,
     )
     val payload = deduplicatedHttpGetText(
         url = url,
@@ -182,11 +184,12 @@ internal fun buildCatalogUrl(
     genre: String?,
     search: String?,
     skip: Int?,
+    includeInitialSkip: Boolean = false,
 ): String {
     val extraParts = buildList {
         if (!search.isNullOrBlank()) add("search=${search.encodeCatalogExtra()}")
         if (!genre.isNullOrBlank()) add("genre=${genre.encodeCatalogExtra()}")
-        if (skip != null && skip > 0) add("skip=$skip")
+        if (skip != null && (skip > 0 || skip == 0 && includeInitialSkip)) add("skip=$skip")
     }
 
     return buildAddonResourceUrl(

@@ -407,6 +407,10 @@ object ProfileRepository {
     }
 
     suspend fun setPin(profileIndex: Int, pin: String, currentPin: String? = null): PinVerifyResult {
+        if (KableKillersAccountPolicy.isHouseholdProfile(profileIndex)) {
+            // Household profiles on the customer login never get cloud PINs (see policy).
+            return PinVerifyResult(unlocked = false, message = getString(Res.string.profile_pin_set_failed))
+        }
         if (AuthRepository.state.value !is AuthState.Authenticated) {
             return PinVerifyResult(unlocked = false, message = getString(Res.string.profile_pin_set_requires_internet))
         }

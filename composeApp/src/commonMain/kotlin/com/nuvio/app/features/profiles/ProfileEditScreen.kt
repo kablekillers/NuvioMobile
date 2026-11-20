@@ -234,7 +234,12 @@ fun ProfileEditScreen(
             }
         }
 
-        if (!isNew) {
+        // Customer phones: only Profile 1 can have a PIN. PINs are stored in the
+        // cloud by profile number, so a PIN on a household profile would lock the
+        // same-numbered profile on every other customer phone.
+        val canManagePin = currentProfile != null &&
+            !KableKillersAccountPolicy.isHouseholdProfile(currentProfile.profileIndex)
+        if (!isNew && canManagePin) {
             item {
                 NuvioSurfaceCard {
                     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {

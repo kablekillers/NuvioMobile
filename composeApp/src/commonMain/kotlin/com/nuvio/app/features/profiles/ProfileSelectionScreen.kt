@@ -83,6 +83,7 @@ fun ProfileSelectionScreen(
     val profileState by ProfileRepository.state.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     var pinDialogProfile by remember { mutableStateOf<NuvioProfile?>(null) }
+    var pinDialogOpensEditor by remember { mutableStateOf(false) }
     var isEditMode by remember { mutableStateOf(false) }
 
     val titleAlpha = remember { Animatable(0f) }
@@ -96,8 +97,15 @@ fun ProfileSelectionScreen(
                 activeProfileIndex = activeProfileIndex,
                 onEditProfile = onEditProfile,
                 onActiveProfileSelected = { scope.launch { showAlreadyActiveProfileToast(it) } },
-                onPinRequired = { pinDialogProfile = it },
+                onPinRequired = {
+                    pinDialogOpensEditor = false
+                    pinDialogProfile = it
+                },
                 onProfileSelected = onProfileSelected,
+                onPinRequiredForEdit = {
+                    pinDialogOpensEditor = true
+                    pinDialogProfile = it
+                },
             )
         }
     }
@@ -311,7 +319,10 @@ fun ProfileSelectionScreen(
             onVerify = { pin -> ProfileRepository.verifyPin(profile.profileIndex, pin) },
             onVerified = {
                 pinDialogProfile = null
-                if (interactionEnabled && profile.profileIndex != activeProfileIndex) {
+                if (pinDialogOpensEditor) {
+                    pinDialogOpensEditor = false
+                    if (interactionEnabled) onEditProfile(profile)
+                } else if (interactionEnabled && profile.profileIndex != activeProfileIndex) {
                     onProfileSelected(profile)
                 }
             },

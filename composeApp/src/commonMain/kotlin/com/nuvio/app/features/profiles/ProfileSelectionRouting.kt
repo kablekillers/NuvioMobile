@@ -13,8 +13,12 @@ internal fun routeProfileSelection(
     onActiveProfileSelected: (NuvioProfile) -> Unit,
     onPinRequired: (NuvioProfile) -> Unit,
     onProfileSelected: (NuvioProfile) -> Unit,
+    // Kable Killers: editing a PIN-locked profile needs its PIN first, so a
+    // customer phone can never change Profile 1 (which every profile mirrors).
+    onPinRequiredForEdit: (NuvioProfile) -> Unit = onPinRequired,
 ) {
     when {
+        isEditMode && profile.pinEnabled -> onPinRequiredForEdit(profile)
         isEditMode -> onEditProfile(profile)
         profile.profileIndex == activeProfileIndex -> onActiveProfileSelected(profile)
         profile.pinEnabled -> onPinRequired(profile)

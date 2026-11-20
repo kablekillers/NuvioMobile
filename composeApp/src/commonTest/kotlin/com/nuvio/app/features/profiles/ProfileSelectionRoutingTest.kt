@@ -47,8 +47,8 @@ class ProfileSelectionRoutingTest {
     }
 
     @Test
-    fun `edit mode routes only to profile editing`() {
-        val profile = NuvioProfile(profileIndex = 2, pinEnabled = true)
+    fun `edit mode on an unlocked profile routes only to profile editing`() {
+        val profile = NuvioProfile(profileIndex = 2)
         var editRequests = 0
         var pinRequests = 0
         var selectionRequests = 0
@@ -66,6 +66,25 @@ class ProfileSelectionRoutingTest {
         assertEquals(1, editRequests)
         assertEquals(0, pinRequests)
         assertEquals(0, selectionRequests)
+    }
+
+    @Test
+    fun `edit mode on a locked profile asks for its PIN before editing`() {
+        val profile = NuvioProfile(profileIndex = 1, pinEnabled = true)
+        val requests = mutableListOf<String>()
+
+        routeProfileSelection(
+            profile = profile,
+            isEditMode = true,
+            activeProfileIndex = 2,
+            onEditProfile = { requests += "edit" },
+            onActiveProfileSelected = { requests += "toast" },
+            onPinRequired = { requests += "pin-select" },
+            onProfileSelected = { requests += "select" },
+            onPinRequiredForEdit = { requests += "pin-edit" },
+        )
+
+        assertEquals(listOf("pin-edit"), requests)
     }
 
     @Test

@@ -43,6 +43,20 @@ class SportsEventRepository(
         return fresh
     }
 
+    private val recentResultsCache = mutableMapOf<SportsLeague, SportsScoreboard>()
+
+    suspend fun recentResults(league: SportsLeague): List<SportsEvent> {
+        val now = clock()
+        mutex.withLock {
+            recentResultsCache[league]?.takeIf { now - it.fetchedAtEpochMillis < STANDINGS_MAX_AGE_MILLIS }
+        }?.let { return it.events }
+        val events = provider.recentResults(league, now)
+        if (events.isNotEmpty()) {
+            mutex.withLock { recentResultsCache[league] = SportsScoreboard(league, events, clock()) }
+        }
+        return events
+    }
+
     private val boxScores = mutableMapOf<String, SportsBoxScore>()
 
     /**

@@ -50,6 +50,19 @@ class SportsAddonCatalogsTest {
         )
     }
 
+    @Test
+    fun pencariSportGenreIsBrowsableOutsideGameDetails() {
+        val popular = AddonCatalog(
+            "movie", "top", "Popular",
+            listOf(AddonExtraProperty("genre", options = listOf("Action", "Sport"))),
+        )
+        val addon = addon("org.pencarimovie.addon.server", "PencariMovie", popular)
+
+        assertEquals(listOf(popular), SportsAddonCatalogs.browseCatalogs(addon))
+        assertEquals("Sport", SportsAddonCatalogs.genre(popular))
+        assertTrue(SportsAddonCatalogs.routes(addon, SportsLeague.NBA).isEmpty())
+    }
+
     private fun addon(id: String, name: String, vararg catalogs: AddonCatalog): AddonManifest {
         val types = catalogs.map { it.type }
         return AddonManifest(

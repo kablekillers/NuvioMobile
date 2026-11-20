@@ -340,7 +340,12 @@ private fun SportsCatalogBrowser(addons: List<ManagedAddon>, onOpenStream: (Meta
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(providerCatalogs) { entry ->
-                SectionPill(entry.catalog.name, selected = entry == source) { selected = entry }
+                val label = when (entry.catalog.type) {
+                    "movie" -> "${entry.catalog.name} · Movies"
+                    "series" -> "${entry.catalog.name} · Series"
+                    else -> entry.catalog.name
+                }
+                SectionPill(label, selected = entry == source) { selected = entry }
             }
         }
     }

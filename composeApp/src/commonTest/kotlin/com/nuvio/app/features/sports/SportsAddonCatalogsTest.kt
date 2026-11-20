@@ -1,0 +1,74 @@
+package com.nuvio.app.features.sports
+
+import com.nuvio.app.features.addons.AddonCatalog
+import com.nuvio.app.features.addons.AddonManifest
+import com.nuvio.app.features.addons.AddonResource
+import com.nuvio.app.features.catalog.buildCatalogUrl
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+
+class SportsAddonCatalogsTest {
+    @Test
+    fun discoversEventCatalogsForTheAdditionalProviders() {
+        val providers = listOf(
+            addon("org.nebulastreams.sports", "Nebula Sports", AddonCatalog("sports", "events", "Events")),
+            addon("example.pencari", "Pencari Sports", AddonCatalog("tv", "live", "Live")),
+            addon("com.penguplay", "PenguPlay", AddonCatalog("channel", "live-tv", "Live TV")),
+            addon("com.sleeyax.dlive-addon", "Tennis Channel", AddonCatalog("tv", "dlive_catalog", "Tennis")),
+        )
+
+        providers.forEach { manifest ->
+            assertEquals(manifest.catalogs, SportsAddonCatalogs.routes(manifest, SportsLeague.NBA))
+        }
+    }
+
+    @Test
+    fun separatesLiveAndReplayCatalogsAndExcludesMovies() {
+        val live = AddonCatalog("sports", "live", "Live")
+        val replay = AddonCatalog("sports", "nba-replays", "NBA Replays")
+        val addon = addon("org.nebulastreams.sports", "Nebula Sports", live, replay, AddonCatalog("movie", "sports-films", "Sports Films"))
+
+        assertEquals(listOf(live), SportsAddonCatalogs.routes(addon, SportsLeague.NBA))
+        assertEquals(listOf(replay), SportsAddonCatalogs.routes(addon, SportsLeague.NBA, replays = true))
+    }
+
+    @Test
+    fun preservesCurrentLeagueCatalogs() {
+        val basketball = AddonCatalog("sport", "sports_basketball", "Basketball")
+        val live = AddonCatalog("sport", "sports_live", "Live")
+        val addon = addon(
+            SportsAddonCatalogs.SPORTS_STREAMS, "Sports Streams",
+            basketball, live, AddonCatalog("sport", "sports_hockey", "Hockey"),
+        )
+
+        assertEquals(listOf(basketball, live), SportsAddonCatalogs.routes(addon, SportsLeague.NBA))
+    }
+
+    @Test
+    fun sendsSkipZeroOnlyWhenRequested() {
+        val manifest = "https://example.com/manifest.json"
+        assertEquals(
+            "https://example.com/catalog/sports/live/skip=0.json",
+            buildCatalogUrl(manifest, "sports", "live", null, null, 0, includeInitialSkip = true),
+        )
+        assertEquals(
+            "https://example.com/catalog/sports/live.json",
+            buildCatalogUrl(manifest, "sports", "live", null, null, 0),
+        )
+    }
+
+    private fun addon(id: String, name: String, vararg catalogs: AddonCatalog): AddonManifest {
+        val types = catalogs.map { it.type }
+        return AddonManifest(
+            id = id,
+            name = name,
+            description = "",
+            version = "1.0.0",
+            resources = listOf(AddonResource("stream", types)),
+            types = types,
+            catalogs = catalogs.toList(),
+            transportUrl = "https://example.com/manifest.json",
+        )
+    }
+}

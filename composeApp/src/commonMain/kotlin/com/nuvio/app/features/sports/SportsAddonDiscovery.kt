@@ -21,15 +21,20 @@ internal object SportsAddonDiscovery {
             SportsAddonCatalogs.routes(manifest, league, replays).map { catalog ->
                 async {
                     try {
-                        val genre = catalog.extra.firstOrNull { it.name == "genre" && it.isRequired }
-                        if (genre != null && "All" !in genre.options) return@async emptyList()
+                        val required = catalog.extra.filter { it.isRequired }
+                        if (required.any { it.name != "genre" && it.name != "skip" }) return@async emptyList()
+                        val genre = required.firstOrNull { it.name == "genre" }
+                        val genreValue = genre?.options?.firstOrNull { it.equals("all", ignoreCase = true) }
+                        if (genre != null && genreValue == null) return@async emptyList()
+                        val skipRequired = required.any { it.name == "skip" }
                         val page = withTimeoutOrNull(10_000) {
                             fetchCatalogPage(
                                 manifestUrl = manifest.transportUrl,
                                 type = catalog.type,
                                 catalogId = catalog.id,
-                                genre = genre?.let { "All" },
-                                skip = if (catalog.extra.any { it.name == "skip" && it.isRequired }) 0 else null,
+                                genre = genreValue,
+                                skip = if (skipRequired) 0 else null,
+                                includeInitialSkip = skipRequired,
                             )
                         } ?: return@async emptyList()
                         page.items.mapNotNull { item ->

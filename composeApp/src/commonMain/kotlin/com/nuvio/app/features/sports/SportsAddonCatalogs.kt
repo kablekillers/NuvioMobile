@@ -44,9 +44,31 @@ object SportsAddonCatalogs {
             )
             STREMVERSE -> if (replays) listOf("stremverse_replays")
                 else listOf("stremverse_xtra_events", "stremverse_live_events")
-            else -> emptyList()
+            else -> null
         }
-        // Respect the user's actual installed manifest: don't query absent catalogs.
-        return addon.catalogs.filter { it.id in candidates && it.type in setOf("tv", "sport") }
+        val catalogs = if (candidates != null) {
+            addon.catalogs.filter { it.id in candidates && it.type in setOf("tv", "sport") }
+        } else {
+            additionalCatalogs(addon, replays)
+        }
+        return catalogs
     }
+    private val additionalProviders = listOf("nebula", "pencari", "penguplay", "tennis")
+    private val eventTypes = setOf("sport", "sports", "tv", "channel", "livetv", "live-tv", "live_tv")
+    private val replayCatalog = Regex(
+        """(?:^|[^a-z])(?:replays?|highlights?|recaps?)(?:[^a-z]|$)""",
+        RegexOption.IGNORE_CASE,
+    )
+
+    private fun additionalCatalogs(addon: AddonManifest, replays: Boolean): List<AddonCatalog> {
+        val identity = (addon.id + " " + addon.name).lowercase().filter(Char::isLetterOrDigit)
+        if (additionalProviders.none { it in identity }) return emptyList()
+
+        return addon.catalogs.filter { catalog ->
+            catalog.type in eventTypes &&
+                replayCatalog.containsMatchIn("${catalog.id} ${catalog.name}") == replays &&
+                addon.resources.any { it.name == "stream" && catalog.type in it.types }
+        }
+    }
+
 }

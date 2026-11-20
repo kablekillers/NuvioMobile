@@ -2,7 +2,7 @@ package com.nuvio.app.features.addons
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.engine.darwin.Darwin
+import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.request.accept
 import io.ktor.client.request.get
@@ -72,7 +72,7 @@ private fun parseEnabledStateLine(line: String): Pair<String, Boolean>? {
     return url to enabled
 }
 
-private val addonHttpClient = HttpClient(Darwin) {
+private val addonHttpClient = HttpClient(OkHttp) {
     install(HttpTimeout) {
         requestTimeoutMillis = 60_000
         connectTimeoutMillis = 60_000

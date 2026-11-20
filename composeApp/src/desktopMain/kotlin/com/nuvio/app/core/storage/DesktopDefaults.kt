@@ -70,6 +70,8 @@ object DesktopDefaults {
         else -> null
     }
 
+    fun stringArrayForKey(key: String): List<Any?>? = arrayForKey(key)?.filterIsInstance<String>()
+
     fun keys(): Set<String> = synchronized(lock) { values.keys.toSet() }
 
     // ---- writes ----

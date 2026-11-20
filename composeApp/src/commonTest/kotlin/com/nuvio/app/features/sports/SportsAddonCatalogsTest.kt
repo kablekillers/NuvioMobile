@@ -1,10 +1,8 @@
 package com.nuvio.app.features.sports
 
 import com.nuvio.app.features.addons.AddonCatalog
-import com.nuvio.app.features.addons.AddonExtraProperty
 import com.nuvio.app.features.addons.AddonManifest
 import com.nuvio.app.features.addons.AddonResource
-import com.nuvio.app.features.addons.ManagedAddon
 import com.nuvio.app.features.catalog.buildCatalogUrl
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -12,29 +10,39 @@ import kotlin.test.assertTrue
 
 class SportsAddonCatalogsTest {
     @Test
-    fun findsEnabledSportsCatalogsWithoutAnEspnEvent() {
-        val nebula = addon("org.nebulastreams.sports", "Nebula Sports", AddonCatalog("sports", "events", "Events"))
-        val pencari = addon("example.pencari", "Pencari Sports", AddonCatalog("tv", "live", "Live"))
-        val tennis = addon("com.sleeyax.dlive-addon", "Tennis Channel", AddonCatalog("tv", "dlive_catalog", "Tennis"))
+    fun discoversEventCatalogsForTheAdditionalProviders() {
+        val providers = listOf(
+            addon("org.nebulastreams.sports", "Nebula Sports", AddonCatalog("sports", "events", "Events")),
+            addon("example.pencari", "Pencari Sports", AddonCatalog("tv", "live", "Live")),
+            addon("com.penguplay", "PenguPlay", AddonCatalog("channel", "live-tv", "Live TV")),
+            addon("com.sleeyax.dlive-addon", "Tennis Channel", AddonCatalog("tv", "dlive_catalog", "Tennis")),
+        )
 
-        listOf(nebula, pencari, tennis).forEach { manifest ->
-            assertEquals(manifest.catalogs, SportsAddonCatalogs.browseCatalogs(manifest))
-            val disabled = ManagedAddon(manifest.transportUrl, manifest, enabled = false)
-            assertTrue(SportsAddonDiscovery.catalogs(listOf(disabled)).isEmpty())
+        providers.forEach { manifest ->
+            assertEquals(manifest.catalogs, SportsAddonCatalogs.routes(manifest, SportsLeague.NBA))
         }
-        assertEquals("sports", SportsAddonCatalogs.routes(nebula, SportsLeague.NBA).single().type)
     }
 
     @Test
-    fun usesConfiguredSportsGenreAndOmitsMovieCatalogs() {
-        val live = AddonCatalog(
-            "tv", "live-tv", "Live TV",
-            listOf(AddonExtraProperty("genre", isRequired = true, options = listOf("All", "Sports Channels"))),
-        )
-        val addon = addon("com.penguplay", "PenguPlay", live, AddonCatalog("movie", "movies", "Movies"))
+    fun separatesLiveAndReplayCatalogsAndExcludesMovies() {
+        val live = AddonCatalog("sports", "live", "Live")
+        val replay = AddonCatalog("sports", "nba-replays", "NBA Replays")
+        val addon = addon("org.nebulastreams.sports", "Nebula Sports", live, replay, AddonCatalog("movie", "sports-films", "Sports Films"))
 
-        assertEquals(listOf(live), SportsAddonCatalogs.browseCatalogs(addon))
-        assertEquals("Sports Channels", SportsAddonCatalogs.genre(live))
+        assertEquals(listOf(live), SportsAddonCatalogs.routes(addon, SportsLeague.NBA))
+        assertEquals(listOf(replay), SportsAddonCatalogs.routes(addon, SportsLeague.NBA, replays = true))
+    }
+
+    @Test
+    fun preservesCurrentLeagueCatalogs() {
+        val basketball = AddonCatalog("sport", "sports_basketball", "Basketball")
+        val live = AddonCatalog("sport", "sports_live", "Live")
+        val addon = addon(
+            SportsAddonCatalogs.SPORTS_STREAMS, "Sports Streams",
+            basketball, live, AddonCatalog("sport", "sports_hockey", "Hockey"),
+        )
+
+        assertEquals(listOf(basketball, live), SportsAddonCatalogs.routes(addon, SportsLeague.NBA))
     }
 
     @Test
@@ -48,19 +56,6 @@ class SportsAddonCatalogsTest {
             "https://example.com/catalog/sports/live.json",
             buildCatalogUrl(manifest, "sports", "live", null, null, 0),
         )
-    }
-
-    @Test
-    fun pencariSportGenreIsBrowsableOutsideGameDetails() {
-        val popular = AddonCatalog(
-            "movie", "top", "Popular",
-            listOf(AddonExtraProperty("genre", options = listOf("Action", "Sport"))),
-        )
-        val addon = addon("org.pencarimovie.addon.server", "PencariMovie", popular)
-
-        assertEquals(listOf(popular), SportsAddonCatalogs.browseCatalogs(addon))
-        assertEquals("Sport", SportsAddonCatalogs.genre(popular))
-        assertTrue(SportsAddonCatalogs.routes(addon, SportsLeague.NBA).isEmpty())
     }
 
     private fun addon(id: String, name: String, vararg catalogs: AddonCatalog): AddonManifest {

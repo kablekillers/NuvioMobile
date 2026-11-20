@@ -1688,29 +1688,25 @@ internal fun MainAppContent(
                 entry<SportsHubRoute> { route ->
                     SettingsDestination(route, navController) { onBack ->
                         SportsHubScreen(onBack = onBack, onOpenStream = { item ->
-                            if (item.type.equals("series", ignoreCase = true)) {
-                                navController.navigate(DetailRoute(type = item.type, id = item.id, title = item.name))
-                            } else {
-                                launchPlaybackWithDownloadPreference(
-                                    type = item.type,
-                                    videoId = item.id,
-                                    parentMetaId = item.id,
-                                    parentMetaType = item.type,
-                                    title = item.name,
-                                    logo = item.logo,
-                                    poster = item.poster,
-                                    background = item.banner,
-                                    seasonNumber = null,
-                                    episodeNumber = null,
-                                    episodeTitle = null,
-                                    episodeThumbnail = null,
-                                    pauseDescription = item.description,
-                                    resumePositionMs = null,
-                                    resumeProgressFraction = null,
-                                    manualSelection = true,
-                                    startFromBeginning = true,
-                                )
-                            }
+                            launchPlaybackWithDownloadPreference(
+                                type = item.type,
+                                videoId = item.id,
+                                parentMetaId = item.id,
+                                parentMetaType = item.type,
+                                title = item.name,
+                                logo = item.logo,
+                                poster = item.poster,
+                                background = item.banner,
+                                seasonNumber = null,
+                                episodeNumber = null,
+                                episodeTitle = null,
+                                episodeThumbnail = null,
+                                pauseDescription = item.description,
+                                resumePositionMs = null,
+                                resumeProgressFraction = null,
+                                manualSelection = true,
+                                startFromBeginning = true,
+                            )
                         })
                     }
                 }

@@ -166,6 +166,32 @@ object ProfileSettingsSync {
         }
     }
 
+    /**
+     * Kable Killers backup restore: applies a saved Profile 1 mobile settings blob
+     * like a Nuvio pull would. Returns true if anything changed.
+     */
+    suspend fun restoreFromBackup(profileId: Int, settingsJson: JsonObject): Boolean {
+        ensureRepositoriesLoaded()
+        return syncMutex.withLock {
+            if (ProfileRepository.activeProfileId != profileId) return@withLock false
+            val remoteBlob = runCatching {
+                json.decodeFromJsonElement(MobileProfileSettingsBlob.serializer(), settingsJson)
+            }.getOrElse { error ->
+                log.e(error) { "restoreFromBackup — failed to decode saved settings" }
+                return@withLock false
+            }
+            if (buildSignature(remoteBlob) == buildSignature(exportSettingsBlob())) return@withLock false
+            isApplyingRemoteBlob = true
+            try {
+                applyRemoteBlob(remoteBlob)
+                skipNextPushSignature = currentObservedStateSignature()
+            } finally {
+                isApplyingRemoteBlob = false
+            }
+            true
+        }
+    }
+
     suspend fun pushCurrentProfileToRemote(): Boolean {
         ensureRepositoriesLoaded()
         return syncMutex.withLock {

@@ -24,7 +24,9 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.put
@@ -121,43 +123,59 @@ object AddonRepository {
                     order("sort_order", Order.ASCENDING)
                 }
                 .decodeList<AddonRow>()
-
-            val rowsByUrl = linkedMapOf<String, AddonRow>()
-            rows.forEach { row ->
-                val manifestUrl = ensureManifestSuffix(row.url)
-                if (!rowsByUrl.containsKey(manifestUrl)) {
-                    rowsByUrl[manifestUrl] = row.copy(url = manifestUrl)
-                }
-            }
-
-            val urls = rowsByUrl.keys.toList()
-            log.i { "pullFromServer() — server returned ${rows.size} addons" }
-            urls.forEachIndexed { i, u -> log.d { "  server[$i]: $u" } }
-
-            val existingByUrl = _uiState.value.addons.associateBy(ManagedAddon::manifestUrl)
-            _uiState.value = AddonsUiState(
-                addons = urls.map { url ->
-                    val row = rowsByUrl[url]
-                    existingByUrl[url].toPendingAddon(
-                        manifestUrl = url,
-                        userSetName = row?.name?.takeIf { it.isNotBlank() },
-                        enabled = row?.enabled,
-                    )
-                },
-            )
-            persist()
-            urls.forEach { url ->
-                val existing = existingByUrl[url]
-                val addon = _uiState.value.addons.firstOrNull { it.manifestUrl == url }
-                if (addon?.enabled == true && (existing == null || (addon.manifest == null && !addon.isRefreshing))) {
-                    refreshAddon(url)
-                }
-            }
-            initialized = true
-            log.i { "pullFromServer() — applied ${urls.size} addons to state" }
+            applyServerRows(rows)
         }.onFailure { e ->
             log.e(e) { "pullFromServer() — FAILED" }
         }
+    }
+
+    /**
+     * Kable Killers backup restore: applies saved Profile 1 add-on rows exactly
+     * like a Nuvio pull would. Returns how many add-ons were restored.
+     */
+    internal suspend fun restoreFromBackup(profileId: Int, rows: JsonArray): Int {
+        val decoded = json.decodeFromJsonElement(ListSerializer(AddonRow.serializer()), rows)
+            .sortedBy { it.sortOrder }
+        if (decoded.isEmpty()) return 0
+        currentProfileId = resolveEffectiveProfileId(profileId)
+        applyServerRows(decoded)
+        return decoded.size
+    }
+
+    private suspend fun applyServerRows(rows: List<AddonRow>) {
+        val rowsByUrl = linkedMapOf<String, AddonRow>()
+        rows.forEach { row ->
+            val manifestUrl = ensureManifestSuffix(row.url)
+            if (!rowsByUrl.containsKey(manifestUrl)) {
+                rowsByUrl[manifestUrl] = row.copy(url = manifestUrl)
+            }
+        }
+
+        val urls = rowsByUrl.keys.toList()
+        log.i { "pullFromServer() — server returned ${rows.size} addons" }
+        urls.forEachIndexed { i, u -> log.d { "  server[$i]: $u" } }
+
+        val existingByUrl = _uiState.value.addons.associateBy(ManagedAddon::manifestUrl)
+        _uiState.value = AddonsUiState(
+            addons = urls.map { url ->
+                val row = rowsByUrl[url]
+                existingByUrl[url].toPendingAddon(
+                    manifestUrl = url,
+                    userSetName = row?.name?.takeIf { it.isNotBlank() },
+                    enabled = row?.enabled,
+                )
+            },
+        )
+        persist()
+        urls.forEach { url ->
+            val existing = existingByUrl[url]
+            val addon = _uiState.value.addons.firstOrNull { it.manifestUrl == url }
+            if (addon?.enabled == true && (existing == null || (addon.manifest == null && !addon.isRefreshing))) {
+                refreshAddon(url)
+            }
+        }
+        initialized = true
+        log.i { "pullFromServer() — applied ${urls.size} addons to state" }
     }
 
     suspend fun awaitManifestsLoaded() {

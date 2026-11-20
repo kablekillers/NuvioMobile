@@ -1,6 +1,7 @@
 package com.nuvio.app.features.plugins
 
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.serialization.json.JsonArray
 
 expect object PluginRepository {
     val uiState: StateFlow<PluginsUiState>
@@ -12,6 +13,9 @@ expect object PluginRepository {
     fun clearLocalState()
 
     suspend fun pullFromServer(profileId: Int)
+
+    /** Kable Killers backup restore of Profile 1's plugin rows. Returns how many were restored. */
+    suspend fun restoreFromBackup(profileId: Int, rows: JsonArray): Int
 
     suspend fun addRepository(rawUrl: String): AddPluginRepositoryResult
 

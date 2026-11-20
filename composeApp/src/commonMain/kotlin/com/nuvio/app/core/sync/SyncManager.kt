@@ -3,6 +3,7 @@ package com.nuvio.app.core.sync
 import co.touchlab.kermit.Logger
 import com.nuvio.app.core.auth.AuthRepository
 import com.nuvio.app.core.auth.AuthState
+import com.nuvio.app.core.backup.KableKillersBackup
 import com.nuvio.app.core.build.AppFeaturePolicy
 import com.nuvio.app.core.time.EpisodeReleaseDatePlatform
 import com.nuvio.app.features.addons.AddonRepository
@@ -441,6 +442,8 @@ object SyncManager {
                 }
             }
             log.i { "Full profile sync completed profile=$profileId reason=$reason" }
+            // Keep the Kable Killers backup in step with Nuvio (or fall back to it).
+            KableKillersBackup.afterNuvioSync()
         }
 
         when (result) {

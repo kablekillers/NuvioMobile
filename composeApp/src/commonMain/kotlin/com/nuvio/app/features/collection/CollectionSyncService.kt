@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -93,6 +94,26 @@ object CollectionSyncService {
             isSyncingFromRemote = false
             log.e(e) { "pullFromServer — FAILED" }
         }
+    }
+
+    /**
+     * Kable Killers backup restore: applies saved Profile 1 collections like a
+     * Nuvio pull would. An empty saved list never wipes local collections.
+     */
+    suspend fun restoreFromBackup(profileId: Int, collectionsJson: JsonElement): Int {
+        if (ProfileRepository.activeProfileId != profileId) return 0
+        if (collectionsJson == JsonNull) return 0
+        val restored = runCatching {
+            json.decodeFromString<List<Collection>>(collectionsJson.toString())
+        }.getOrNull().orEmpty()
+        if (restored.isEmpty()) return 0
+        isSyncingFromRemote = true
+        try {
+            CollectionRepository.applyFromRemote(restored, collectionsJson)
+        } finally {
+            isSyncingFromRemote = false
+        }
+        return restored.size
     }
 
     fun triggerPush() {

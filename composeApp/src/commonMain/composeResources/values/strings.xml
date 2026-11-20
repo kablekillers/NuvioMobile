@@ -2603,4 +2603,22 @@
     <string name="subtitle_shadow_size">Shadow size</string>
     <string name="subtitle_outline_width">Outline width</string>
     <string name="subtitle_reset_appearance">Reset appearance</string>
+    <!-- Kable Killers backup (Cloudflare) -->
+    <string name="kk_backup_title">Kable Killers backup</string>
+    <string name="kk_backup_status_signed_in">Profile 1 (add-ons, plugins, rows and settings) is copied to the Kable Killers backup whenever this phone syncs. Last copy: %1$s.</string>
+    <string name="kk_backup_status_signed_in_none">Profile 1 (add-ons, plugins, rows and settings) will be copied to the Kable Killers backup the next time this phone syncs.</string>
+    <string name="kk_backup_status_connected">Connected to the backup for %1$s.</string>
+    <string name="kk_backup_status_signed_out">If Nuvio sign-in isn't working, continue as a guest and set this phone up from the Kable Killers backup with the restore PIN.</string>
+    <string name="kk_backup_working">Working…</string>
+    <string name="kk_backup_done">Backed up.</string>
+    <string name="kk_backup_restored">Restored %1$s add-ons, %2$s plugins, %3$s Home rows and %4$s collections.</string>
+    <string name="kk_backup_now_title">Back up now</string>
+    <string name="kk_backup_restore_title">Restore Profile 1 from backup</string>
+    <string name="kk_backup_restore_confirm_title">Restore Profile 1?</string>
+    <string name="kk_backup_restore_confirm_subtitle">Profile 1's add-ons, plugins, collections, Home rows and settings will be replaced with the saved copy. Continue Watching and your library are not changed.</string>
+    <string name="kk_backup_restore_confirm_action">Restore</string>
+    <string name="kk_backup_pin_title">Set up from backup</string>
+    <string name="kk_backup_pin_email_hint">Login email</string>
+    <string name="kk_backup_pin_hint">Restore PIN</string>
+    <string name="kk_backup_pin_action">Set up</string>
 </resources>

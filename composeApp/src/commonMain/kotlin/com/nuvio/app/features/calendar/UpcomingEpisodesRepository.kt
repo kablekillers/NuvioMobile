@@ -5,6 +5,7 @@ import com.nuvio.app.features.details.MetaDetailsRepository
 import com.nuvio.app.features.library.LibraryRepository
 import com.nuvio.app.features.notifications.isSeriesLibraryType
 import com.nuvio.app.features.notifications.releaseDateIso
+import com.nuvio.app.features.profiles.ProfileRepository
 import com.nuvio.app.features.watchprogress.CurrentDateProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -14,6 +15,10 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
@@ -70,15 +75,49 @@ object UpcomingEpisodesRepository {
     val state: StateFlow<CalendarUiState> = _state.asStateFlow()
     private var loadedAtMs = 0L
     private var loadedForDay: String? = null
+    private var loadedForProfile: Int? = null
+    private var observingLibrary = false
 
     fun ensureLoaded(force: Boolean = false) {
+        observeLibrary()
         scope.launch { refresh(force) }
     }
 
+    /** Each profile has its own library, so drop the previous profile's list right away. */
+    fun onProfileChanged() {
+        _state.value = CalendarUiState()
+        loadedForProfile = null
+        loadedAtMs = 0L
+    }
+
+    /** Rebuild when the profile changes or a show is added to / removed from the library. */
+    @OptIn(kotlinx.coroutines.FlowPreview::class)
+    private fun observeLibrary() {
+        if (observingLibrary) return
+        observingLibrary = true
+        scope.launch {
+            LibraryRepository.uiState
+                .map { ui ->
+                    ProfileRepository.activeProfileId to ui.items
+                        .filter { isSeriesLibraryType(it.type) }
+                        .map { it.type to it.id }
+                        .toSet()
+                }
+                .distinctUntilChanged()
+                .drop(1)
+                .debounce(750)
+                .collect { refresh(force = true) }
+        }
+    }
+
     private suspend fun refresh(force: Boolean) = mutex.withLock {
+        val profileId = ProfileRepository.activeProfileId
         val today = CurrentDateProvider.todayIsoDate()
         val now = kotlin.time.Clock.System.now().toEpochMilliseconds()
-        if (!force && _state.value.hasLoaded && loadedForDay == today && now - loadedAtMs < REFRESH_AFTER_MS) return@withLock
+        if (
+            !force && _state.value.hasLoaded && loadedForProfile == profileId &&
+            loadedForDay == today && now - loadedAtMs < REFRESH_AFTER_MS
+        ) return@withLock
         _state.value = _state.value.copy(isLoading = true)
         val todayStart = CurrentDateProvider.localStartOfDayEpochMs(today) ?: now
         LibraryRepository.ensureLoaded()
@@ -117,6 +156,8 @@ object UpcomingEpisodesRepository {
                 }
             }
         }).flatten()
+        // The profile was switched while loading: this list belongs to the old one.
+        if (ProfileRepository.activeProfileId != profileId) return@withLock
         _state.value = CalendarUiState(
             isLoading = false,
             hasLoaded = true,
@@ -127,6 +168,7 @@ object UpcomingEpisodesRepository {
         )
         loadedAtMs = now
         loadedForDay = today
+        loadedForProfile = profileId
     }
 
     private suspend fun <T> coroutineScopeAsync(blocks: List<suspend () -> T>): List<T> =

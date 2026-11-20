@@ -4,6 +4,7 @@ import com.nuvio.app.features.addons.AddonCatalog
 import com.nuvio.app.features.home.MetaPreview
 
 internal object SportsRecordingClassifier {
+    private const val FULL_REPLAY_SECONDS = 120 * 60
     private val sportNames = SportsLeague.entries.map { it.catalogSport }.toSet()
     private val sportTags = mapOf("mlb" to "baseball", "nhl" to "hockey", "nfl" to "american_football",
         "ncaaf" to "american_football", "nba" to "basketball", "wnba" to "basketball",
@@ -18,6 +19,8 @@ internal object SportsRecordingClassifier {
     private val highlightTitle = Regex("""\b(?:highlights?|condensed game|recaps?)\b""", RegexOption.IGNORE_CASE)
     private val fullTitle = Regex("""\b(?:full (?:game|match|replay|broadcast)|replay)\b""", RegexOption.IGNORE_CASE)
     private val durationLine = Regex("""^\s*(?:duration|runtime)\s*:\s*([^\r\n]+)""", setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE))
+    private val recordedDuration = Regex("""^\s*Recorded\s*[·•]\s*([^\r\n]+)""", setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE))
+    private val recapStreamLabel = Regex("""^Recap\b""", RegexOption.IGNORE_CASE)
     private val durationUnits = Regex(
         """(?:(\d{1,4})\s*(?:hours?|hrs?|h)\s*)?(?:(\d{1,4})\s*(?:minutes?|mins?|m)\s*)?(?:(\d{1,4})\s*(?:seconds?|secs?|s))?""",
         RegexOption.IGNORE_CASE,
@@ -25,7 +28,7 @@ internal object SportsRecordingClassifier {
     private val durationClock = Regex("""(?:([0-9]{1,3}):)?([0-9]{1,3}):([0-5][0-9])""")
 
     fun appliesTo(league: SportsLeague): Boolean = league == SportsLeague.NHL ||
-        league == SportsLeague.COLLEGE_FOOTBALL || league.isCollegeBasketball
+        league == SportsLeague.NBA || league == SportsLeague.COLLEGE_FOOTBALL || league.isCollegeBasketball
 
     fun accepts(
         addonId: String,
@@ -47,11 +50,13 @@ internal object SportsRecordingClassifier {
 
         val scoped = SportsAddonCatalogs.isScopedCatalog(catalog, league)
         if (league == SportsLeague.NHL && (scoped || sport == "hockey" && isSportsStreams(addonId))) return true
+        if (league == SportsLeague.NBA && addonId == SportsAddonCatalogs.NUVIO_LIVE && scoped) return true
         // A basketball or football catalog can mix college and professional games.
         return score > 0 && (sport != null || scoped || labels.isNotEmpty())
     }
 
     private fun labelMatches(label: String, league: SportsLeague): Boolean = when (label) {
+        "nba" -> league == SportsLeague.NBA
         "nhl" -> league == SportsLeague.NHL
         "ncaaf", "college football" -> league == SportsLeague.COLLEGE_FOOTBALL
         "ncaaw" -> league == SportsLeague.NCAA_WOMEN
@@ -69,7 +74,7 @@ internal object SportsRecordingClassifier {
             item.description?.let { durationLine.find(it)?.groupValues?.get(1) },
         )
         return when {
-            seconds != null && seconds >= 120 * 60 -> SportsContentKind.REPLAY
+            seconds != null && seconds >= FULL_REPLAY_SECONDS -> SportsContentKind.REPLAY
             seconds != null && seconds <= 30 * 60 -> SportsContentKind.HIGHLIGHT
             highlightTitle.containsMatchIn(item.name) || item.genres.any { it.equals("highlights", true) } ->
                 SportsContentKind.HIGHLIGHT
@@ -80,6 +85,14 @@ internal object SportsRecordingClassifier {
             highlightTitle.containsMatchIn(catalog.name) -> SportsContentKind.HIGHLIGHT
             else -> SportsContentKind.REPLAY
         }
+    }
+
+    fun streamLabel(addonInstanceId: String, label: String, subtitle: String?): String {
+        val addonId = addonInstanceId.removePrefix("addon:").substringBefore(':')
+        if (!isSportsStreams(addonId) || !recapStreamLabel.containsMatchIn(label)) return label
+        val seconds = subtitle?.let { recordedDuration.find(it)?.groupValues?.get(1) }?.let(::durationSeconds)
+        if (seconds == null || seconds < FULL_REPLAY_SECONDS) return label
+        return recapStreamLabel.replaceFirst(label, "Replay")
     }
 
     private fun isSportsStreams(id: String) = id == SportsAddonCatalogs.SPORTS_STREAMS || id == "community.sports.fly"

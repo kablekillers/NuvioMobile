@@ -1,0 +1,52 @@
+name: Publish verified Kable Killers Mobile 0.8.3
+on:
+  push:
+    branches: [release-0.8.3]
+permissions:
+  actions: read
+  contents: write
+concurrency:
+  group: mobile-0.8.3-publish
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_SHA: d55c3ea4826e699eb142894cff6d1f8fdf2e14b8
+      SOURCE_RUN: '44782676772'
+      TAG: v0.8.3
+    steps:
+      - name: Verify source run and download signed APKs
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN" |
+            jq -e --arg sha "$SOURCE_SHA" '.head_sha == $sha and .conclusion == "success"'
+          gh run download "$SOURCE_RUN" --repo "$GITHUB_REPOSITORY" --name Kable-Killers-Mobile-v0.8.3 --dir dist
+      - name: Verify checksums and Android upgrade compatibility
+        run: |
+          set -euo pipefail
+          cd dist
+          test "$(wc -l < SHA256SUMS.txt)" -eq 4
+          sha256sum -c SHA256SUMS.txt
+          sdk=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          for abi in arm64-v8a armeabi-v7a universal x86_64; do
+            apk="Kable-Killers-Mobile-v0.8.3-$abi.apk"
+            cert=$("$sdk/apksigner" verify --print-certs "$apk" | awk '/^Signer #1 certificate SHA-256 digest:/ {print $NF}')
+            test "$cert" = 654f88fdd33bd93188db9e136eff1af84c323514ff2d29f16908179df91f1755
+            "$sdk/aapt" dump badging "$apk" > "$RUNNER_TEMP/mobile-badging.txt"
+            grep -Fq "name='com.kablekillers.mobile' versionCode='158' versionName='0.8.3'" "$RUNNER_TEMP/mobile-badging.txt"
+            if grep -q '^application-debuggable' "$RUNNER_TEMP/mobile-badging.txt"; then exit 1; fi
+          done
+      - name: Publish stable Android release
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" dist/*.apk dist/SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" \
+            --target "$SOURCE_SHA" --draft --title "Kable Killers Mobile 0.8.3" \
+            --notes "The Android Sports Hub adds college basketball, tennis, golf, motorsports, and more. League and runtime metadata improve replay and highlight sorting. Large replay catalogs load without blocking the interface. Installed add-ons continue to provide streams."
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets,isDraft,isPrerelease |
+            jq -e '.isDraft and (.isPrerelease | not) and ((.assets | length) == 5) and all(.assets[]; .size > 0)'
+          gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest
+          gh release view --repo "$GITHUB_REPOSITORY" --json tagName,isDraft,isPrerelease,url |
+            jq -e --arg tag "$TAG" '.tagName == $tag and (.isDraft | not) and (.isPrerelease | not)'

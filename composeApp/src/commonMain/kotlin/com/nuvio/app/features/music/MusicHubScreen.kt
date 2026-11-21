@@ -44,6 +44,8 @@ fun MusicHubScreen(onBack: () -> Unit, onOpenTrack: (MetaPreview) -> Unit) {
     var items by remember { mutableStateOf<List<MetaPreview>>(emptyList()) }
     var loading by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf<String?>(null) }
+    var albumLoading by remember { mutableStateOf(false) }
+    var selectedAlbum by remember { mutableStateOf<Pair<String, List<MusicAlbumTrack>>?>(null) }
 
     LaunchedEffect(search, tab) {
         delay(350)
@@ -101,6 +103,37 @@ fun MusicHubScreen(onBack: () -> Unit, onOpenTrack: (MetaPreview) -> Unit) {
         }
     }
 
+    LaunchedEffect(selectedAlbum?.first) {
+        val album = selectedAlbum
+        if (album == null || album.second.isNotEmpty()) return@LaunchedEffect
+        val selected = items.firstOrNull { it.name == album.first && isPlayableAlbum(it) }
+        val addon = AddonRepository.uiState.value.addons.firstOrNull {
+            it.isActive && it.manifest?.id == "org.kablekillers.music"
+        }
+        if (selected == null || addon?.manifest == null) {
+            albumLoading = false
+            selectedAlbum = null
+            status = "Music addon must be installed and enabled."
+            return@LaunchedEffect
+        }
+        try {
+            val tracks = fetchMusicAlbumTracks(selected, addon.manifest.transportUrl)
+            if (tracks.isEmpty()) {
+                status = "This album doesn't have a playable track list yet."
+                selectedAlbum = null
+            } else {
+                selectedAlbum = album.first to tracks
+            }
+        } catch (cancel: CancellationException) {
+            throw cancel
+        } catch (_: Exception) {
+            status = "Unable to load the album tracks."
+            selectedAlbum = null
+        } finally {
+            albumLoading = false
+        }
+    }
+
     Column(
         modifier = Modifier.fillMaxSize().background(dark).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -123,6 +156,7 @@ fun MusicHubScreen(onBack: () -> Unit, onOpenTrack: (MetaPreview) -> Unit) {
             }
         }
         if (loading) Text("Searching music sources…", color = Color.White)
+        if (albumLoading) Text("Loading album track list…", color = Color.White)
         status?.let { Text(it, color = Color.White) }
         LazyColumn(verticalArrangement = Arrangement.spacedBy(5.dp)) {
             items(items, key = { it.type + ":" + it.id }) { result ->
@@ -132,7 +166,9 @@ fun MusicHubScreen(onBack: () -> Unit, onOpenTrack: (MetaPreview) -> Unit) {
                         .background(Color(0xFF13243C))
                         .clickable {
                             if (tab == MusicTab.ALBUMS) {
-                                status = "Album playback queue is still being integrated for Mobile."
+                                albumLoading = true
+                                status = null
+                                selectedAlbum = result.name to emptyList()
                             } else {
                                 onOpenTrack(result)
                             }
@@ -142,4 +178,14 @@ fun MusicHubScreen(onBack: () -> Unit, onOpenTrack: (MetaPreview) -> Unit) {
             }
         }
     }
+    selectedAlbum?.let { album ->
+        if (album.second.isNotEmpty()) {
+            MusicAlbumPlayerDialog(
+                title = album.first,
+                tracks = album.second,
+                onClose = { selectedAlbum = null }
+            )
+        }
+    }
+
 }

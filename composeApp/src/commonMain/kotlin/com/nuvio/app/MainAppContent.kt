@@ -184,6 +184,7 @@ import com.nuvio.app.features.watchprogress.continueWatchingItemKey
 import com.nuvio.app.features.watchprogress.nextUpDismissKey
 import com.nuvio.app.features.watchprogress.toContinueWatchingItem
 import com.nuvio.app.features.sports.SportsHubScreen
+import com.nuvio.app.features.music.MusicHubScreen
 import com.nuvio.app.navigation.*
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
@@ -1503,6 +1504,7 @@ internal fun MainAppContent(
                                 onCollectionsSettingsClick = { navController.navigate(CollectionsRoute(collectionsTitle)) },
                                 onWatchPartySettingsClick = { navController.navigate(PartyRoute(title = watchPartyTitle)) },
                                 onSportsHubClick = { navController.navigate(SportsHubRoute) },
+                                onMusicHubClick = { navController.navigate(MusicHubRoute) },
                                 onCalendarClick = { navController.navigate(CalendarRoute) },
                                 onCalendarEpisodeClick = { ep ->
                                     navController.navigate(DetailRoute(type = ep.showType, id = ep.showId, title = ep.showName))
@@ -1683,6 +1685,31 @@ internal fun MainAppContent(
                                 navController.navigate(DetailRoute(type = ep.showType, id = ep.showId, title = ep.showName))
                             },
                         )
+                    }
+                }
+                entry<MusicHubRoute> { route ->
+                    SettingsDestination(route, navController) { onBack ->
+                        MusicHubScreen(onBack = onBack, onOpenTrack = { item ->
+                            launchPlaybackWithDownloadPreference(
+                                type = item.type,
+                                videoId = item.id,
+                                parentMetaId = item.id,
+                                parentMetaType = item.type,
+                                title = item.name,
+                                logo = item.logo,
+                                poster = item.poster,
+                                background = item.banner,
+                                seasonNumber = null,
+                                episodeNumber = null,
+                                episodeTitle = null,
+                                episodeThumbnail = null,
+                                pauseDescription = item.description,
+                                resumePositionMs = null,
+                                resumeProgressFraction = null,
+                                manualSelection = true,
+                                startFromBeginning = true,
+                            )
+                        })
                     }
                 }
                 entry<SportsHubRoute> { route ->

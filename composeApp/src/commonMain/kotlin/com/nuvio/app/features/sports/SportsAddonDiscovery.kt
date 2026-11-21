@@ -82,6 +82,74 @@ internal object SportsAddonDiscovery {
         else matches.take(40)
     }
 
+    /**
+     * NFL RedZone and NFL Network are continuous channels, not ESPN game fixtures.
+     * Discover only catalog-provided, stream-capable IDs; never invent a URL or ID.
+     */
+    suspend fun findNflChannels(addons: List<ManagedAddon>): List<SportsCatalogMatch> =
+        withContext(Dispatchers.Default) {
+            val requests = addons.filter { it.isActive }.flatMap { addon ->
+                val manifest = addon.manifest ?: return@flatMap emptyList()
+                manifest.catalogs.filter { catalog ->
+                    catalog.type in setOf("tv", "sport", "sports", "channel", "livetv", "live-tv", "live_tv") &&
+                        !Regex("replays?|highlights?|recaps?", RegexOption.IGNORE_CASE)
+                            .containsMatchIn("${catalog.id} ${catalog.name}") &&
+                        (Regex("nfl|sport|live|channel|tv", RegexOption.IGNORE_CASE)
+                            .containsMatchIn("${catalog.id} ${catalog.name}") ||
+                            Regex("sport|nfl|live", RegexOption.IGNORE_CASE)
+                                .containsMatchIn(manifest.id))
+                }.take(10).map { catalog ->
+                    async {
+                        try {
+                            val required = catalog.extra.filter { it.isRequired }
+                            if (required.any { it.name !in setOf("search", "genre", "skip") }) return@async emptyList()
+                            val genre = required.firstOrNull { it.name == "genre" }
+                            val genreValue = genre?.options?.firstOrNull { it.equals("all", true) }
+                            if (genre != null && genreValue == null) return@async emptyList()
+                            val page = catalogRequests.withPermit {
+                                withTimeoutOrNull(10_000) {
+                                    fetchCatalogPage(
+                                        manifestUrl = manifest.transportUrl,
+                                        type = catalog.type,
+                                        catalogId = catalog.id,
+                                        search = if (required.any { it.name == "search" }) "NFL" else null,
+                                        genre = genreValue,
+                                        skip = if (required.any { it.name == "skip" }) 0 else null,
+                                        includeInitialSkip = required.any { it.name == "skip" },
+                                    )
+                                }
+                            } ?: return@async emptyList()
+                            page.items.mapNotNull { item ->
+                                ensureActive()
+                                if (nflChannelLabel(item.name) == null ||
+                                    !manifest.supportsResource("stream", item.type, item.id)
+                                ) return@mapNotNull null
+                                SportsCatalogMatch(addon.displayTitle, item, 100, SportsContentKind.EVENT)
+                            }
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
+                        } catch (_: Exception) {
+                            emptyList()
+                        }
+                    }
+                }
+            }
+            requests.awaitAll().flatten()
+                .distinctBy { Triple(it.addonName, it.item.type, it.item.id) }
+                .sortedWith(compareBy({ if (nflChannelLabel(it.item.name) == "NFL RedZone") 0 else 1 }, { it.addonName }))
+                .take(20)
+        }
+
+    private fun nflChannelLabel(title: String): String? {
+        if (Regex("replay|highlight|recap|condensed", RegexOption.IGNORE_CASE).containsMatchIn(title)) return null
+        val normalized = title.lowercase().replace(Regex("[^a-z0-9]"), "")
+        return when {
+            "nflredzone" in normalized || "redzonenfl" in normalized -> "NFL RedZone"
+            "nflnetwork" in normalized || "nflchannel" in normalized -> "NFL Network"
+            else -> null
+        }
+    }
+
     private val HighlightTitle = Regex("\\b(highlights?|recap)\\b", RegexOption.IGNORE_CASE)
 
     private fun isLeagueCatalog(id: String, league: SportsLeague): Boolean = when (league) {

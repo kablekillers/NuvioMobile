@@ -134,18 +134,8 @@ internal fun PlayerTimeline(
     sliderState.value = displayedPositionMs.coerceIn(0L, durationMs).toFloat()
 
     // Seek preview: a still of the video above the bar while scrubbing.
-    val thumbnailLoader = rememberScrubThumbnailLoader(LocalScrubThumbnailSource.current)
-    var previewFrame by remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
     val scrubbingAt = scrubPosition
-    androidx.compose.runtime.LaunchedEffect(thumbnailLoader, scrubbingAt?.let { it / SCRUB_THUMBNAIL_BUCKET_MS }) {
-        if (scrubbingAt == null) {
-            previewFrame = null
-            return@LaunchedEffect
-        }
-        val loader = thumbnailLoader ?: return@LaunchedEffect
-        kotlinx.coroutines.delay(60)
-        loader.frameAt(scrubbingAt)?.let { previewFrame = it }
-    }
+    val previewFrame = rememberScrubPreviewFrame(scrubbingAt)
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
       androidx.compose.foundation.layout.BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
@@ -248,7 +238,6 @@ internal fun PlayerTimeline(
     }
 }
 
-private const val SCRUB_THUMBNAIL_BUCKET_MS = 2_000L
 
 private fun formatScrubTime(positionMs: Long): String {
     val totalSeconds = (positionMs / 1000).coerceAtLeast(0)

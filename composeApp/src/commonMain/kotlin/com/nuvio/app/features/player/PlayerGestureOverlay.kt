@@ -6,6 +6,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -158,6 +159,21 @@ private fun PlayerGestureFeedback(
                         stringResource(it, *feedback.secondaryMessageArgs.toTypedArray())
                     } ?: feedback.secondaryMessage
                     val shadow = Shadow(Color.Black.copy(alpha = 0.8f), blurRadius = 8f)
+                    // Seek thumbnail while swiping left or right on the video.
+                    val previewFrame = rememberScrubPreviewFrame(feedback.previewPositionMs)
+                    if (feedback.previewPositionMs != null && previewFrame != null) {
+                        androidx.compose.foundation.Image(
+                            bitmap = previewFrame,
+                            contentDescription = null,
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .width(240.dp)
+                                .height(135.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .border(1.dp, Color.White.copy(alpha = 0.5f), RoundedCornerShape(12.dp)),
+                        )
+                    }
                     Row(
                         modifier = Modifier
                             .align(Alignment.TopCenter)

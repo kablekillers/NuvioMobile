@@ -107,6 +107,7 @@ internal fun PlayerScreenRuntime.showHorizontalSeekPreview(previewPositionMs: Lo
     val deltaMs = previewPositionMs - baselinePositionMs
     val direction = if (deltaMs < 0L) PlayerSeekDirection.Backward else PlayerSeekDirection.Forward
     liveGestureFeedback = GestureFeedbackState(
+        previewPositionMs = previewPositionMs,
         message = formatPlaybackTime(previewPositionMs),
         icon = if (direction == PlayerSeekDirection.Forward) {
             GestureFeedbackIcon.SeekForward

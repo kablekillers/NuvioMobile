@@ -1,6 +1,14 @@
 package com.nuvio.app.features.player
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.filterNotNull
 import androidx.compose.runtime.State
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.ImageBitmap
@@ -94,6 +102,9 @@ internal data class ScrubThumbnailSource(
 
 internal val LocalScrubThumbnailSource = staticCompositionLocalOf<ScrubThumbnailSource?> { null }
 
+/** One shared frame reader for the whole player screen. */
+internal val LocalScrubThumbnailLoader = staticCompositionLocalOf<ScrubThumbnailLoader?> { null }
+
 /** Fetches still frames of a stream for the seek bar preview. */
 internal interface ScrubThumbnailLoader {
     /** A frame near [positionMs], or null when this stream can't provide one. */
@@ -106,3 +117,26 @@ internal expect fun rememberScrubThumbnailLoader(source: ScrubThumbnailSource?):
 /** True while the device's media volume is at zero (muted). */
 @Composable
 internal expect fun rememberMediaVolumeMuted(): State<Boolean>
+
+/**
+ * The latest seek-preview frame for [positionMs] (null while not seeking). Requests are
+ * conflated, not cancelled: a slow network still delivers frames while the finger keeps moving,
+ * and the newest finished frame stays on screen until a closer one arrives.
+ */
+@Composable
+internal fun rememberScrubPreviewFrame(positionMs: Long?): ImageBitmap? {
+    val loader = LocalScrubThumbnailLoader.current
+    val requests = remember { MutableStateFlow<Long?>(null) }
+    var frame by remember { mutableStateOf<ImageBitmap?>(null) }
+    SideEffect { requests.value = positionMs }
+    LaunchedEffect(loader) {
+        val active = loader ?: return@LaunchedEffect
+        requests.filterNotNull().conflate().collect { position ->
+            active.frameAt(position)?.let { frame = it }
+        }
+    }
+    LaunchedEffect(positionMs == null) {
+        if (positionMs == null) frame = null
+    }
+    return if (positionMs == null) null else frame
+}

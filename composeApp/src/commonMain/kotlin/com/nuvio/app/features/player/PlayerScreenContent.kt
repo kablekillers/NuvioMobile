@@ -193,12 +193,21 @@ internal fun PlayerScreenContent(args: PlayerScreenArgs) {
         runtime.BindPlayerRuntimeEffects()
         runtime.BindPlayerExtrasEffects()
         val scrubThumbnailsEnabled by PlayerExtrasRepository.state.collectAsStateWithLifecycle()
+        val thumbnailSource = if (scrubThumbnailsEnabled.scrubThumbnails) {
+            ScrubThumbnailSource(runtime.activeSourceUrl, runtime.activeSourceHeaders)
+        } else {
+            null
+        }
+        val thumbnailLoader = rememberScrubThumbnailLoader(thumbnailSource)
+        // Open the frame reader in the background so the first preview appears quickly.
+        androidx.compose.runtime.LaunchedEffect(thumbnailLoader) {
+            val loader = thumbnailLoader ?: return@LaunchedEffect
+            kotlinx.coroutines.delay(6_000)
+            loader.frameAt(30_000)
+        }
         androidx.compose.runtime.CompositionLocalProvider(
-            LocalScrubThumbnailSource provides if (scrubThumbnailsEnabled.scrubThumbnails) {
-                ScrubThumbnailSource(runtime.activeSourceUrl, runtime.activeSourceHeaders)
-            } else {
-                null
-            },
+            LocalScrubThumbnailSource provides thumbnailSource,
+            LocalScrubThumbnailLoader provides thumbnailLoader,
         ) {
             runtime.RenderPlayerRuntimeUi(
                 partyPanelWidth = partyPanelWidth,

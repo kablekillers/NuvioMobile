@@ -83,6 +83,8 @@ internal data class GestureFeedbackState(
     val secondaryMessageArgs: List<Any> = emptyList(),
     val secondaryMessageColor: Color? = null,
     val level: Float? = null,
+    /** Where a swipe-seek would land, for the seek thumbnail. */
+    val previewPositionMs: Long? = null,
 )
 
 

@@ -47,7 +47,7 @@ fun MusicHubScreen(onBack: () -> Unit, onOpenTrack: (MetaPreview) -> Unit) {
     var youtubeVideos by remember { mutableStateOf<List<YouTubeMusicVideo>>(emptyList()) }
     var selectedYouTube by remember { mutableStateOf<YouTubeMusicVideo?>(null) }
     var albumLoading by remember { mutableStateOf(false) }
-    var selectedAlbum by remember { mutableStateOf<Pair<String, List<MusicAlbumTrack>>?>(null) }
+    var selectedAlbum by remember { mutableStateOf<Pair<MetaPreview, List<MusicAlbumTrack>>?>(null) }
 
     LaunchedEffect(search, tab) {
         delay(350)
@@ -120,10 +120,10 @@ fun MusicHubScreen(onBack: () -> Unit, onOpenTrack: (MetaPreview) -> Unit) {
         }
     }
 
-    LaunchedEffect(selectedAlbum?.first) {
+    LaunchedEffect(selectedAlbum?.first?.id) {
         val album = selectedAlbum
         if (album == null || album.second.isNotEmpty()) return@LaunchedEffect
-        val selected = items.firstOrNull { it.name == album.first && isPlayableAlbum(it) }
+        val selected = album.first.takeIf(::isPlayableAlbum)
         val addon = AddonRepository.uiState.value.addons.firstOrNull {
             it.isActive && it.manifest?.id == "org.kablekillers.music"
         }
@@ -194,7 +194,7 @@ fun MusicHubScreen(onBack: () -> Unit, onOpenTrack: (MetaPreview) -> Unit) {
                             if (tab == MusicTab.ALBUMS) {
                                 albumLoading = true
                                 status = null
-                                selectedAlbum = result.name to emptyList()
+                                selectedAlbum = result to emptyList()
                             } else {
                                 onOpenTrack(result)
                             }
@@ -210,7 +210,7 @@ fun MusicHubScreen(onBack: () -> Unit, onOpenTrack: (MetaPreview) -> Unit) {
     selectedAlbum?.let { album ->
         if (album.second.isNotEmpty()) {
             MusicAlbumPlayerDialog(
-                title = album.first,
+                title = album.first.name,
                 tracks = album.second,
                 onClose = { selectedAlbum = null }
             )

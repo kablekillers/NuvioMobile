@@ -105,6 +105,7 @@ private val HubLiveText = Color(0xFFFF7B86)
 private enum class SportsSection(val label: String) {
     Live("Live Now"), MyTeams("My Teams"), Upcoming("Upcoming"), Final("Final"),
     Standings("Standings"), Replays("Replays"), Highlights("Highlights"), Events("Events"),
+    Channels("NFL Channels"),
 }
 
 private fun nowMillis(): Long = kotlin.time.Clock.System.now().toEpochMilliseconds()
@@ -197,6 +198,13 @@ internal fun SportsHubScreen(
         standings = runCatching { repository.standings(league) }.getOrNull()
         standingsLoaded = true
     }
+    var nflChannels by remember { mutableStateOf<List<SportsCatalogMatch>?>(null) }
+    LaunchedEffect(section, league, activeAddons, refresh) {
+        if (league == SportsLeague.NFL && section == SportsSection.Channels) {
+            nflChannels = null
+            nflChannels = SportsAddonDiscovery.findNflChannels(activeAddons)
+        }
+    }
     val vod = section == SportsSection.Replays || section == SportsSection.Highlights
     val catalogOnly = league.scoreboardPath == null
     val catalogSection = vod || section == SportsSection.Events
@@ -230,6 +238,7 @@ internal fun SportsHubScreen(
                             if (league != sport) {
                                 section = when {
                                     sport.scoreboardPath == null -> SportsSection.Events
+                                    sport != SportsLeague.NFL && section == SportsSection.Channels -> SportsSection.Live
                                     section == SportsSection.Events || section == SportsSection.Standings &&
                                         !sport.usesTeamStats && sport != SportsLeague.UFC ->
                                         SportsSection.Live
@@ -247,7 +256,8 @@ internal fun SportsHubScreen(
                     val sections = if (catalogOnly) {
                         listOf(SportsSection.Events, SportsSection.Replays, SportsSection.Highlights)
                     } else SportsSection.entries.filter { tab ->
-                        tab != SportsSection.Events && (tab != SportsSection.Standings || isIos ||
+                        tab != SportsSection.Events && (tab != SportsSection.Channels || league == SportsLeague.NFL) &&
+                            (tab != SportsSection.Standings || isIos ||
                             league == SportsLeague.UFC || league.usesTeamStats)
                     }
                     items(sections) { tab ->
@@ -280,6 +290,20 @@ internal fun SportsHubScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     when {
+                        section == SportsSection.Channels && league == SportsLeague.NFL -> {
+                            item {
+                                HubMessage("NFL RedZone and NFL Network · Available channels from your enabled add-ons")
+                            }
+                            when {
+                                nflChannels == null -> item { CircularProgressIndicator(color = HubAccent) }
+                                nflChannels!!.isEmpty() -> item {
+                                    HubMessage("No NFL RedZone or NFL Network channel was found in the enabled add-ons.")
+                                }
+                                else -> itemsIndexed(nflChannels!!) { index, channel ->
+                                    EnterAnimated(index) { SourceCard(channel, onOpenStream) }
+                                }
+                            }
+                        }
                         section == SportsSection.Standings -> when {
                             !standingsLoaded -> item { CircularProgressIndicator(color = HubAccent) }
                             standings == null -> item { HubMessage("Standings aren't available for ${league.label}.") }

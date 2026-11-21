@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - feature/mobile-087-music-sports-integration
+  pull_request:
+    paths:
+      - 'composeApp/src/commonMain/kotlin/com/nuvio/app/features/sports/**'
+      - 'composeApp/src/commonTest/kotlin/com/nuvio/app/features/sports/**'
+      - '.github/workflows/mobile-087-integrated-test.yml'
   workflow_dispatch:
 
 permissions:

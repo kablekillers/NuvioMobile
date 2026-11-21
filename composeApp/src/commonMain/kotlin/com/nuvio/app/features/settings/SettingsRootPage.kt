@@ -6,6 +6,7 @@ import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.runtime.Composable
 import nuvio.composeapp.generated.resources.*
+import com.nuvio.app.features.installapps.InstallAppsRepository
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -107,6 +108,15 @@ internal fun LazyListScope.settingsRootContent(
                             isTablet = isTablet,
                             onPageClick = onPageClick,
                         )
+                        if (InstallAppsRepository.isSupported) {
+                            SettingsGroupDivider(isTablet = isTablet)
+                            SettingsPageRow(
+                                page = SettingsPage.InstallApps,
+                                description = Res.string.install_apps_root_description,
+                                isTablet = isTablet,
+                                onPageClick = onPageClick,
+                            )
+                        }
                         SettingsGroupDivider(isTablet = isTablet)
                         SettingsPageRow(
                             page = SettingsPage.About,

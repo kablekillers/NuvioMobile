@@ -173,7 +173,10 @@ fun MusicHubScreen(onBack: () -> Unit, onOpenTrack: (MetaPreview) -> Unit) {
             label = { Text("Artist, song title or album") },
             singleLine = true, modifier = Modifier.fillMaxWidth()
         )
-        Row(\n            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),\n            horizontalArrangement = Arrangement.spacedBy(5.dp)\n        ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
             MusicTab.entries.forEach { option ->
                 Button(onClick = { tab = option }, enabled = tab != option) {
                     Text(option.title)

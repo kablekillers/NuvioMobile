@@ -86,15 +86,20 @@ fun MusicHubScreen(onBack: () -> Unit, onOpenTrack: (MetaPreview) -> Unit) {
                 }
                 var failures = 0
                 val found = mutableListOf<MetaPreview>()
+                // Show recordings on first opening Albums rather than an empty tab.
+                // This is a discovery query, not a claim that every Archive item is an album.
+                val effectiveSearch = search.trim().ifBlank {
+                    if (tab == MusicTab.ALBUMS) "live music" else ""
+                }
                 catalogs.forEach { id ->
                     val descriptor = manifest.catalogs.firstOrNull { it.id == id } ?: return@forEach
-                    if (search.isBlank() && descriptor.extra.any { it.name == "search" && it.isRequired }) return@forEach
+                    if (effectiveSearch.isBlank() && descriptor.extra.any { it.name == "search" && it.isRequired }) return@forEach
                     try {
                         val page = fetchCatalogPage(
                             manifestUrl = manifest.transportUrl,
                             type = descriptor.type,
                             catalogId = descriptor.id,
-                            search = search.trim().ifBlank { null },
+                            search = effectiveSearch.ifBlank { null },
                             maxItems = 60
                         )
                         found += page.items
@@ -107,6 +112,7 @@ fun MusicHubScreen(onBack: () -> Unit, onOpenTrack: (MetaPreview) -> Unit) {
                 items = found.distinctBy { it.type + ":" + it.id }
                 if (items.isEmpty()) {
                     status = if (failures > 0) "Music source unavailable; try again."
+                    else if (search.isBlank() && tab == MusicTab.ALBUMS) "No albums found in the installed addon. The updated album catalogs must be deployed first."
                     else if (search.isBlank()) "Enter an artist, song or album to begin."
                     else "No matching recordings."
                 }

@@ -1,7 +1,9 @@
 name: Kable Killers Mobile 0.8.6 Stable Release
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - release-0.8.6
 
 permissions:
   contents: write

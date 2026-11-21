@@ -19,7 +19,12 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import com.nuvio.app.core.storage.ProfileScopedKey
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -45,38 +50,89 @@ internal actual object PlayerExtrasStorage {
  * Reads frames with Android's MediaMetadataRetriever. It works for progressive files (MP4, MKV,
  * WebM) over http(s) and local files; HLS/DASH and torrents return nothing and the seek bar just
  * shows no preview.
+ *
+ * Once opened it fills in thumbnails across the whole video in the background (a coarse pass,
+ * then a finer one), so scrubbing can show the nearest ready picture instantly. On-demand frames
+ * take priority: the background work gives way after each frame.
  */
 private class RetrieverScrubThumbnailLoader(
     private val source: ScrubThumbnailSource,
+    private val scope: CoroutineScope,
 ) : ScrubThumbnailLoader {
     private val mutex = Mutex()
     private var retriever: MediaMetadataRetriever? = null
     private var failed = false
-    private val cache = LinkedHashMap<Long, ImageBitmap>(32, 0.75f, true)
+    private var durationMs = 0L
+    private val cache = java.util.concurrent.ConcurrentSkipListMap<Long, ImageBitmap>()
+    private var prefetchJob: Job? = null
+    @Volatile private var pendingOnDemand = 0
 
-    override suspend fun frameAt(positionMs: Long): ImageBitmap? = withContext(Dispatchers.IO) {
-        mutex.withLock {
-            if (failed) return@withLock null
-            val bucket = positionMs / BUCKET_MS
-            cache[bucket]?.let { return@withLock it }
-            val mmr = retriever ?: openRetriever() ?: return@withLock null
-            val timeUs = bucket * BUCKET_MS * 1_000L
-            val bitmap = runCatching {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-                    mmr.getScaledFrameAtTime(timeUs, MediaMetadataRetriever.OPTION_CLOSEST_SYNC, WIDTH, HEIGHT)
-                } else {
-                    mmr.getFrameAtTime(timeUs, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
-                        ?.let { Bitmap.createScaledBitmap(it, WIDTH, HEIGHT, true) }
-                }
-            }.getOrNull() ?: return@withLock null
-            val image = bitmap.asImageBitmap()
-            cache[bucket] = image
-            if (cache.size > MAX_CACHED) cache.remove(cache.keys.first())
-            image
+    override fun nearest(positionMs: Long): ImageBitmap? {
+        if (cache.isEmpty()) return null
+        val below = cache.floorEntry(positionMs)
+        val above = cache.ceilingEntry(positionMs)
+        val best = listOfNotNull(below, above).minByOrNull { kotlin.math.abs(it.key - positionMs) } ?: return null
+        // Only use it if it's reasonably close (within 3% of the video, at least 20 s).
+        val tolerance = maxOf(20_000L, durationMs * 3 / 100)
+        return best.value.takeIf { kotlin.math.abs(best.key - positionMs) <= tolerance }
+    }
+
+    override suspend fun frameAt(positionMs: Long): ImageBitmap? {
+        val key = (positionMs / EXACT_BUCKET_MS) * EXACT_BUCKET_MS
+        cache[key]?.let { return it }
+        pendingOnDemand++
+        try {
+            return withContext(Dispatchers.IO) {
+                mutex.withLock { decode(key) }
+            }
+        } finally {
+            pendingOnDemand--
+            startPrefetch()
         }
     }
 
-    private fun openRetriever(): MediaMetadataRetriever? {
+    /** Must hold [mutex]. */
+    private fun decode(key: Long): ImageBitmap? {
+        if (failed) return null
+        cache[key]?.let { return it }
+        val mmr = retriever ?: open() ?: return null
+        val bitmap = runCatching {
+            val timeUs = key * 1_000L
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                mmr.getScaledFrameAtTime(timeUs, MediaMetadataRetriever.OPTION_CLOSEST_SYNC, WIDTH, HEIGHT)
+            } else {
+                mmr.getFrameAtTime(timeUs, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+                    ?.let { Bitmap.createScaledBitmap(it, WIDTH, HEIGHT, true) }
+            }
+        }.getOrNull() ?: return null
+        // RGB_565 halves the memory of each thumbnail.
+        val compact = runCatching { bitmap.copy(Bitmap.Config.RGB_565, false) }.getOrNull() ?: bitmap
+        if (compact !== bitmap) bitmap.recycle()
+        val image = compact.asImageBitmap()
+        cache[key] = image
+        while (cache.size > MAX_CACHED) cache.pollFirstEntry()
+        return image
+    }
+
+    private fun startPrefetch() {
+        if (prefetchJob != null || failed) return
+        prefetchJob = scope.launch(Dispatchers.IO) {
+            if (durationMs <= 0L) return@launch
+            val coarse = (1..COARSE_STEPS).map { durationMs * it / (COARSE_STEPS + 1) }
+            val fine = (1..FINE_STEPS).map { durationMs * it / (FINE_STEPS + 1) }.filter { p -> coarse.none { kotlin.math.abs(it - p) < durationMs / (FINE_STEPS * 2) } }
+            for (position in coarse + fine) {
+                if (!isActive || failed) break
+                while (pendingOnDemand > 0 && isActive) delay(50)
+                val key = (position / EXACT_BUCKET_MS) * EXACT_BUCKET_MS
+                if (cache.containsKey(key)) continue
+                mutex.withLock { decode(key) }
+                delay(PREFETCH_PAUSE_MS)
+            }
+        }
+    }
+
+    /** Must hold [mutex]. */
+    private fun open(): MediaMetadataRetriever? {
         val url = source.url
         val supported = url.startsWith("http://") || url.startsWith("https://") ||
             url.startsWith("file:") || url.startsWith("/")
@@ -93,27 +149,40 @@ private class RetrieverScrubThumbnailLoader(
                     else -> setDataSource(url, source.headers)
                 }
             }
-        }.onFailure { failed = true }.getOrNull()?.also { retriever = it }
+        }.onFailure { failed = true }.getOrNull()?.also { mmr ->
+            retriever = mmr
+            durationMs = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L
+        }
     }
 
     fun release() {
-        runCatching { retriever?.release() }
-        retriever = null
-        cache.clear()
+        prefetchJob?.cancel()
+        // The screen's scope is already gone here, so release on a scope of its own.
+        CoroutineScope(Dispatchers.IO).launch {
+            mutex.withLock {
+                runCatching { retriever?.release() }
+                retriever = null
+                cache.clear()
+            }
+        }
     }
 
     private companion object {
-        const val BUCKET_MS = 2_000L
-        const val WIDTH = 320
-        const val HEIGHT = 180
-        const val MAX_CACHED = 60
+        const val EXACT_BUCKET_MS = 2_000L
+        const val WIDTH = 256
+        const val HEIGHT = 144
+        const val MAX_CACHED = 220
+        const val COARSE_STEPS = 40
+        const val FINE_STEPS = 160
+        const val PREFETCH_PAUSE_MS = 150L
     }
 }
 
 @Composable
 internal actual fun rememberScrubThumbnailLoader(source: ScrubThumbnailSource?): ScrubThumbnailLoader? {
     if (source == null) return null
-    val loader = remember(source.url) { RetrieverScrubThumbnailLoader(source) }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val loader = remember(source.url) { RetrieverScrubThumbnailLoader(source, scope) }
     DisposableEffect(loader) {
         onDispose { loader.release() }
     }

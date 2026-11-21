@@ -109,6 +109,9 @@ internal val LocalScrubThumbnailLoader = staticCompositionLocalOf<ScrubThumbnail
 internal interface ScrubThumbnailLoader {
     /** A frame near [positionMs], or null when this stream can't provide one. */
     suspend fun frameAt(positionMs: Long): ImageBitmap?
+
+    /** The closest frame already made, returned instantly (no network), or null. */
+    fun nearest(positionMs: Long): ImageBitmap? = null
 }
 
 @Composable
@@ -128,7 +131,11 @@ internal fun rememberScrubPreviewFrame(positionMs: Long?): ImageBitmap? {
     val loader = LocalScrubThumbnailLoader.current
     val requests = remember { MutableStateFlow<Long?>(null) }
     var frame by remember { mutableStateOf<ImageBitmap?>(null) }
-    SideEffect { requests.value = positionMs }
+    SideEffect {
+        requests.value = positionMs
+        // Show the closest ready thumbnail right away; the exact frame follows.
+        if (positionMs != null) loader?.nearest(positionMs)?.let { frame = it }
+    }
     LaunchedEffect(loader) {
         val active = loader ?: return@LaunchedEffect
         requests.filterNotNull().conflate().collect { position ->

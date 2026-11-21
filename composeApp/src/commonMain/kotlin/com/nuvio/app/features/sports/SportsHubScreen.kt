@@ -284,10 +284,15 @@ internal fun SportsHubScreen(
                 ) {
                     val sections = if (catalogOnly) {
                         listOf(SportsSection.AllSports, SportsSection.Events, SportsSection.Replays, SportsSection.Highlights)
-                    } else SportsSection.entries.filter { tab ->
-                        tab != SportsSection.Events && (tab != SportsSection.Channels || league == SportsLeague.NFL) &&
-                            (tab != SportsSection.Standings || isIos ||
-                            league == SportsLeague.UFC || league.usesTeamStats)
+                    } else {
+                        val visible = SportsSection.entries.filter { tab ->
+                            tab != SportsSection.Events && (tab != SportsSection.Channels || league == SportsLeague.NFL) &&
+                                (tab != SportsSection.Standings || isIos ||
+                                league == SportsLeague.UFC || league.usesTeamStats)
+                        }
+                        if (league == SportsLeague.NFL) {
+                            listOf(SportsSection.Channels) + visible.filterNot { it == SportsSection.Channels }
+                        } else visible
                     }
                     items(sections) { tab ->
                         SectionPill(tab.label, selected = section == tab) { section = tab }

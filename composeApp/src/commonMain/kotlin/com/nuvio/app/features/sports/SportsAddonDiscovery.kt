@@ -5,6 +5,7 @@ import com.nuvio.app.features.addons.ManagedAddon
 import com.nuvio.app.features.addons.supportsResource
 import com.nuvio.app.features.catalog.fetchCatalogPage
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -88,7 +89,7 @@ internal object SportsAddonDiscovery {
      */
     suspend fun findNflChannels(addons: List<ManagedAddon>): List<SportsCatalogMatch> =
         withContext(Dispatchers.Default) {
-            val requests = addons.filter { it.isActive }.flatMap { addon ->
+            val requests: List<Deferred<List<SportsCatalogMatch>>> = addons.filter { it.isActive }.flatMap { addon ->
                 val manifest = addon.manifest ?: return@flatMap emptyList()
                 manifest.catalogs.filter { catalog ->
                     catalog.type in setOf("tv", "sport", "sports", "channel", "livetv", "live-tv", "live_tv") &&

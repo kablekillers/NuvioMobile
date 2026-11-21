@@ -66,8 +66,14 @@ fun MusicHubScreen(onBack: () -> Unit, onOpenTrack: (MetaPreview) -> Unit) {
                 status = "Install Kable Killers Music from Add-ons to use Music Hub."
             } else if (tab == MusicTab.YOUTUBE) {
                 if (search.isNotBlank()) {
-                    youtubeVideos = findYouTubeMusic(search, manifest.transportUrl)
-                    if (youtubeVideos.isEmpty()) status = "No embeddable YouTube music videos found."
+                    try {
+                        youtubeVideos = findYouTubeMusic(search, manifest.transportUrl)
+                        if (youtubeVideos.isEmpty()) status = "No embeddable YouTube music videos found."
+                    } catch (cancel: CancellationException) {
+                        throw cancel
+                    } catch (_: Exception) {
+                        status = "YouTube search isn't available yet. Check YOUTUBE_API_KEY on Render."
+                    }
                 } else {
                     status = "Search for an artist, song or official music video."
                 }

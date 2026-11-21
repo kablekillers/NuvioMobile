@@ -171,7 +171,7 @@ private fun YouTubeVideoCard(video: YouTubeMusicVideo, onClick: () -> Unit) {
                 .fillMaxWidth()
                 .aspectRatio(16f / 9f)
                 .clip(RoundedCornerShape(14.dp))
-                .background(colors.backgroundCard),
+                .background(colors.surfaceCard),
         ) {
             val thumbnail = video.thumbnail.ifBlank { "https://i.ytimg.com/vi/${video.videoId}/hqdefault.jpg" }
             AsyncImage(

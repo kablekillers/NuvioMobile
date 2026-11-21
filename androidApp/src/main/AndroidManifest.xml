@@ -26,6 +26,12 @@
             android:value="false" />
 
         <activity
+            android:name="com.nuvio.app.features.music.YouTubeVideoActivity"
+            android:exported="false"
+            android:hardwareAccelerated="true"
+            android:theme="@android:style/Theme.Material.NoActionBar" />
+
+        <activity
             android:exported="true"
             android:name="com.nuvio.app.MainActivity"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"

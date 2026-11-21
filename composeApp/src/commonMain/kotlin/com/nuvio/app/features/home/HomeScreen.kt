@@ -129,6 +129,7 @@ fun HomeScreen(
     scrollToTopRequests: Flow<Unit> = emptyFlow(),
     onCatalogClick: ((HomeCatalogSection) -> Unit)? = null,
     onSportsHubClick: (() -> Unit)? = null,
+    onMusicHubClick: (() -> Unit)? = null,
     onCalendarClick: (() -> Unit)? = null,
     onCalendarEpisodeClick: ((com.nuvio.app.features.calendar.CalendarEpisode) -> Unit)? = null,
     onPosterClick: ((MetaPreview) -> Unit)? = null,
@@ -1048,6 +1049,14 @@ fun HomeScreen(
             if (onSportsHubClick != null) {
                 item(key = "home_sports_hub") {
                     SportsHubHomeButton(onClick = onSportsHubClick, modifier = Modifier.padding(horizontal = 16.dp))
+                }
+            }
+            if (onMusicHubClick != null) {
+                item(key = "home_music_hub") {
+                    androidx.compose.material3.Button(
+                        onClick = onMusicHubClick,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    ) { androidx.compose.material3.Text("♫ Music Hub — Search Songs & Albums") }
                 }
             }
             if (onCalendarClick != null && onCalendarEpisodeClick != null) {

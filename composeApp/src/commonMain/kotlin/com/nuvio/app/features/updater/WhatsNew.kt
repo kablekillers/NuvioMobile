@@ -48,6 +48,10 @@ import kotlinx.serialization.json.jsonPrimitive
  */
 internal object WhatsNewNotes {
     val byVersion: Map<String, List<String>> = mapOf(
+        "0.8.9" to listOf(
+            "Faster seek previews: thumbnails are made in the background while you watch, so dragging the seek bar shows a picture right away.",
+            "Seek previews now also show when you swipe left or right on the video.",
+        ),
         "0.8.8" to listOf(
             "New bottom tabs: Sports, Music and YouTube are now one tap away.",
             "All-new Music: today's biggest hits, genres, trending playlists and live radio, with a mini player and a Now Playing screen.",

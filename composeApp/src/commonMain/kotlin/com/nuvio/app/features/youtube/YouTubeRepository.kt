@@ -31,7 +31,7 @@ data class YouTubePage(
 data class YouTubeChannelRef(val id: String, val name: String)
 
 @Serializable
-internal data class YouTubeLocalData(
+data class YouTubeLocalData(
     val following: List<YouTubeChannelRef> = emptyList(),
     val history: List<YouTubeVideo> = emptyList(),
 )

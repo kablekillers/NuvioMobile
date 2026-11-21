@@ -35,14 +35,14 @@ private val blue = Color(0xFF19A8FF)
 private val dark = Color(0xFF070F20)
 
 private enum class MusicTab(val title: String) {
-    SONGS("Songs"), ALBUMS("Albums"), RADIO("Radio"), YOUTUBE("YouTube")
+    AUDIO("Ad-free Audio"), ALBUMS("Albums"), RADIO("Radio"), YOUTUBE("Videos")
 }
 
 /** First mobile test of the installed music addon using the existing Nuvio stream flow. */
 @Composable
 fun MusicHubScreen(onBack: () -> Unit, onOpenTrack: (MetaPreview) -> Unit) {
     var search by remember { mutableStateOf("") }
-    var tab by remember { mutableStateOf(MusicTab.SONGS) }
+    var tab by remember { mutableStateOf(MusicTab.AUDIO) }
     var items by remember { mutableStateOf<List<MetaPreview>>(emptyList()) }
     var loading by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf<String?>(null) }
@@ -81,7 +81,7 @@ fun MusicHubScreen(onBack: () -> Unit, onOpenTrack: (MetaPreview) -> Unit) {
                 }
             } else {
                 val catalogs = when (tab) {
-                    MusicTab.SONGS -> listOf("kablekillers_music_search", "kk_audius", "kk_commons")
+                    MusicTab.AUDIO -> listOf("kk_audius", "kk_commons")
                     MusicTab.ALBUMS -> listOf("kk_audius_albums", "kk_archive")
                     MusicTab.RADIO -> listOf("kk_radio")
                     MusicTab.YOUTUBE -> emptyList()
@@ -111,6 +111,7 @@ fun MusicHubScreen(onBack: () -> Unit, onOpenTrack: (MetaPreview) -> Unit) {
                         failures++
                     }
                 }
+                // For the ad-free section, use only the approved audio sources (no YouTube or SoundCloud).
                 items = found.distinctBy { it.type + ":" + it.id }
                 if (items.isEmpty()) {
                     status = if (failures > 0) "Music source unavailable; try again."
@@ -170,7 +171,7 @@ fun MusicHubScreen(onBack: () -> Unit, onOpenTrack: (MetaPreview) -> Unit) {
         }
         OutlinedTextField(
             value = search, onValueChange = { search = it },
-            label = { Text("Artist, song title or album") },
+            label = { Text(if (tab == MusicTab.YOUTUBE) "Search YouTube music videos" else "Artist, song title or album") },
             singleLine = true, modifier = Modifier.fillMaxWidth()
         )
         Row(
@@ -183,6 +184,15 @@ fun MusicHubScreen(onBack: () -> Unit, onOpenTrack: (MetaPreview) -> Unit) {
                 }
             }
         }
+        Text(
+            when (tab) {
+                MusicTab.AUDIO -> "Listen without YouTube video ads • Audius and open recordings. Catalog availability varies."
+                MusicTab.ALBUMS -> "Play available Audius albums and Internet Archive recordings in order."
+                MusicTab.RADIO -> "Live internet radio • Station promotions or ads may still play."
+                MusicTab.YOUTUBE -> "Official YouTube music videos • YouTube may show ads."
+            },
+            color = Color.LightGray
+        )
         if (loading) Text("Searching music sources…", color = Color.White)
         if (albumLoading) Text("Loading album track list…", color = Color.White)
         status?.let { Text(it, color = Color.White) }

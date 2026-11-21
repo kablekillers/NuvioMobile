@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.navigationBars
+import com.nuvio.app.features.music.MusicPlayerHost
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -247,6 +249,16 @@ internal fun MainTabsDestination(
                         glowEnabled = navBarGlowEnabled,
                     )
                 }
+
+                // Mini player above the bottom bar on every tab, and the full Now Playing screen.
+                val systemBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+                MusicPlayerHost(
+                    bottomPadding = when {
+                        isTabletLayout || useNativeBottomTabs -> systemBottom
+                        navBarStyleSetting == NavBarStyle.CLASSIC -> innerPadding.calculateBottomPadding()
+                        else -> systemBottom + 72.dp
+                    },
+                )
             }
         }
     }

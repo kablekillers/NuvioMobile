@@ -121,6 +121,8 @@ open class MainActivity : AppCompatActivity() {
         CustomPosterUrlStorage.initialize(applicationContext)
         CardDepthStyleStorage.initialize(applicationContext)
         com.nuvio.app.features.player.PlayerExtrasStorage.initialize(applicationContext)
+        com.nuvio.app.features.music.MusicAudioEngine.initialize(applicationContext)
+        com.nuvio.app.features.youtube.YouTubeTabStorage.initialize(applicationContext)
         DebridSettingsStorage.initialize(applicationContext)
         TmdbSettingsStorage.initialize(applicationContext)
         MdbListSettingsStorage.initialize(applicationContext)

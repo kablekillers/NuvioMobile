@@ -31,8 +31,8 @@ import com.nuvio.app.features.home.HomeCatalogSection
 import com.nuvio.app.features.home.HomeScreen
 import com.nuvio.app.features.home.MetaPreview
 import com.nuvio.app.features.library.LibraryItem
-import com.nuvio.app.features.music.MusicHubScreen
-import com.nuvio.app.features.music.YouTubeTabScreen
+import com.nuvio.app.features.music.MusicTabScreen
+import com.nuvio.app.features.youtube.YouTubeTabScreen
 import com.nuvio.app.features.sports.SportsHubScreen
 import com.nuvio.app.features.library.LibraryScreen
 import com.nuvio.app.features.library.LibrarySection
@@ -175,11 +175,7 @@ internal fun AppTabHost(
 
             AppScreenTab.Music -> {
                 BottomTabPane {
-                    MusicHubScreen(
-                        onBack = {},
-                        onOpenTrack = { item -> actions.onOpenHubItem?.invoke(item) },
-                        showBack = false,
-                    )
+                    MusicTabScreen()
                 }
             }
 

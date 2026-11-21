@@ -47,6 +47,7 @@ internal fun PlayerScreenRuntime.BindPlayerExtrasEffects() {
     // Each video starts with night mode at the saved default.
     LaunchedEffect(Unit) {
         PlayerExtrasRepository.reload() // settings are per profile
+        com.nuvio.app.features.music.MusicPlayer.pause() // a video takes over the audio
         PlayerExtrasRuntime.setNightMode(PlayerExtrasRepository.state.value.nightModeByDefault)
         PlayerExtrasRuntime.closeSyncByEar()
     }

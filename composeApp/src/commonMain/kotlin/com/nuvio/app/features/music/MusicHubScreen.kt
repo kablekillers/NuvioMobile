@@ -2,6 +2,8 @@ package com.nuvio.app.features.music
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -171,7 +173,7 @@ fun MusicHubScreen(onBack: () -> Unit, onOpenTrack: (MetaPreview) -> Unit) {
             label = { Text("Artist, song title or album") },
             singleLine = true, modifier = Modifier.fillMaxWidth()
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+        Row(\n            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),\n            horizontalArrangement = Arrangement.spacedBy(5.dp)\n        ) {
             MusicTab.entries.forEach { option ->
                 Button(onClick = { tab = option }, enabled = tab != option) {
                     Text(option.title)

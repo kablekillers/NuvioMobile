@@ -105,7 +105,7 @@ class YouTubeVideoActivity : Activity() {
         private const val EXTRA_TITLE = "title"
         private const val EXTRA_CHANNEL = "channel"
 
-        fun intentFor(activity: android.content.Context, video: YouTubeMusicVideo): Intent =
+        internal fun intentFor(activity: android.content.Context, video: YouTubeMusicVideo): Intent =
             Intent(activity, YouTubeVideoActivity::class.java).apply {
                 putExtra(EXTRA_VIDEO_ID, video.videoId)
                 putExtra(EXTRA_TITLE, video.title)

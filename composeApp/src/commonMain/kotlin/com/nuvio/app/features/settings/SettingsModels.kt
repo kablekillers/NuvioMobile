@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Hub
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.InstallMobile
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.NetworkCheck
 import androidx.compose.material.icons.filled.Palette
@@ -151,6 +152,11 @@ internal enum class SettingsPage(
         category = SettingsCategory.System,
         parentPage = Root,
     ),
+    InstallApps(
+        titleRes = Res.string.install_apps_title,
+        category = SettingsCategory.System,
+        parentPage = Root,
+    ),
     Notifications(
         titleRes = Res.string.compose_settings_page_notifications,
         category = SettingsCategory.System,
@@ -252,6 +258,7 @@ internal val SettingsPage.icon: ImageVector
         SettingsPage.About -> Icons.Default.Info
         SettingsPage.Streams -> Icons.AutoMirrored.Filled.ViewList
         SettingsPage.Advanced -> Icons.Default.Build
+        SettingsPage.InstallApps -> Icons.Default.InstallMobile
         SettingsPage.Notifications -> Icons.Rounded.Notifications
         SettingsPage.ContinueWatching -> Icons.Default.History
         SettingsPage.PosterCustomization -> Icons.Default.RoundedCorner

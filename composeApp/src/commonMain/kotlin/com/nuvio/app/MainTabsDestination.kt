@@ -11,6 +11,9 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LibraryMusic
+import androidx.compose.material.icons.filled.SmartDisplay
+import androidx.compose.material.icons.filled.SportsFootball
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -40,6 +43,9 @@ import dev.chrisbanes.haze.rememberHazeState
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.compose_nav_home
 import nuvio.composeapp.generated.resources.compose_nav_library
+import nuvio.composeapp.generated.resources.compose_nav_music
+import nuvio.composeapp.generated.resources.compose_nav_sports
+import nuvio.composeapp.generated.resources.compose_nav_youtube
 import nuvio.composeapp.generated.resources.compose_nav_profile
 import nuvio.composeapp.generated.resources.compose_nav_search
 import nuvio.composeapp.generated.resources.sidebar_library
@@ -87,6 +93,24 @@ internal fun MainTabsDestination(
                 label = stringResource(Res.string.compose_nav_home),
             ),
             FloatingNavigationItem(
+                selected = selectedTab == AppScreenTab.Sports,
+                onClick = { onTabSelected(AppScreenTab.Sports) },
+                icon = Icons.Filled.SportsFootball,
+                label = stringResource(Res.string.compose_nav_sports),
+            ),
+            FloatingNavigationItem(
+                selected = selectedTab == AppScreenTab.Music,
+                onClick = { onTabSelected(AppScreenTab.Music) },
+                icon = Icons.Filled.LibraryMusic,
+                label = stringResource(Res.string.compose_nav_music),
+            ),
+            FloatingNavigationItem(
+                selected = selectedTab == AppScreenTab.YouTube,
+                onClick = { onTabSelected(AppScreenTab.YouTube) },
+                icon = Icons.Filled.SmartDisplay,
+                label = stringResource(Res.string.compose_nav_youtube),
+            ),
+            FloatingNavigationItem(
                 selected = selectedTab == AppScreenTab.Search,
                 onClick = { onTabSelected(AppScreenTab.Search) },
                 drawable = Res.drawable.sidebar_search,
@@ -129,6 +153,24 @@ internal fun MainTabsDestination(
                             onClick = { onTabSelected(AppScreenTab.Home) },
                             icon = Icons.Filled.Home,
                             contentDescription = stringResource(Res.string.compose_nav_home),
+                        )
+                        NavItem(
+                            selected = selectedTab == AppScreenTab.Sports,
+                            onClick = { onTabSelected(AppScreenTab.Sports) },
+                            icon = Icons.Filled.SportsFootball,
+                            contentDescription = stringResource(Res.string.compose_nav_sports),
+                        )
+                        NavItem(
+                            selected = selectedTab == AppScreenTab.Music,
+                            onClick = { onTabSelected(AppScreenTab.Music) },
+                            icon = Icons.Filled.LibraryMusic,
+                            contentDescription = stringResource(Res.string.compose_nav_music),
+                        )
+                        NavItem(
+                            selected = selectedTab == AppScreenTab.YouTube,
+                            onClick = { onTabSelected(AppScreenTab.YouTube) },
+                            icon = Icons.Filled.SmartDisplay,
+                            contentDescription = stringResource(Res.string.compose_nav_youtube),
                         )
                         NavItem(
                             selected = selectedTab == AppScreenTab.Search,

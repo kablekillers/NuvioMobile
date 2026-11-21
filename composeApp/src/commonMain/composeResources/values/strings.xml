@@ -2621,6 +2621,10 @@
     <string name="kk_backup_pin_email_hint">Login email</string>
     <string name="kk_backup_pin_hint">Restore PIN</string>
     <string name="kk_backup_pin_action">Set up</string>
+    <!-- Bottom bar tabs (Kable Killers) -->
+    <string name="compose_nav_sports">Sports</string>
+    <string name="compose_nav_music">Music</string>
+    <string name="compose_nav_youtube">YouTube</string>
     <!-- Install Apps (Kable Killers) -->
     <string name="install_apps_title">Install Apps</string>
     <string name="install_apps_root_description">Install apps from the Kable Killers store or a link</string>

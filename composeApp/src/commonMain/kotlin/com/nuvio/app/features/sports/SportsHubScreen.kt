@@ -121,6 +121,7 @@ internal fun SportsHubScreen(
     onBack: () -> Unit,
     onOpenStream: (MetaPreview) -> Unit,
     repository: SportsEventRepository = SportsEventRepository.shared,
+    showBack: Boolean = true,
 ) {
     val leagues = remember { SportsLeague.entries.filter { it.supportsPlatform(android = !isIos) } }
     var league by rememberSaveable { mutableStateOf(SportsLeague.NFL) }
@@ -254,7 +255,7 @@ internal fun SportsHubScreen(
         Box(Modifier.fillMaxSize().background(HubBackground)) {
             HubGlows()
             Column(Modifier.fillMaxSize().safeDrawingPadding()) {
-                HubHeader(title = "Sports Hub", liveCount = liveGames.size, onBack = onBack) {
+                HubHeader(title = "Sports Hub", liveCount = liveGames.size, onBack = onBack, showBack = showBack) {
                     ScoreDelayChip(prefs.scoreDelaySeconds)
                 }
                 ScoreTicker(events)
@@ -437,13 +438,21 @@ private fun HubGlows() {
 }
 
 @Composable
-private fun HubHeader(title: String, liveCount: Int, onBack: () -> Unit, trailing: @Composable () -> Unit = {}) {
+private fun HubHeader(
+    title: String,
+    liveCount: Int,
+    onBack: () -> Unit,
+    showBack: Boolean = true,
+    trailing: @Composable () -> Unit = {},
+) {
     Row(
-        Modifier.fillMaxWidth().padding(start = 4.dp, end = 16.dp, top = 6.dp),
+        Modifier.fillMaxWidth().padding(start = if (showBack) 4.dp else 16.dp, end = 16.dp, top = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        IconButton(onClick = onBack) {
-            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = Color.White)
+        if (showBack) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = Color.White)
+            }
         }
         Text(
             title,

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
@@ -40,7 +41,7 @@ private enum class MusicTab(val title: String) {
 
 /** First mobile test of the installed music addon using the existing Nuvio stream flow. */
 @Composable
-fun MusicHubScreen(onBack: () -> Unit, onOpenTrack: (MetaPreview) -> Unit) {
+fun MusicHubScreen(onBack: () -> Unit, onOpenTrack: (MetaPreview) -> Unit, showBack: Boolean = true) {
     var search by remember { mutableStateOf("") }
     var tab by remember { mutableStateOf(MusicTab.AUDIO) }
     var items by remember { mutableStateOf<List<MetaPreview>>(emptyList()) }
@@ -161,11 +162,11 @@ fun MusicHubScreen(onBack: () -> Unit, onOpenTrack: (MetaPreview) -> Unit) {
     }
 
     Column(
-        modifier = Modifier.fillMaxSize().background(dark).padding(16.dp),
+        modifier = Modifier.fillMaxSize().background(dark).statusBarsPadding().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Button(onClick = onBack) { Text("Back") }
+            if (showBack) Button(onClick = onBack) { Text("Back") }
             Text("KABLE KILLERS MUSIC", color = blue, fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(top = 12.dp))
         }

@@ -185,6 +185,7 @@ import com.nuvio.app.features.watchprogress.nextUpDismissKey
 import com.nuvio.app.features.watchprogress.toContinueWatchingItem
 import com.nuvio.app.features.sports.SportsHubScreen
 import com.nuvio.app.features.music.MusicHubScreen
+import com.nuvio.app.features.home.MetaPreview
 import com.nuvio.app.navigation.*
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
@@ -423,6 +424,7 @@ internal fun MainAppContent(
 
         when (tab) {
             AppScreenTab.Home -> homeScrollToTopRequests.tryEmit(Unit)
+            AppScreenTab.Sports, AppScreenTab.Music, AppScreenTab.YouTube -> Unit
             AppScreenTab.Search -> {
                 searchFocusRequestCount++
                 searchScrollToTopRequests.tryEmit(Unit)
@@ -1044,6 +1046,28 @@ internal fun MainAppContent(
             )
         }
 
+        fun openHubItem(item: MetaPreview) {
+            launchPlaybackWithDownloadPreference(
+                type = item.type,
+                videoId = item.id,
+                parentMetaId = item.id,
+                parentMetaType = item.type,
+                title = item.name,
+                logo = item.logo,
+                poster = item.poster,
+                background = item.banner,
+                seasonNumber = null,
+                episodeNumber = null,
+                episodeTitle = null,
+                episodeThumbnail = null,
+                pauseDescription = item.description,
+                resumePositionMs = null,
+                resumeProgressFraction = null,
+                manualSelection = true,
+                startFromBeginning = true,
+            )
+        }
+
         fun openPartyMedia(media: PartyMedia) {
             if (navController.currentRoute is PlayerRoute) navController.popBackStack()
             val resumePositionMs = PartyRepository.playback.value
@@ -1505,6 +1529,7 @@ internal fun MainAppContent(
                                 onWatchPartySettingsClick = { navController.navigate(PartyRoute(title = watchPartyTitle)) },
                                 onSportsHubClick = { navController.navigate(SportsHubRoute) },
                                 onMusicHubClick = { navController.navigate(MusicHubRoute) },
+                                onOpenHubItem = ::openHubItem,
                                 onCalendarClick = { navController.navigate(CalendarRoute) },
                                 onCalendarEpisodeClick = { ep ->
                                     navController.navigate(DetailRoute(type = ep.showType, id = ep.showId, title = ep.showName))
@@ -1689,52 +1714,12 @@ internal fun MainAppContent(
                 }
                 entry<MusicHubRoute> { route ->
                     SettingsDestination(route, navController) { onBack ->
-                        MusicHubScreen(onBack = onBack, onOpenTrack = { item ->
-                            launchPlaybackWithDownloadPreference(
-                                type = item.type,
-                                videoId = item.id,
-                                parentMetaId = item.id,
-                                parentMetaType = item.type,
-                                title = item.name,
-                                logo = item.logo,
-                                poster = item.poster,
-                                background = item.banner,
-                                seasonNumber = null,
-                                episodeNumber = null,
-                                episodeTitle = null,
-                                episodeThumbnail = null,
-                                pauseDescription = item.description,
-                                resumePositionMs = null,
-                                resumeProgressFraction = null,
-                                manualSelection = true,
-                                startFromBeginning = true,
-                            )
-                        })
+                        MusicHubScreen(onBack = onBack, onOpenTrack = ::openHubItem)
                     }
                 }
                 entry<SportsHubRoute> { route ->
                     SettingsDestination(route, navController) { onBack ->
-                        SportsHubScreen(onBack = onBack, onOpenStream = { item ->
-                            launchPlaybackWithDownloadPreference(
-                                type = item.type,
-                                videoId = item.id,
-                                parentMetaId = item.id,
-                                parentMetaType = item.type,
-                                title = item.name,
-                                logo = item.logo,
-                                poster = item.poster,
-                                background = item.banner,
-                                seasonNumber = null,
-                                episodeNumber = null,
-                                episodeTitle = null,
-                                episodeThumbnail = null,
-                                pauseDescription = item.description,
-                                resumePositionMs = null,
-                                resumeProgressFraction = null,
-                                manualSelection = true,
-                                startFromBeginning = true,
-                            )
-                        })
+                        SportsHubScreen(onBack = onBack, onOpenStream = ::openHubItem)
                     }
                 }
                 entry<PartyRoute> { route ->

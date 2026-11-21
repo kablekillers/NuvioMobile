@@ -86,14 +86,14 @@ internal fun JellyTabRow(
                             text = item.label,
                             color = color,
                             style = TextStyle(
-                                fontSize = if (compactSize) 12.sp else 13.sp,
+                                fontSize = if (items.size > 5) 10.sp else if (compactSize) 12.sp else 13.sp,
                                 lineHeight = if (compactSize) 14.sp else 16.sp,
                                 fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
                                 textAlign = TextAlign.Center,
                             ),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = if (items.size > 5) 1.dp else 4.dp),
                         )
                     }
                 }

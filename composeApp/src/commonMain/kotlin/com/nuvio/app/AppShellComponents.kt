@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -19,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.nuvio.app.core.ui.DisintegrationRequest
+import com.nuvio.app.core.ui.LocalNuvioBottomNavigationOverlayPadding
 import com.nuvio.app.core.ui.NuvioLoadingIndicator
 import com.nuvio.app.core.ui.NuvioTokens
 import com.nuvio.app.core.ui.nuvio
@@ -29,6 +31,9 @@ import com.nuvio.app.features.home.HomeCatalogSection
 import com.nuvio.app.features.home.HomeScreen
 import com.nuvio.app.features.home.MetaPreview
 import com.nuvio.app.features.library.LibraryItem
+import com.nuvio.app.features.music.MusicHubScreen
+import com.nuvio.app.features.music.YouTubeTabScreen
+import com.nuvio.app.features.sports.SportsHubScreen
 import com.nuvio.app.features.library.LibraryScreen
 import com.nuvio.app.features.library.LibrarySection
 import com.nuvio.app.features.library.LibrarySortOption
@@ -111,6 +116,8 @@ internal data class AppTabActions(
     val onWatchPartySettingsClick: () -> Unit = {},
     val onSportsHubClick: (() -> Unit)? = null,
     val onMusicHubClick: (() -> Unit)? = null,
+    /** Plays a Sports Hub or Music Hub item from the bottom-bar tabs. */
+    val onOpenHubItem: ((MetaPreview) -> Unit)? = null,
     val onCalendarClick: (() -> Unit)? = null,
     val onCalendarEpisodeClick: ((com.nuvio.app.features.calendar.CalendarEpisode) -> Unit)? = null,
     val onFolderClick: ((collectionId: String, folderId: String) -> Unit)? = null,
@@ -140,8 +147,9 @@ internal fun AppTabHost(
                         animateCollectionGifs = state.animateHomeCollectionGifs,
                         scrollToTopRequests = requests.homeScrollToTopRequests,
                         onCatalogClick = actions.onCatalogClick,
-                        onSportsHubClick = actions.onSportsHubClick,
-                        onMusicHubClick = actions.onMusicHubClick,
+                        // Sports and Music now live in the bottom bar instead of buttons above the catalogs.
+                        onSportsHubClick = null,
+                        onMusicHubClick = null,
                         onCalendarClick = actions.onCalendarClick,
                         onCalendarEpisodeClick = actions.onCalendarEpisodeClick,
                         onPosterClick = actions.onPosterClick,
@@ -152,6 +160,32 @@ internal fun AppTabHost(
                         onFolderClick = actions.onFolderClick,
                         onFirstCatalogRendered = actions.onInitialHomeContentRendered,
                     )
+                }
+            }
+
+            AppScreenTab.Sports -> {
+                BottomTabPane {
+                    SportsHubScreen(
+                        onBack = {},
+                        onOpenStream = { item -> actions.onOpenHubItem?.invoke(item) },
+                        showBack = false,
+                    )
+                }
+            }
+
+            AppScreenTab.Music -> {
+                BottomTabPane {
+                    MusicHubScreen(
+                        onBack = {},
+                        onOpenTrack = { item -> actions.onOpenHubItem?.invoke(item) },
+                        showBack = false,
+                    )
+                }
+            }
+
+            AppScreenTab.YouTube -> {
+                BottomTabPane {
+                    YouTubeTabScreen()
                 }
             }
 
@@ -208,6 +242,18 @@ internal fun AppTabHost(
                 )
             }
         }
+    }
+}
+
+/** Keeps a full-screen tab's content clear of the floating bottom bar. */
+@Composable
+private fun BottomTabPane(content: @Composable () -> Unit) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .padding(bottom = LocalNuvioBottomNavigationOverlayPadding.current),
+    ) {
+        content()
     }
 }
 

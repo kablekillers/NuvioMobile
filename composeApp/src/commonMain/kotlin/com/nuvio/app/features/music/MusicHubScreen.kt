@@ -52,6 +52,7 @@ fun MusicHubScreen(onBack: () -> Unit, onOpenTrack: (MetaPreview) -> Unit) {
         status = null
         try {
             AddonRepository.initialize()
+            AddonRepository.awaitManifestsLoaded()
             val addon = AddonRepository.uiState.value.addons.firstOrNull {
                 it.isActive && it.manifest?.id == "org.kablekillers.music"
             }
@@ -129,7 +130,13 @@ fun MusicHubScreen(onBack: () -> Unit, onOpenTrack: (MetaPreview) -> Unit) {
                     result.name, color = Color.White,
                     modifier = Modifier.fillMaxWidth()
                         .background(Color(0xFF13243C))
-                        .clickable { onOpenTrack(result) }
+                        .clickable {
+                            if (tab == MusicTab.ALBUMS) {
+                                status = "Album playback queue is still being integrated for Mobile."
+                            } else {
+                                onOpenTrack(result)
+                            }
+                        }
                         .padding(15.dp)
                 )
             }

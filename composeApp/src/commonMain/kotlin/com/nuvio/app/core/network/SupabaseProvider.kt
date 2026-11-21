@@ -110,7 +110,9 @@ object SupabaseProvider {
                     contentConverter = KotlinxWebsocketSerializationConverter(supabaseJson)
                 }
             }
-            install(Auth)
+            install(Auth) {
+                platformAuthSessionManager()?.let { sessionManager = it }
+            }
             install(Postgrest)
             install(Functions)
             install(Storage)

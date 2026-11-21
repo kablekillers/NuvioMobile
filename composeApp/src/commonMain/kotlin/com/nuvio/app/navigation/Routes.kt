@@ -40,6 +40,12 @@ data object CalendarRoute : AppRoute {
 }
 
 @Serializable
+data object MusicHubRoute : AppRoute {
+    override val title: String = "Music Hub"
+    override val hidesNavigationBar: Boolean = true
+}
+
+@Serializable
 data object SportsHubRoute : AppRoute {
     override val title: String = "Sports Hub"
     override val hidesNavigationBar: Boolean = true

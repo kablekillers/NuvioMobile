@@ -16,6 +16,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.type
+import com.nuvio.app.desktop.DesktopWindowState
 import com.nuvio.app.desktop.player.DesktopMpvPlayer
 import com.nuvio.app.features.streams.StreamSubtitle
 import kotlinx.coroutines.Dispatchers
@@ -136,8 +141,37 @@ actual fun PlatformPlayerSurface(
         }
     }
 
+    // Keyboard: Space/K play-pause, Left/J back 10 s, Right/L forward 10 s,
+    // M mute, F or F11 fullscreen, Esc leaves fullscreen.
     DisposableEffect(player) {
-        onDispose { player.destroy() }
+        var muted = false
+        DesktopWindowState.playerKeyHandler = handler@{ event ->
+            if (event.type != KeyEventType.KeyDown) return@handler false
+            when (event.key) {
+                Key.Spacebar, Key.K -> {
+                    if (player.isPlaying) player.pause() else player.play()
+                    true
+                }
+                Key.DirectionLeft, Key.J -> { player.seekBy(-10_000); true }
+                Key.DirectionRight, Key.L -> { player.seekBy(10_000); true }
+                Key.M -> { muted = !muted; player.setMuted(muted); true }
+                Key.F, Key.F11 -> {
+                    DesktopWindowState.setFullscreen(!DesktopWindowState.isFullscreen.value)
+                    true
+                }
+                Key.Escape -> if (DesktopWindowState.isFullscreen.value) {
+                    DesktopWindowState.setFullscreen(false)
+                    true
+                } else {
+                    false
+                }
+                else -> false
+            }
+        }
+        onDispose {
+            DesktopWindowState.playerKeyHandler = null
+            player.destroy()
+        }
     }
 
     val frame by player.frame.collectAsState()

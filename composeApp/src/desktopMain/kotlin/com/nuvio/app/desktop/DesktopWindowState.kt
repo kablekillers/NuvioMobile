@@ -12,6 +12,10 @@ object DesktopWindowState {
     private val _isFullscreen = MutableStateFlow(false)
     val isFullscreen: StateFlow<Boolean> = _isFullscreen.asStateFlow()
 
+    /** Set while the player is open; gets first look at key presses (shortcuts). */
+    @Volatile
+    var playerKeyHandler: ((androidx.compose.ui.input.key.KeyEvent) -> Boolean)? = null
+
     fun setActive(active: Boolean) { _isActive.value = active }
     fun setFullscreen(fullscreen: Boolean) { _isFullscreen.value = fullscreen }
 }

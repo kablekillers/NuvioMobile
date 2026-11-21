@@ -480,7 +480,9 @@ composeCompiler {
 }
 
 // ---- Kable Killers for Windows: installer ----
-val kkWindowsVersion: String = providers.gradleProperty("kkWindowsVersion").orNull ?: "1.0.0"
+val kkWindowsVersion: String = providers.gradleProperty("kkWindowsVersion").orNull
+    ?: readXcconfigValue(rootProject.file("version.conf"), "WINDOWS_VERSION")
+    ?: "1.0.0"
 
 compose.desktop {
     application {

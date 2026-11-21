@@ -20,6 +20,10 @@ import kotlinx.coroutines.delay
 import com.nuvio.app.core.backup.KableKillersBackup
 import com.nuvio.app.core.storage.DesktopDefaults
 import com.nuvio.app.desktop.DesktopAppIcon
+import com.nuvio.app.desktop.DesktopUpdatePrompt
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
 import com.nuvio.app.desktop.DesktopNotifier
 import com.nuvio.app.desktop.DesktopWindowState
 import com.nuvio.app.features.autosync.AutoSyncPreferencesDesktop
@@ -54,6 +58,7 @@ fun main() {
             icon = icon,
             onPreviewKeyEvent = { event ->
                 when {
+                    DesktopWindowState.playerKeyHandler?.invoke(event) == true -> true
                     event.type != KeyEventType.KeyDown -> false
                     event.key == Key.F11 -> {
                         DesktopWindowState.setFullscreen(!DesktopWindowState.isFullscreen.value)
@@ -93,7 +98,14 @@ fun main() {
                     override fun windowLostFocus(e: WindowEvent?) = DesktopWindowState.setActive(false)
                 })
             }
-            App()
+            Box(Modifier.fillMaxSize()) {
+                App()
+                DesktopUpdatePrompt(exitApp = {
+                    DesktopDefaults.synchronize()
+                    DesktopNotifier.dispose()
+                    exitApplication()
+                })
+            }
         }
     }
 }

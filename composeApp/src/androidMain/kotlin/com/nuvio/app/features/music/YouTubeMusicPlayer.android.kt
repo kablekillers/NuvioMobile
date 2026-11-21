@@ -1,6 +1,8 @@
 package com.nuvio.app.features.music
 
 import android.annotation.SuppressLint
+import android.view.View
+import android.view.WindowManager
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -14,6 +16,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.window.DialogWindowProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -29,6 +34,10 @@ internal actual fun YouTubeMusicPlayerDialog(video: YouTubeMusicVideo, onClose: 
         onDismissRequest = onClose,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
+        // A video surface can be black while audio works if the dialog window is
+        // not hardware accelerated. This flag applies to the player dialog only.
+        val dialogWindow = (LocalView.current.parent as? DialogWindowProvider)?.window
+        SideEffect { dialogWindow?.addFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED) }
         Column(
             modifier = Modifier.fillMaxSize().background(Color(0xFF070F20)).padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -38,6 +47,8 @@ internal actual fun YouTubeMusicPlayerDialog(video: YouTubeMusicVideo, onClose: 
             AndroidView(
                 factory = { context ->
                     WebView(context).apply {
+                        // Keep Chromium video compositing hardware-backed.
+                        setLayerType(View.LAYER_TYPE_NONE, null)
                         settings.javaScriptEnabled = true
                         settings.domStorageEnabled = true
                         settings.mediaPlaybackRequiresUserGesture = true

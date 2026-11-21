@@ -26,8 +26,18 @@ jobs:
           echo "ANDROID_HOME=${ANDROID_HOME:-/usr/local/lib/android/sdk}" >> "$GITHUB_ENV"
           echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}" >> "$GITHUB_ENV"
       - uses: gradle/actions/setup-gradle@v4
-      - name: Run Android tests and build installable debug APK
-        run: ./gradlew :composeApp:allHostTests :androidApp:assembleFullDebug --stacktrace --no-daemon
+      - name: Discover supported Compose Android test tasks
+        run: ./gradlew :composeApp:tasks --all --no-daemon | tee compose-gradle-tasks.txt
+      - name: Run supported Android tests and build installable debug APK
+        run: |
+          set -euo pipefail
+          TASK=$(grep -E '^([[:alnum:]_]*HostTest|[[:alnum:]_]*UnitTest)[[:space:]]+-' compose-gradle-tasks.txt | grep -E 'Android|android|Debug|debug' | head -n 1 | awk '{print $1}' || true)
+          if [ -z "$TASK" ]; then
+            echo "::error::No Android host test task found. See Compose task listing above."
+            exit 1
+          fi
+          echo "Using Compose test task: $TASK"
+          ./gradlew ":composeApp:$TASK" :androidApp:assembleFullDebug --stacktrace --no-daemon
       - name: Upload device-test APK
         uses: actions/upload-artifact@v4
         with:

@@ -185,6 +185,7 @@ actual fun PlatformPlayerSurface(
                 videoOutput = playerSettings.androidLibmpvVideoOutput,
                 hardwareDecodingEnabled = playerSettings.androidLibmpvHardwareDecodingEnabled,
                 yuv420pEnabled = playerSettings.androidLibmpvYuv420pEnabled,
+                audioPassthrough = PlayerExtrasRepository.current().audioPassthrough,
                 preferredSubtitleLanguage = playerSettings.preferredSubtitleLanguage,
                 onControllerReady = onControllerReady,
                 onSnapshot = onSnapshot,
@@ -276,6 +277,8 @@ private fun ExoPlayerSurface(
     val audioDelayUs = remember { AtomicLong(0L) }
     // Read by the playback thread's audio sink; every rebuilt player picks up the current gain.
     val audioAmplificationDb = remember { AtomicInteger(AUDIO_AMPLIFICATION_MIN_DB) }
+    val nightModeEnabled = remember { java.util.concurrent.atomic.AtomicBoolean(false) }
+    val audioPassthrough = remember { PlayerExtrasRepository.current().audioPassthrough }
     val centerMixLevelDb = remember { AtomicInteger(0) }
     // The current player's FFmpeg audio renderer, for center mix changes during playback.
     val ffmpegAudioRenderer = remember { AtomicReference<FfmpegAudioRenderer?>(null) }
@@ -433,6 +436,8 @@ private fun ExoPlayerSurface(
                 channels = AudioOutputChannels.CHANNELS_2_0,
                 normalize = !playerSettings.maintainOriginalAudioOnDownmix,
             )
+            // Passthrough sends the original Dolby/DTS bitstream, so nothing may downmix it.
+            audioPassthrough -> null
             playerSettings.effectiveDownmixEnabled -> FfmpegAudioDownmix(
                 channels = playerSettings.audioOutputChannels,
                 normalize = !playerSettings.maintainOriginalAudioOnDownmix,
@@ -445,6 +450,8 @@ private fun ExoPlayerSurface(
             subtitleDelayUsProvider = { latestSubtitleDelayMs.value.toLong() * 1_000L },
             audioDelayUsProvider = audioDelayUs::get,
             audioAmplificationDbProvider = audioAmplificationDb::get,
+            nightModeEnabledProvider = nightModeEnabled::get,
+            audioPassthrough = audioPassthrough,
             audioDownmix = audioDownmix,
             preferAppAudioDecoder = bluetoothOutput,
             centerMixLevelDbProvider = centerMixLevelDb::get,
@@ -1249,6 +1256,12 @@ private fun ExoPlayerSurface(
                     audioAmplificationDb.set(db.coerceIn(AUDIO_AMPLIFICATION_MIN_DB, AUDIO_AMPLIFICATION_MAX_DB))
                 }
 
+                override val supportsNightMode = true
+
+                override fun setNightModeEnabled(enabled: Boolean) {
+                    nightModeEnabled.set(enabled)
+                }
+
                 override fun isCenterMixActive(): Boolean =
                     ffmpegAudioRenderer.get()?.isCenterMixActive() == true
 
@@ -1335,6 +1348,7 @@ private fun LibmpvPlayerSurface(
     videoOutput: AndroidLibmpvVideoOutput,
     hardwareDecodingEnabled: Boolean,
     yuv420pEnabled: Boolean,
+    audioPassthrough: Boolean,
     preferredSubtitleLanguage: String?,
     onControllerReady: (PlayerEngineController) -> Unit,
     onSnapshot: (PlayerPlaybackSnapshot) -> Unit,
@@ -1663,6 +1677,7 @@ private fun LibmpvPlayerSurface(
                     videoOutput = videoOutput,
                     hardwareDecodingEnabled = hardwareDecodingEnabled,
                     yuv420pEnabled = yuv420pEnabled,
+                    audioPassthrough = audioPassthrough,
                 ).apply {
                     layoutParams = android.view.ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT)
                     keepScreenOn = false
@@ -1701,6 +1716,7 @@ private class NuvioLibmpvView(
     videoOutput: AndroidLibmpvVideoOutput,
     private val hardwareDecodingEnabled: Boolean,
     private val yuv420pEnabled: Boolean,
+    private val audioPassthrough: Boolean,
 ) : MpvSurfaceView(context, videoOutput.mpvValue) {
     private var currentSourceUrl: String? = null
     private var currentSourceAudioUrl: String? = null
@@ -1764,6 +1780,9 @@ private class NuvioLibmpvView(
         // Room above 100% for the player's amplification (+10 dB is about 316%).
         mpv.setOptionString("volume-max", "$LIBMPV_MAX_VOLUME_PERCENT").logIfMpvError("volume-max")
         mpv.setOptionString("vd-lavc-film-grain", "cpu")
+        if (audioPassthrough) {
+            mpv.setOptionString("audio-spdif", "ac3,eac3,dts,dts-hd,truehd").logIfMpvError("audio-spdif")
+        }
         mpv.setPropertyBoolean("keep-open", true)
         mpv.setPropertyBoolean("input-default-bindings", true)
         mpv.setPropertyBoolean("audio-fallback-to-null", true)
@@ -2156,6 +2175,14 @@ private class NuvioLibmpvView(
             override fun setAudioAmplificationDb(db: Int) {
                 executeMpv {
                     mpv.setPropertyDouble("volume", 100.0 * audioAmplificationGain(db))
+                }
+            }
+
+            override val supportsNightMode = true
+
+            override fun setNightModeEnabled(enabled: Boolean) {
+                executeMpv {
+                    mpv.setPropertyString("af", if (enabled) LIBMPV_NIGHT_MODE_FILTER else "")
                 }
             }
         }
@@ -2904,6 +2931,8 @@ private class SubtitleOffsetRenderersFactory(
     private val subtitleDelayUsProvider: () -> Long,
     private val audioDelayUsProvider: () -> Long,
     private val audioAmplificationDbProvider: () -> Int,
+    private val nightModeEnabledProvider: () -> Boolean,
+    private val audioPassthrough: Boolean,
     private val audioDownmix: FfmpegAudioDownmix?,
     private val preferAppAudioDecoder: Boolean,
     private val centerMixLevelDbProvider: () -> Int,
@@ -2921,7 +2950,12 @@ private class SubtitleOffsetRenderersFactory(
         return DefaultAudioSink.Builder(context)
             .setEnableFloatOutput(enableFloatOutput)
             .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
-            .setAudioProcessors(arrayOf(GainAudioProcessor(audioAmplificationDbProvider)))
+            .setAudioProcessors(
+                arrayOf(
+                    GainAudioProcessor(audioAmplificationDbProvider),
+                    NightModeAudioProcessor(nightModeEnabledProvider),
+                ),
+            )
             .build()
     }
 
@@ -2938,7 +2972,12 @@ private class SubtitleOffsetRenderersFactory(
         val startIndex = out.size
         super.buildAudioRenderers(
             context,
-            if (preferAppAudioDecoder) DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER else extensionRendererMode,
+            when {
+                preferAppAudioDecoder -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER
+                // The platform audio renderer is the one that can pass Dolby/DTS through untouched.
+                audioPassthrough -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
+                else -> extensionRendererMode
+            },
             DolbyFreeMediaCodecSelector(mediaCodecSelector),
             enableDecoderFallback,
             audioSink,
@@ -3271,3 +3310,7 @@ private fun Format.exoBitDepth(): Int? {
         else -> null
     }
 }
+
+/** Night mode for libmpv: the same gentle compression as [NightModeAudioProcessor]. */
+private const val LIBMPV_NIGHT_MODE_FILTER =
+    "lavfi=[acompressor=threshold=-26dB:ratio=4:attack=5:release=250:makeup=8dB]"

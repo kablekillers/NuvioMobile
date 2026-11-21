@@ -102,6 +102,10 @@ fun SubtitleStylePanel(
                 label = stringResource(Res.string.compose_player_reset),
                 onClick = onSubtitleDelayReset,
             )
+            SubtitleTextAction(
+                label = "Sync by ear",
+                onClick = PlayerExtrasRuntime::openSyncByEar,
+            )
         }
 
         SubtitleAppearanceControls(

@@ -1,6 +1,8 @@
 package com.nuvio.app.features.player
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import com.nuvio.app.features.details.MetaDetailsUiState
 import com.nuvio.app.features.details.MetaVideo
 import com.nuvio.app.features.downloads.DownloadsRepository
@@ -124,6 +126,8 @@ internal fun PlayerScreenModalHosts(
         )
     }
 
+    val nightModeSupported by PlayerExtrasRuntime.nightModeSupported.collectAsState()
+    val nightModeEnabled by PlayerExtrasRuntime.nightModeEnabled.collectAsState()
     AudioTrackModal(
         visible = showAudioModal,
         audioTracks = audioTracks,
@@ -141,6 +145,9 @@ internal fun PlayerScreenModalHosts(
         showCenterMix = showCenterMix,
         centerMixLevelDb = centerMixLevelDb,
         onCenterMixLevelChanged = onCenterMixLevelChanged,
+        showNightMode = nightModeSupported,
+        nightModeEnabled = nightModeEnabled,
+        onNightModeChanged = PlayerExtrasRuntime::setNightMode,
     )
 
     SubtitleModal(

@@ -191,10 +191,21 @@ internal fun PlayerScreenContent(args: PlayerScreenArgs) {
             videoSize = videoSize,
         )
         runtime.BindPlayerRuntimeEffects()
-        runtime.RenderPlayerRuntimeUi(
-            partyPanelWidth = partyPanelWidth,
-            partyPanelInset = partyPanelInset,
-            dockPartyPanel = dockPartyPanel,
-        )
+        runtime.BindPlayerExtrasEffects()
+        val scrubThumbnailsEnabled by PlayerExtrasRepository.state.collectAsStateWithLifecycle()
+        androidx.compose.runtime.CompositionLocalProvider(
+            LocalScrubThumbnailSource provides if (scrubThumbnailsEnabled.scrubThumbnails) {
+                ScrubThumbnailSource(runtime.activeSourceUrl, runtime.activeSourceHeaders)
+            } else {
+                null
+            },
+        ) {
+            runtime.RenderPlayerRuntimeUi(
+                partyPanelWidth = partyPanelWidth,
+                partyPanelInset = partyPanelInset,
+                dockPartyPanel = dockPartyPanel,
+            )
+        }
+        runtime.PlayerExtrasOverlay()
     }
 }

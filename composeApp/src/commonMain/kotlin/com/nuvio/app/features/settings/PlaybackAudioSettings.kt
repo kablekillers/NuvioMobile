@@ -3,6 +3,7 @@ package com.nuvio.app.features.settings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -68,6 +69,10 @@ internal fun PlaybackAudioSettings(
                     )
                 }
             }
+        }
+
+        if (!isIos) {
+            PlayerExtrasSettingsSection(isTablet = isTablet, enabled = !settings.externalPlayerEnabled)
         }
 
         if (!isIos) {
@@ -200,5 +205,53 @@ internal fun PlaybackAudioSettings(
             },
             onDismiss = { showIosAudioOutputDialog = false },
         )
+    }
+}
+
+/** Kable Killers player extras: passthrough, night mode, subtitles on mute and seek previews. */
+@Composable
+private fun PlayerExtrasSettingsSection(isTablet: Boolean, enabled: Boolean) {
+    val extras by remember {
+        com.nuvio.app.features.player.PlayerExtrasRepository.reload()
+        com.nuvio.app.features.player.PlayerExtrasRepository.state
+    }.collectAsState()
+    SettingsSection(title = "Player extras", isTablet = isTablet) {
+        SettingsGroup(isTablet = isTablet) {
+            SettingsSwitchRow(
+                title = "Audio passthrough",
+                description = "Send Dolby and DTS audio undecoded to a soundbar or AV receiver. Leave off for phone speakers, headphones and Bluetooth. Turns off downmixing.",
+                checked = extras.audioPassthrough,
+                enabled = enabled,
+                isTablet = isTablet,
+                onCheckedChange = com.nuvio.app.features.player.PlayerExtrasRepository::setAudioPassthrough,
+            )
+            SettingsGroupDivider(isTablet = isTablet)
+            SettingsSwitchRow(
+                title = "Night mode by default",
+                description = "Start every video with night mode on, which evens out loud and quiet audio. You can also switch it in the player's audio panel.",
+                checked = extras.nightModeByDefault,
+                enabled = enabled,
+                isTablet = isTablet,
+                onCheckedChange = com.nuvio.app.features.player.PlayerExtrasRepository::setNightModeByDefault,
+            )
+            SettingsGroupDivider(isTablet = isTablet)
+            SettingsSwitchRow(
+                title = "Subtitles on mute",
+                description = "When subtitles are off, turn them on while the volume is muted, then turn them off again when you unmute.",
+                checked = extras.subtitlesOnMute,
+                enabled = enabled,
+                isTablet = isTablet,
+                onCheckedChange = com.nuvio.app.features.player.PlayerExtrasRepository::setSubtitlesOnMute,
+            )
+            SettingsGroupDivider(isTablet = isTablet)
+            SettingsSwitchRow(
+                title = "Seek thumbnails",
+                description = "Show a picture of the video above the seek bar while you drag it. Works with regular video files; live and HLS streams show no preview.",
+                checked = extras.scrubThumbnails,
+                enabled = enabled,
+                isTablet = isTablet,
+                onCheckedChange = com.nuvio.app.features.player.PlayerExtrasRepository::setScrubThumbnails,
+            )
+        }
     }
 }

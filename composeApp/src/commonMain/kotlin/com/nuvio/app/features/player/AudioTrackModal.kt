@@ -70,6 +70,9 @@ fun AudioTrackModal(
     showCenterMix: Boolean = false,
     centerMixLevelDb: Int = 0,
     onCenterMixLevelChanged: (Int) -> Unit = {},
+    showNightMode: Boolean = false,
+    nightModeEnabled: Boolean = false,
+    onNightModeChanged: (Boolean) -> Unit = {},
 ) {
     PlayerOverlayScaffold(
         visible = visible,
@@ -81,8 +84,26 @@ fun AudioTrackModal(
             val railWidth = minOf(maxWidth, 444.dp)
             val railMaxHeight = (maxHeight - 64.dp).coerceAtLeast(120.dp).coerceAtMost(620.dp)
             val panelMaxHeight = maxHeight
-            val hasAdjustments = showAudioDelay || showAudioAmplification || showCenterMix
+            val hasAdjustments = showAudioDelay || showAudioAmplification || showCenterMix || showNightMode
             val adjustments: @Composable () -> Unit = {
+                if (showNightMode) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        AudioToggleChip(
+                            label = "Night mode",
+                            checked = nightModeEnabled,
+                            onCheckedChange = onNightModeChanged,
+                        )
+                        Text(
+                            text = "Evens out loud and quiet parts so explosions don't wake anyone and dialogue stays clear.",
+                            color = Color.White.copy(alpha = 0.7f),
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                }
+
                 if (showAudioDelay) {
                     AudioDelaySection(
                         delayMs = audioDelayMs,

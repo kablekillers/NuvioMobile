@@ -10,6 +10,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -129,7 +133,54 @@ internal fun PlayerTimeline(
     val sliderState = remember(rangeEnd) { SliderState(trackRange = 0f..rangeEnd) }
     sliderState.value = displayedPositionMs.coerceIn(0L, durationMs).toFloat()
 
+    // Seek preview: a still of the video above the bar while scrubbing.
+    val thumbnailLoader = rememberScrubThumbnailLoader(LocalScrubThumbnailSource.current)
+    var previewFrame by remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
+    val scrubbingAt = scrubPosition
+    androidx.compose.runtime.LaunchedEffect(thumbnailLoader, scrubbingAt?.let { it / SCRUB_THUMBNAIL_BUCKET_MS }) {
+        if (scrubbingAt == null) {
+            previewFrame = null
+            return@LaunchedEffect
+        }
+        val loader = thumbnailLoader ?: return@LaunchedEffect
+        kotlinx.coroutines.delay(60)
+        loader.frameAt(scrubbingAt)?.let { previewFrame = it }
+    }
+
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+      androidx.compose.foundation.layout.BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        val previewWidth = 168.dp
+        val frame = previewFrame
+        if (scrubbingAt != null && frame != null && durationMs > 0L) {
+            val fraction = (scrubbingAt.toFloat() / rangeEnd).coerceIn(0f, 1f)
+            val x = (maxWidth * fraction - previewWidth / 2).coerceIn(0.dp, (maxWidth - previewWidth).coerceAtLeast(0.dp))
+            androidx.compose.foundation.layout.Column(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .offset(x = x, y = (-40).dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                androidx.compose.foundation.Image(
+                    bitmap = frame,
+                    contentDescription = null,
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    modifier = Modifier
+                        .size(width = previewWidth, height = previewWidth * 9f / 16f)
+                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
+                        .border(
+                            width = 1.dp,
+                            color = Color.White.copy(alpha = 0.5f),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
+                        ),
+                )
+                Text(
+                    text = formatScrubTime(scrubbingAt),
+                    color = Color.White,
+                    style = MaterialTheme.nuvioTypeScale.labelSm,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+        }
         Slider(
             state = sliderState,
             onValueChange = { value ->
@@ -186,14 +237,26 @@ internal fun PlayerTimeline(
                         },
                 )
             },
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxWidth()
                 .height(24.dp)
                 .wrapContentHeight(Alignment.Bottom, unbounded = true)
                 .requiredHeight(48.dp)
                 .semantics { contentDescription = description },
         )
+      }
     }
+}
+
+private const val SCRUB_THUMBNAIL_BUCKET_MS = 2_000L
+
+private fun formatScrubTime(positionMs: Long): String {
+    val totalSeconds = (positionMs / 1000).coerceAtLeast(0)
+    val hours = totalSeconds / 3600
+    val minutes = (totalSeconds % 3600) / 60
+    val seconds = totalSeconds % 60
+    fun two(n: Long) = n.toString().padStart(2, '0')
+    return if (hours > 0) "$hours:${two(minutes)}:${two(seconds)}" else "$minutes:${two(seconds)}"
 }
 
 /**

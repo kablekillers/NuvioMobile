@@ -496,6 +496,8 @@ compose.desktop {
             description = "Kable Killers media app for Windows"
             vendor = "Kable Killers"
             copyright = "Kable Killers"
+            // libmpv-2.dll (built-in video player) is downloaded into desktop-resources/windows by CI.
+            appResourcesRootDir.set(project.layout.projectDirectory.dir("desktop-resources"))
             modules("java.net.http", "java.sql", "jdk.unsupported", "jdk.crypto.ec", "java.naming", "java.management")
             windows {
                 iconFile.set(project.file("desktop-icons/kk_icon.ico"))

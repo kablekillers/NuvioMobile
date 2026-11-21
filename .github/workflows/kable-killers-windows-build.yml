@@ -67,6 +67,18 @@ jobs:
           fi
           printf '\nNUVIO_SUPABASE_URL=https://api.nuvio.tv\n' >> local.properties
           printf 'NUVIO_SUPABASE_ANON_KEY=sb_publishable_1Clq8rlTVACkdcZuqr6_AD__xUUC_EN\n' >> local.properties
+      - name: Download libmpv (video player)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p mpv-download composeApp/desktop-resources/windows
+          gh release download -R shinchiro/mpv-winbuild-cmake --pattern 'mpv-dev-x86_64-2*.7z' -D mpv-download
+          ls -la mpv-download
+          7z e mpv-download/*.7z libmpv-2.dll -ocomposeApp/desktop-resources/windows -y
+          ls -la composeApp/desktop-resources/windows
+          test -s composeApp/desktop-resources/windows/libmpv-2.dll
       - name: Build installer
         shell: bash
         run: |

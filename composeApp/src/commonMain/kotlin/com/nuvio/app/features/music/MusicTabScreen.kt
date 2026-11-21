@@ -85,7 +85,7 @@ internal val MusicAccent = Color(0xFF19A8FF)
 internal val MusicBackground = Color.Black
 internal val MusicSurface = Color(0xFF16181D)
 
-private enum class MusicTab(val label: String) {
+private enum class MusicPillTab(val label: String) {
     Home("Home"), Explore("Explore"), Library("Library"), Radio("Radio"),
     Albums("Albums"), Search("Search"), Videos("Videos"),
 }
@@ -112,7 +112,7 @@ private data class MusicCollection(val title: String, val kind: String, val item
 /** The Music tab, laid out like Nuvio One: black, pill tabs and rows of artwork. */
 @Composable
 fun MusicTabScreen() {
-    var tab by rememberSaveable { mutableStateOf(MusicTab.Home) }
+    var tab by rememberSaveable { mutableStateOf(MusicPillTab.Home) }
     var query by rememberSaveable { mutableStateOf("") }
     var addonMissing by remember { mutableStateOf(false) }
     var sections by remember { mutableStateOf<List<MusicCollection>>(emptyList()) }
@@ -167,25 +167,25 @@ fun MusicTabScreen() {
         val q = query.trim()
         results = emptyList()
         videos = emptyList()
-        if (tab !in listOf(MusicTab.Search, MusicTab.Radio, MusicTab.Albums, MusicTab.Videos) || q.isEmpty()) return@LaunchedEffect
+        if (tab !in listOf(MusicPillTab.Search, MusicPillTab.Radio, MusicPillTab.Albums, MusicPillTab.Videos) || q.isEmpty()) return@LaunchedEffect
         delay(400)
         searching = true
         status = null
         try {
             val manifest = musicAddonManifestUrl() ?: run { addonMissing = true; return@LaunchedEffect }
             when (tab) {
-                MusicTab.Search -> results = coroutineScope {
+                MusicPillTab.Search -> results = coroutineScope {
                     listOf("kk_audius", "kablekillers_music_search", "kk_audius_albums", "kk_radio", "kk_commons")
                         .map { id -> async { loadCatalog(manifest, id, q, 20) } }
                         .awaitAll().flatten().distinctBy { it.id }
                 }
-                MusicTab.Radio -> results = loadCatalog(manifest, "kk_radio", q, 60)
-                MusicTab.Albums -> results = coroutineScope {
+                MusicPillTab.Radio -> results = loadCatalog(manifest, "kk_radio", q, 60)
+                MusicPillTab.Albums -> results = coroutineScope {
                     listOf("kk_audius_albums", "kk_archive")
                         .map { id -> async { loadCatalog(manifest, id, q, 30) } }
                         .awaitAll().flatten().filter(::isPlayableAlbum).distinctBy { it.id }
                 }
-                MusicTab.Videos -> videos = findYouTubeMusic(q, manifest)
+                MusicPillTab.Videos -> videos = findYouTubeMusic(q, manifest)
                 else -> Unit
             }
             if (results.isEmpty() && videos.isEmpty()) status = "No results for \"$q\"."
@@ -231,16 +231,16 @@ fun MusicTabScreen() {
             ) {
                 item(key = "header") { MusicHeader() }
                 item(key = "tabs") {
-                    MusicPillTabs(selected = tab, onSelect = { tab = it; query = "" })
+                    MusicPillTabRow(selected = tab, onSelect = { tab = it; query = "" })
                 }
-                if (tab in listOf(MusicTab.Search, MusicTab.Radio, MusicTab.Albums, MusicTab.Videos)) {
+                if (tab in listOf(MusicPillTab.Search, MusicPillTab.Radio, MusicPillTab.Albums, MusicPillTab.Videos)) {
                     item(key = "search") {
                         MusicSearchPill(
                             value = query,
                             placeholder = when (tab) {
-                                MusicTab.Radio -> "Search 30,000+ radio stations"
-                                MusicTab.Albums -> "Search albums and concerts"
-                                MusicTab.Videos -> "Search music videos"
+                                MusicPillTab.Radio -> "Search 30,000+ radio stations"
+                                MusicPillTab.Albums -> "Search albums and concerts"
+                                MusicPillTab.Videos -> "Search music videos"
                                 else -> "Songs, artists, albums or stations"
                             },
                             onValueChange = { query = it },
@@ -253,7 +253,7 @@ fun MusicTabScreen() {
                 if (searching) item(key = "searching") { MusicMessage("Searching…") }
 
                 when (tab) {
-                    MusicTab.Home -> {
+                    MusicPillTab.Home -> {
                         if (artists.isNotEmpty()) {
                             item(key = "artists") {
                                 LazyRow(
@@ -261,7 +261,7 @@ fun MusicTabScreen() {
                                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                                 ) {
                                     items(artists, key = { "artist:" + it.name }) { artist ->
-                                        MusicArtistChip(artist) { query = artist.name; tab = MusicTab.Search }
+                                        MusicArtistChip(artist) { query = artist.name; tab = MusicPillTab.Search }
                                     }
                                 }
                             }
@@ -287,7 +287,7 @@ fun MusicTabScreen() {
                             }
                         }
                     }
-                    MusicTab.Explore -> {
+                    MusicPillTab.Explore -> {
                         item(key = "explore") {
                             Text("Browse", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold,
                                 modifier = Modifier.padding(start = 18.dp, top = 16.dp, bottom = 12.dp))
@@ -301,7 +301,7 @@ fun MusicTabScreen() {
                             }
                         }
                     }
-                    MusicTab.Library -> {
+                    MusicPillTab.Library -> {
                         if (recent.isEmpty()) {
                             item(key = "lib_empty") { MusicMessage("Songs and stations you play show up here.") }
                         } else {
@@ -312,11 +312,11 @@ fun MusicTabScreen() {
                             }
                         }
                     }
-                    MusicTab.Radio -> {
+                    MusicPillTab.Radio -> {
                         val stations = if (query.isBlank()) sections.firstOrNull { it.kind == "radio" }?.items.orEmpty() else results
                         musicGridItems(stations, "radio", onItem = { openItem(it, "radio", stations) })
                     }
-                    MusicTab.Albums -> {
+                    MusicPillTab.Albums -> {
                         if (query.isBlank()) {
                             val trendingAlbums = sections.firstOrNull { it.kind == "albums" }
                             if (trendingAlbums != null) {
@@ -329,11 +329,11 @@ fun MusicTabScreen() {
                             musicGridItems(results, "albums", onItem = { openAlbum = it })
                         }
                     }
-                    MusicTab.Search -> {
+                    MusicPillTab.Search -> {
                         if (query.isBlank()) item(key = "search_hint") { MusicMessage("Search across Audius, SoundCloud, live radio and open recordings.") }
                         musicGridItems(results, "tracks", onItem = { openItem(it, "tracks", results) })
                     }
-                    MusicTab.Videos -> {
+                    MusicPillTab.Videos -> {
                         if (query.isBlank()) item(key = "videos_hint") {
                             MusicMessage("Official music videos play in YouTube's own player, so YouTube may show ads.")
                         }
@@ -351,6 +351,21 @@ fun MusicTabScreen() {
         YouTubeMusicPlayerDialog(video = video, onClose = { selectedVideo = null })
     }
 }
+
+private suspend fun loadCatalog(manifestUrl: String, catalogId: String, search: String?, max: Int): List<MetaPreview> =
+    try {
+        fetchCatalogPage(
+            manifestUrl = manifestUrl,
+            type = "music",
+            catalogId = catalogId,
+            search = search,
+            maxItems = max,
+        ).items
+    } catch (cancel: CancellationException) {
+        throw cancel
+    } catch (_: Exception) {
+        emptyList()
+    }
 
 private data class MusicCardData(val title: String, val subtitle: String, val artwork: String?, val live: Boolean = false)
 
@@ -396,7 +411,7 @@ private fun MusicHeader() {
 }
 
 @Composable
-private fun MusicPillTabs(selected: MusicTab, onSelect: (MusicTab) -> Unit) {
+private fun MusicPillTabRow(selected: MusicPillTab, onSelect: (MusicPillTab) -> Unit) {
     Box(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp)) {
         Row(
             Modifier
@@ -406,7 +421,7 @@ private fun MusicPillTabs(selected: MusicTab, onSelect: (MusicTab) -> Unit) {
                 .padding(5.dp),
             horizontalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-            MusicTab.entries.forEach { option ->
+            MusicPillTab.entries.forEach { option ->
                 val isSelected = option == selected
                 Text(
                     option.label,

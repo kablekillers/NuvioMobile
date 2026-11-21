@@ -287,7 +287,16 @@ internal fun SportsHubScreen(
                                 item { CircularProgressIndicator(color = HubAccent) }
                             } else {
                                 if (combinedError) item {
-                                    HubMessage("Some leagues are unavailable. Showing available games.")
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            "Some leagues are unavailable. Showing available games.",
+                                            color = HubMuted,
+                                            modifier = Modifier.weight(1f),
+                                        )
+                                        TextButton(onClick = { refresh++ }) {
+                                            Text("Retry", color = HubAccent)
+                                        }
+                                    }
                                 }
                                 item { HubSectionTitle("LIVE NOW") }
                                 if (combinedFeed.live.isEmpty()) item { HubMessage("No live games right now.") }

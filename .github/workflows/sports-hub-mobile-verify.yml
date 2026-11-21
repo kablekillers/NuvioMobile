@@ -27,7 +27,7 @@ jobs:
           echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}" >> "$GITHUB_ENV"
       - uses: gradle/actions/setup-gradle@v4
       - name: Run Android tests and build installable debug APK
-        run: ./gradlew :composeApp:testDebugUnitTest :androidApp:assembleFullDebug --stacktrace --no-daemon
+        run: ./gradlew :composeApp:allHostTests :androidApp:assembleFullDebug --stacktrace --no-daemon
       - name: Upload device-test APK
         uses: actions/upload-artifact@v4
         with:

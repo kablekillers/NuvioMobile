@@ -102,7 +102,7 @@ private val HubCardBorder = Color.White.copy(alpha = 0.07f)
 private val HubLiveText = Color(0xFFFF7B86)
 
 private enum class SportsSection(val label: String) {
-    Live("Live Now"), MyTeams("My Teams"), Upcoming("Upcoming"), Final("Final"),
+    AllSports("All Sports"), Live("Live Now"), MyTeams("My Teams"), Upcoming("Upcoming"), Final("Final"),
     Standings("Standings"), Replays("Replays"), Highlights("Highlights"),
 }
 
@@ -121,7 +121,7 @@ internal fun SportsHubScreen(
     repository: SportsEventRepository = SportsEventRepository.shared,
 ) {
     var league by rememberSaveable { mutableStateOf(SportsLeague.NFL) }
-    var section by rememberSaveable { mutableStateOf(SportsSection.Live) }
+    var section by rememberSaveable { mutableStateOf(SportsSection.AllSports) }
     var showIntro by rememberSaveable { mutableStateOf(true) }
     var selectedEvent by remember { mutableStateOf<SportsEvent?>(null) }
     var board by remember(league) { mutableStateOf<SportsScoreboard?>(null) }
@@ -148,6 +148,36 @@ internal fun SportsHubScreen(
             }
         }
     }
+    // Cross-league feed is refreshed while the screen is visible. League-specific
+    // scoreboard requests remain unchanged for existing tabs.
+    var combinedBoards by remember { mutableStateOf<List<SportsScoreboard>>(emptyList()) }
+    var combinedLoading by remember { mutableStateOf(true) }
+    var combinedError by remember { mutableStateOf(false) }
+    LaunchedEffect(section, refresh, owner) {
+        if (section != SportsSection.AllSports) return@LaunchedEffect
+        owner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            var force = refresh > 0
+            while (true) {
+                val fetched = mutableListOf<SportsScoreboard>()
+                var failures = 0
+                for (sport in SportsLeague.entries) {
+                    try {
+                        fetched.add(repository.scoreboard(sport, forceRefresh = force))
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (_: Exception) {
+                        failures++
+                        repository.cached(sport)?.let { fetched.add(it) }
+                    }
+                }
+                combinedBoards = fetched
+                combinedError = failures > 0
+                combinedLoading = false
+                force = true
+                delay(60_000L)
+            }
+        }
+    }
     val prefs by SportsPreferences.state.collectAsStateWithLifecycle()
     // Score delay: keep recent scoreboards and show the one from [delay] ago, so scores on
     // screen don't run ahead of a stream that lags behind live TV.
@@ -160,8 +190,8 @@ internal fun SportsHubScreen(
         }
     }
     var clockNow by remember { mutableStateOf(nowMillis()) }
-    LaunchedEffect(prefs.scoreDelaySeconds) {
-        while (prefs.scoreDelaySeconds > 0) {
+    LaunchedEffect(prefs.scoreDelaySeconds, section) {
+        while (prefs.scoreDelaySeconds > 0 || section == SportsSection.AllSports) {
             clockNow = nowMillis()
             delay(5_000L)
         }
@@ -172,7 +202,8 @@ internal fun SportsHubScreen(
     }
     PlatformBackHandler(enabled = selectedEvent != null) { selectedEvent = null }
     val currentEvent = selectedEvent?.let { selected ->
-        shownBoard?.events?.firstOrNull { it.id == selected.id } ?: selected
+        (shownBoard?.events.orEmpty() + combinedBoards.flatMap { it.events })
+            .firstOrNull { it.id == selected.id && it.league == selected.league } ?: selected
     }
     val activeAddons = addons.addons.filter { it.isActive }.map { it.copy(isRefreshing = false, errorMessage = null) }
     val events = shownBoard?.events.orEmpty()
@@ -204,6 +235,7 @@ internal fun SportsHubScreen(
         SportsGameDetail(currentEvent, repository, activeAddons, { selectedEvent = null }, onOpenStream)
     } else {
         val liveGames = SportsEventSections.live(events)
+        val combinedFeed = SportsHubCombinedEvents.combine(combinedBoards, clockNow)
         Box(Modifier.fillMaxSize().background(HubBackground)) {
             HubGlows()
             Column(Modifier.fillMaxSize().safeDrawingPadding()) {
@@ -234,6 +266,7 @@ internal fun SportsHubScreen(
                     }
                 }
                 val games = when (section) {
+                    SportsSection.AllSports -> combinedFeed.live + combinedFeed.upcoming
                     SportsSection.Live -> liveGames
                     SportsSection.MyTeams -> myTeamGames.orEmpty()
                     SportsSection.Upcoming -> SportsEventSections.upcoming(events)
@@ -249,6 +282,25 @@ internal fun SportsHubScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     when {
+                        section == SportsSection.AllSports -> {
+                            if (combinedLoading && combinedBoards.isEmpty()) {
+                                item { CircularProgressIndicator(color = HubAccent) }
+                            } else {
+                                if (combinedError) item {
+                                    HubMessage("Some leagues are unavailable. Showing available games.")
+                                }
+                                item { HubSectionTitle("LIVE NOW") }
+                                if (combinedFeed.live.isEmpty()) item { HubMessage("No live games right now.") }
+                                itemsIndexed(combinedFeed.live, key = { _, event -> "live_${event.league.name}_${event.id}" }) { index, event ->
+                                    EnterAnimated(index) { GameRow(event) { selectedEvent = event } }
+                                }
+                                item { HubSectionTitle("UPCOMING · NEXT 60 MIN") }
+                                if (combinedFeed.upcoming.isEmpty()) item { HubMessage("No games starting in the next hour.") }
+                                itemsIndexed(combinedFeed.upcoming, key = { _, event -> "soon_${event.league.name}_${event.id}" }) { index, event ->
+                                    EnterAnimated(index) { GameRow(event) { selectedEvent = event } }
+                                }
+                            }
+                        }
                         section == SportsSection.Standings -> when {
                             !standingsLoaded -> item { CircularProgressIndicator(color = HubAccent) }
                             standings == null -> item { HubMessage("Standings aren't available for ${league.label}.") }

@@ -31,15 +31,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          config=iosApp/Configuration/Version.xcconfig
+          config=version.conf
           name="$(sed -n 's/^MARKETING_VERSION=//p' "$config" | tr -d '[:space:]')"
           code="$(sed -n 's/^CURRENT_PROJECT_VERSION=//p' "$config" | tr -d '[:space:]')"
           if [ -z "$name" ] || [ -z "$code" ]; then
-            echo "::error::Version.xcconfig is missing MARKETING_VERSION or CURRENT_PROJECT_VERSION"
+            echo "::error::version.conf is missing MARKETING_VERSION or CURRENT_PROJECT_VERSION"
             exit 1
           fi
           if [ "${GITHUB_REF_TYPE}" = tag ] && [ "${GITHUB_REF_NAME}" != "v${name}" ]; then
-            echo "::error::Tag ${GITHUB_REF_NAME} does not match Version.xcconfig (v${name}). Bump the version or fix the tag."
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match version.conf (v${name}). Bump the version or fix the tag."
             exit 1
           fi
           echo "name=$name" >> "$GITHUB_OUTPUT"
@@ -97,7 +97,6 @@ jobs:
           chmod +x gradlew
           ./gradlew :androidApp:assembleFullRelease \
             -Pnuvio.android.distribution=full \
-            -Pnuvio.ios.distribution=appstore \
             -PreleaseMinifyEnabled=${{ steps.version.outputs.minify }} \
             "-Dorg.gradle.jvmargs=-Xmx7g -XX:MaxMetaspaceSize=1536m -Dfile.encoding=UTF-8" \
             -Pkotlin.compiler.execution.strategy=in-process \
@@ -150,4 +149,4 @@ jobs:
         run: |
           touch local.properties
           ./gradlew :composeApp:testAndroidHostTest --tests 'com.nuvio.app.features.sports.*' \
-            -Pnuvio.android.distribution=full -Pnuvio.ios.distribution=appstore --stacktrace --no-daemon
+            -Pnuvio.android.distribution=full --stacktrace --no-daemon

@@ -38,7 +38,7 @@ val sentryAuthToken = envOrLocalProperty("SENTRY_AUTH_TOKEN")
 val sentryOrg = envOrLocalProperty("SENTRY_ORG")
 val sentryProject = envOrLocalProperty("SENTRY_PROJECT")
 val sentryMappingUploadEnabled = sentryAuthToken != null && sentryOrg != null && sentryProject != null
-val appVersionConfigFile = rootProject.file("iosApp/Configuration/Version.xcconfig")
+val appVersionConfigFile = rootProject.file("version.conf")
 val releaseAppVersionName = providers.gradleProperty("nuvio.app.versionName").orNull
     ?: readXcconfigValue(appVersionConfigFile, "MARKETING_VERSION")
     ?: error("MARKETING_VERSION is missing from ${appVersionConfigFile.path}")

@@ -1,12 +1,11 @@
 name: Kable Killers Mobile - Release
 
 # How to release:
-#   1. Bump MARKETING_VERSION and CURRENT_PROJECT_VERSION in iosApp/Configuration/Version.xcconfig.
+#   1. Bump MARKETING_VERSION and CURRENT_PROJECT_VERSION in version.conf.
 #   2. Merge to cmp-rewrite.
 #   3. Push a tag that matches the version:  git tag v0.5.21 && git push origin v0.5.21
 # The workflow builds signed APKs and publishes the GitHub release the Android in-app updater
-# reads as soon as they're ready. The unsigned iPhone IPA (about 2 hours) is then added to the
-# same release and to the SideStore/AltStore source (branch altstore-source, file source.json).
+# reads as soon as they're ready.
 #
 # To test a release build without publishing, run this workflow manually ("Run workflow")
 # and leave "publish" unchecked; the APKs are attached to the run as an artifact.
@@ -25,10 +24,6 @@ on:
         description: Shrink code and resources with R8 (recommended)
         type: boolean
         default: true
-      ios:
-        description: Also build the iPhone IPA (off; iPhone updates are paused)
-        type: boolean
-        default: false
 
 permissions:
   contents: write
@@ -56,15 +51,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          config=iosApp/Configuration/Version.xcconfig
+          config=version.conf
           name="$(sed -n 's/^MARKETING_VERSION=//p' "$config" | tr -d '[:space:]')"
           code="$(sed -n 's/^CURRENT_PROJECT_VERSION=//p' "$config" | tr -d '[:space:]')"
           if [ -z "$name" ] || [ -z "$code" ]; then
-            echo "::error::Version.xcconfig is missing MARKETING_VERSION or CURRENT_PROJECT_VERSION"
+            echo "::error::version.conf is missing MARKETING_VERSION or CURRENT_PROJECT_VERSION"
             exit 1
           fi
           if [ "${GITHUB_REF_TYPE}" = tag ] && [ "${GITHUB_REF_NAME}" != "v${name}" ]; then
-            echo "::error::Tag ${GITHUB_REF_NAME} does not match Version.xcconfig (v${name}). Bump the version or fix the tag."
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match version.conf (v${name}). Bump the version or fix the tag."
             exit 1
           fi
           echo "name=$name" >> "$GITHUB_OUTPUT"
@@ -89,7 +84,7 @@ jobs:
           TAG: ${{ steps.version.outputs.tag }}
         run: |
           if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "::error::Release $TAG already exists. Bump the version in Version.xcconfig."
+            echo "::error::Release $TAG already exists. Bump the version in version.conf."
             exit 1
           fi
 
@@ -133,7 +128,6 @@ jobs:
           chmod +x gradlew
           ./gradlew :androidApp:assembleFullRelease \
             -Pnuvio.android.distribution=full \
-            -Pnuvio.ios.distribution=appstore \
             -PreleaseMinifyEnabled=${{ steps.version.outputs.minify }} \
             "-Dorg.gradle.jvmargs=-Xmx7g -XX:MaxMetaspaceSize=1536m -Dfile.encoding=UTF-8" \
             -Pkotlin.compiler.execution.strategy=in-process \
@@ -182,11 +176,6 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-  ios:
-    name: iPhone
-    if: github.ref_type == 'tag' || inputs.ios != false
-    uses: ./.github/workflows/kable-killers-ios.yml
-
   publish:
     name: Publish release (Android)
     needs: release
@@ -204,7 +193,6 @@ jobs:
           path: dist
 
       # Published as soon as Android is ready, so the in-app updater picks it up right away.
-      # The iPhone IPA is added to the same release later by publish-ios.
       - name: Publish GitHub release
         run: |
           set -euo pipefail
@@ -215,50 +203,3 @@ jobs:
             --title "Kable Killers Mobile v${VERSION}" \
             --generate-notes \
             --latest
-
-  publish-ios:
-    name: Add iPhone IPA to release
-    needs: [release, ios, publish]
-    if: needs.publish.result == 'success' && needs.ios.result == 'success'
-    runs-on: ubuntu-latest
-    env:
-      GH_TOKEN: ${{ github.token }}
-      TAG: ${{ needs.release.outputs.tag }}
-      VERSION: ${{ needs.release.outputs.name }}
-      BUILD: ${{ needs.release.outputs.code }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Download iPhone IPA
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ needs.ios.outputs.artifact }}
-          path: dist
-
-      - name: Upload IPA to the release
-        run: gh release upload "$TAG" dist/*.ipa dist/SHA256SUMS-ios.txt --repo "$GITHUB_REPOSITORY"
-
-      - name: Add the IPA to the SideStore/AltStore source
-        run: |
-          set -euo pipefail
-          ipa="dist/Kable-Killers-Mobile-v${VERSION}.ipa"
-          test -f "$ipa"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          cp scripts/kable-killers-altstore-source.py /tmp/altstore-source.py
-          if git fetch --depth 1 origin altstore-source 2>/dev/null; then
-            git switch -C altstore-source FETCH_HEAD
-          else
-            git switch --orphan altstore-source
-          fi
-          python3 -I /tmp/altstore-source.py source.json \
-            --version "$VERSION" \
-            --build "$BUILD" \
-            --ipa "$ipa" \
-            --download-url "https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/Kable-Killers-Mobile-v${VERSION}.ipa" \
-            --notes "Kable Killers Mobile v${VERSION}. Full notes: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}"
-          git add source.json
-          git commit -m "Add Kable Killers Mobile v${VERSION} to the iPhone source"
-          git push origin altstore-source
-          echo "Source URL: https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/altstore-source/source.json" >> "$GITHUB_STEP_SUMMARY"

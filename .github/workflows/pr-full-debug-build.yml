@@ -55,7 +55,6 @@ jobs:
           chmod +x gradlew
           ./gradlew :androidApp:assembleFullDebug \
             -Pnuvio.android.distribution=full \
-            -Pnuvio.ios.distribution=appstore \
             --stacktrace
 
       - name: Upload Kable Killers Mobile APK

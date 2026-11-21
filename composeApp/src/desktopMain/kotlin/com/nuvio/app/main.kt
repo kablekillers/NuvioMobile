@@ -16,6 +16,7 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import kotlinx.coroutines.delay
 import com.nuvio.app.core.backup.KableKillersBackup
 import com.nuvio.app.core.storage.DesktopDefaults
 import com.nuvio.app.desktop.DesktopAppIcon
@@ -38,9 +39,9 @@ fun main() {
             (DesktopAppIcon.awtImage as? BufferedImage)?.let { BitmapPainter(it.toComposeImageBitmap()) }
         }
 
-        LaunchedEffect(fullscreen) {
-            windowState.placement = if (fullscreen) WindowPlacement.Fullscreen else WindowPlacement.Floating
-        }
+        // Remember how the window looked before fullscreen (maximized or a
+        // normal window, and its size) so leaving the player restores it exactly.
+        val beforeFullscreen = remember { arrayOf<Any?>(WindowPlacement.Floating, windowState.size) }
 
         Window(
             onCloseRequest = {
@@ -62,6 +63,29 @@ fun main() {
                 }
             },
         ) {
+            LaunchedEffect(fullscreen) {
+                if (fullscreen) {
+                    if (windowState.placement != WindowPlacement.Fullscreen) {
+                        beforeFullscreen[0] = windowState.placement
+                        beforeFullscreen[1] = windowState.size
+                    }
+                    windowState.placement = WindowPlacement.Fullscreen
+                } else if (windowState.placement == WindowPlacement.Fullscreen) {
+                    val placement = beforeFullscreen[0] as WindowPlacement
+                    val size = beforeFullscreen[1] as DpSize
+                    windowState.placement = placement
+                    delay(80)
+                    if (placement == WindowPlacement.Floating) {
+                        // Nudge the size so the page re-lays out at the window's real width.
+                        windowState.size = DpSize(size.width + 1.dp, size.height)
+                        delay(30)
+                        windowState.size = size
+                    }
+                    window.invalidate()
+                    window.validate()
+                    window.repaint()
+                }
+            }
             LaunchedEffect(window) {
                 window.minimumSize = java.awt.Dimension(900, 600)
                 window.addWindowFocusListener(object : WindowAdapter() {

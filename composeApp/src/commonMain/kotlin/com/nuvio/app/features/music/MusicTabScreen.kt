@@ -49,6 +49,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -71,40 +72,62 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 
 /** Kable Killers electric blue, matching the brand. */
-internal val MusicAccent = Color(0xFF19A8FF)
-internal val MusicBackground = Color(0xFF060B16)
-internal val MusicSurface = Color(0xFF111A2B)
+import androidx.compose.material.icons.rounded.LibraryMusic
+import androidx.compose.material.icons.rounded.Explore
+import androidx.compose.material.icons.rounded.History
+import com.nuvio.app.features.addons.fetchAddonResponseText
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 
-private enum class MusicSection(val label: String, val icon: ImageVector) {
-    ForYou("For you", Icons.Rounded.MusicNote),
-    Radio("Radio", Icons.Rounded.Radio),
-    Albums("Albums", Icons.Rounded.Album),
-    Videos("Videos", Icons.Rounded.SmartDisplay),
+
+/** Kable Killers electric blue, matching the brand. */
+internal val MusicAccent = Color(0xFF19A8FF)
+internal val MusicBackground = Color.Black
+internal val MusicSurface = Color(0xFF16181D)
+
+private enum class MusicTab(val label: String) {
+    Home("Home"), Explore("Explore"), Library("Library"), Radio("Radio"),
+    Albums("Albums"), Search("Search"), Videos("Videos"),
 }
 
-private data class MusicHomeData(
-    val trending: List<MetaPreview> = emptyList(),
-    val radio: List<MetaPreview> = emptyList(),
-)
+@Serializable
+private data class HomeMeta(val id: String = "", val name: String = "", val poster: String? = null, val description: String? = null)
 
-/** The Music tab: a clean, artwork-first music section in the style of Nuvio One. */
+@Serializable
+private data class HomeSection(val title: String = "", val kind: String = "tracks", val items: List<HomeMeta> = emptyList())
+
+@Serializable
+private data class HomeArtist(val name: String = "", val handle: String = "", val image: String = "")
+
+@Serializable
+private data class HomePayload(val sections: List<HomeSection> = emptyList(), val artists: List<HomeArtist> = emptyList())
+
+private val homeJson = Json { ignoreUnknownKeys = true; coerceInputValues = true }
+
+private fun HomeMeta.toPreview(): MetaPreview = MetaPreview(id = id, type = "music", name = name, poster = poster)
+
+/** A titled row of artwork, opened full-screen from Explore or "See all". */
+private data class MusicCollection(val title: String, val kind: String, val items: List<MetaPreview>)
+
+/** The Music tab, laid out like Nuvio One: black, pill tabs and rows of artwork. */
 @Composable
 fun MusicTabScreen() {
-    var section by rememberSaveable { mutableStateOf(MusicSection.ForYou) }
+    var tab by rememberSaveable { mutableStateOf(MusicTab.Home) }
     var query by rememberSaveable { mutableStateOf("") }
     var addonMissing by remember { mutableStateOf(false) }
-    var home by remember { mutableStateOf(MusicHomeData()) }
+    var sections by remember { mutableStateOf<List<MusicCollection>>(emptyList()) }
+    var artists by remember { mutableStateOf<List<HomeArtist>>(emptyList()) }
     var homeLoading by remember { mutableStateOf(true) }
     var results by remember { mutableStateOf<List<MetaPreview>>(emptyList()) }
     var videos by remember { mutableStateOf<List<YouTubeMusicVideo>>(emptyList()) }
     var searching by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf<String?>(null) }
     var openAlbum by remember { mutableStateOf<MetaPreview?>(null) }
+    var openCollection by remember { mutableStateOf<MusicCollection?>(null) }
     var selectedVideo by remember { mutableStateOf<YouTubeMusicVideo?>(null) }
     val recent by MusicPlayer.recent.collectAsState()
     val player by MusicPlayer.state.collectAsState()
 
-    // Home rows: trending Audius tracks and top radio stations, which need no search.
     LaunchedEffect(Unit) {
         homeLoading = true
         try {
@@ -112,10 +135,23 @@ fun MusicTabScreen() {
             if (manifest == null) {
                 addonMissing = true
             } else {
-                coroutineScope {
-                    val trending = async { loadCatalog(manifest, "kk_audius", null, 40) }
-                    val radio = async { loadCatalog(manifest, "kk_radio", null, 30) }
-                    home = MusicHomeData(trending.await(), radio.await())
+                val base = manifest.substringBeforeLast("/").trimEnd('/')
+                val payload = runCatching {
+                    homeJson.decodeFromString<HomePayload>(fetchAddonResponseText("$base/api/music/home"))
+                }.getOrNull()
+                if (payload != null && payload.sections.isNotEmpty()) {
+                    sections = payload.sections.map { s -> MusicCollection(s.title, s.kind, s.items.map { it.toPreview() }) }
+                    artists = payload.artists
+                } else {
+                    // Older addon without the home endpoint: fall back to its catalogs.
+                    coroutineScope {
+                        val trending = async { loadCatalog(manifest, "kk_audius", null, 40) }
+                        val radio = async { loadCatalog(manifest, "kk_radio", null, 30) }
+                        sections = listOf(
+                            MusicCollection("Today's biggest hits", "tracks", trending.await()),
+                            MusicCollection("Live radio", "radio", radio.await()),
+                        ).filter { it.items.isNotEmpty() }
+                    }
                 }
             }
         } catch (cancel: CancellationException) {
@@ -127,38 +163,30 @@ fun MusicTabScreen() {
         }
     }
 
-    LaunchedEffect(query, section) {
+    LaunchedEffect(query, tab) {
         val q = query.trim()
         results = emptyList()
         videos = emptyList()
-        status = null
-        val needsSearch = section == MusicSection.Albums || section == MusicSection.Videos || q.isNotEmpty()
-        if (!needsSearch) return@LaunchedEffect
-        if (q.isEmpty()) return@LaunchedEffect
+        if (tab !in listOf(MusicTab.Search, MusicTab.Radio, MusicTab.Albums, MusicTab.Videos) || q.isEmpty()) return@LaunchedEffect
         delay(400)
         searching = true
+        status = null
         try {
             val manifest = musicAddonManifestUrl() ?: run { addonMissing = true; return@LaunchedEffect }
-            when (section) {
-                MusicSection.ForYou -> {
-                    results = coroutineScope {
-                        listOf("kk_audius", "kablekillers_music_search", "kk_commons")
-                            .map { id -> async { loadCatalog(manifest, id, q, 30) } }
-                            .awaitAll()
-                            .flatten()
-                            .distinctBy { it.id }
-                    }
+            when (tab) {
+                MusicTab.Search -> results = coroutineScope {
+                    listOf("kk_audius", "kablekillers_music_search", "kk_audius_albums", "kk_radio", "kk_commons")
+                        .map { id -> async { loadCatalog(manifest, id, q, 20) } }
+                        .awaitAll().flatten().distinctBy { it.id }
                 }
-                MusicSection.Radio -> results = loadCatalog(manifest, "kk_radio", q, 60)
-                MusicSection.Albums -> results = coroutineScope {
+                MusicTab.Radio -> results = loadCatalog(manifest, "kk_radio", q, 60)
+                MusicTab.Albums -> results = coroutineScope {
                     listOf("kk_audius_albums", "kk_archive")
                         .map { id -> async { loadCatalog(manifest, id, q, 30) } }
-                        .awaitAll()
-                        .flatten()
-                        .filter(::isPlayableAlbum)
-                        .distinctBy { it.id }
+                        .awaitAll().flatten().filter(::isPlayableAlbum).distinctBy { it.id }
                 }
-                MusicSection.Videos -> videos = findYouTubeMusic(q, manifest)
+                MusicTab.Videos -> videos = findYouTubeMusic(q, manifest)
+                else -> Unit
             }
             if (results.isEmpty() && videos.isEmpty()) status = "No results for \"$q\"."
         } catch (cancel: CancellationException) {
@@ -170,158 +198,146 @@ fun MusicTabScreen() {
         }
     }
 
-    PlatformBackHandler(enabled = openAlbum != null) { openAlbum = null }
+    PlatformBackHandler(enabled = openAlbum != null || openCollection != null) {
+        if (openAlbum != null) openAlbum = null else openCollection = null
+    }
 
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(MusicBackground)
-            .background(
-                Brush.radialGradient(
-                    colors = listOf(MusicAccent.copy(alpha = 0.22f), Color.Transparent),
-                    radius = 900f,
-                ),
-            ),
-    ) {
+    fun openItem(item: MetaPreview, kind: String, siblings: List<MetaPreview>) {
+        when {
+            isPlayableAlbum(item) || kind == "albums" -> openAlbum = item
+            else -> {
+                val playable = siblings.filterNot(::isPlayableAlbum)
+                MusicPlayer.playQueue(playable.map { it.toMusicTrack() }, playable.indexOf(item).coerceAtLeast(0))
+            }
+        }
+    }
+
+    val bottomPad = if (player.current != null) 100.dp else 28.dp
+
+    Box(Modifier.fillMaxSize().background(MusicBackground)) {
         val album = openAlbum
-        if (album != null) {
-            MusicAlbumPage(album = album, onBack = { openAlbum = null })
-        } else {
-            LazyColumn(
+        val collection = openCollection
+        when {
+            album != null -> MusicAlbumPage(album = album, onBack = { openAlbum = null })
+            collection != null -> MusicCollectionPage(
+                collection = collection,
+                bottomPadding = bottomPad,
+                onBack = { openCollection = null },
+                onItem = { item -> openItem(item, collection.kind, collection.items) },
+            )
+            else -> LazyColumn(
                 modifier = Modifier.fillMaxSize().statusBarsPadding(),
-                contentPadding = PaddingValues(bottom = if (player.current != null) 96.dp else 24.dp),
+                contentPadding = PaddingValues(bottom = bottomPad),
             ) {
-                item(key = "header") {
-                    Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 12.dp)) {
-                        Text("Music", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.ExtraBold)
-                        Text("KABLE KILLERS MUSIC", color = MusicAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                item(key = "header") { MusicHeader() }
+                item(key = "tabs") {
+                    MusicPillTabs(selected = tab, onSelect = { tab = it; query = "" })
+                }
+                if (tab in listOf(MusicTab.Search, MusicTab.Radio, MusicTab.Albums, MusicTab.Videos)) {
+                    item(key = "search") {
+                        MusicSearchPill(
+                            value = query,
+                            placeholder = when (tab) {
+                                MusicTab.Radio -> "Search 30,000+ radio stations"
+                                MusicTab.Albums -> "Search albums and concerts"
+                                MusicTab.Videos -> "Search music videos"
+                                else -> "Songs, artists, albums or stations"
+                            },
+                            onValueChange = { query = it },
+                            modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
+                        )
                     }
                 }
-                item(key = "search") {
-                    MusicSearchPill(
-                        value = query,
-                        placeholder = when (section) {
-                            MusicSection.ForYou -> "Songs, artists or albums"
-                            MusicSection.Radio -> "Search 30,000+ stations"
-                            MusicSection.Albums -> "Search albums and concerts"
-                            MusicSection.Videos -> "Search music videos"
-                        },
-                        onValueChange = { query = it },
-                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
-                    )
-                }
-                item(key = "sections") {
-                    Row(
-                        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 20.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        MusicSection.entries.forEach { option ->
-                            MusicChip(option.label, option.icon, selected = section == option) { section = option }
-                        }
-                    }
-                    Spacer(Modifier.height(10.dp))
-                }
-
-                if (addonMissing) {
-                    item(key = "missing") {
-                        MusicMessage("Add Kable Killers Music in Settings → Add-ons to start listening.")
-                    }
-                }
-                status?.let { message -> item(key = "status") { MusicMessage(message) } }
+                if (addonMissing) item(key = "missing") { MusicMessage("Add Kable Killers Music in Settings → Add-ons to start listening.") }
+                status?.let { item(key = "status") { MusicMessage(it) } }
                 if (searching) item(key = "searching") { MusicMessage("Searching…") }
 
-                val q = query.trim()
-                when {
-                    section == MusicSection.Videos -> {
-                        if (q.isEmpty()) item(key = "videos_hint") {
-                            MusicMessage("Official music videos play in YouTube's own player, so YouTube may show ads.")
+                when (tab) {
+                    MusicTab.Home -> {
+                        if (artists.isNotEmpty()) {
+                            item(key = "artists") {
+                                LazyRow(
+                                    contentPadding = PaddingValues(horizontal = 18.dp, vertical = 6.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                ) {
+                                    items(artists, key = { "artist:" + it.name }) { artist ->
+                                        MusicArtistChip(artist) { query = artist.name; tab = MusicTab.Search }
+                                    }
+                                }
+                            }
                         }
-                        items(videos, key = { "yt:" + it.videoId }) { video ->
-                            MusicVideoRow(video) { selectedVideo = video }
+                        if (recent.isNotEmpty()) {
+                            item(key = "recent") {
+                                MusicRowSection(
+                                    title = "Jump back in",
+                                    cards = recent.map { MusicCardData(it.title, it.artist.ifBlank { "Music" }, it.artwork, it.isLive) },
+                                    onCard = { index -> MusicPlayer.playQueue(recent, index) },
+                                )
+                            }
+                        }
+                        if (homeLoading && sections.isEmpty()) item(key = "loading") { MusicMessage("Loading music…") }
+                        sections.forEach { section ->
+                            item(key = "sec:" + section.title) {
+                                MusicRowSection(
+                                    title = section.title,
+                                    cards = section.items.take(20).map { it.toCard(section.kind) },
+                                    onCard = { index -> openItem(section.items[index], section.kind, section.items) },
+                                    onSeeAll = if (section.items.size > 3) ({ openCollection = section }) else null,
+                                )
+                            }
                         }
                     }
-                    section == MusicSection.Albums -> {
-                        if (q.isEmpty()) item(key = "albums_hint") {
-                            MusicMessage("Search for an artist or album to play it from start to finish.")
+                    MusicTab.Explore -> {
+                        item(key = "explore") {
+                            Text("Browse", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold,
+                                modifier = Modifier.padding(start = 18.dp, top = 16.dp, bottom = 12.dp))
                         }
-                        items(results.chunked(2), key = { row -> row.joinToString { it.id } }) { row ->
-                            Row(
-                                Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
-                                horizontalArrangement = Arrangement.spacedBy(14.dp),
-                            ) {
-                                row.forEach { item ->
-                                    MusicAlbumCard(item, Modifier.weight(1f)) { openAlbum = item }
+                        items(sections.chunked(2), key = { row -> "ex:" + row.joinToString { it.title } }) { row ->
+                            Row(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                row.forEach { section ->
+                                    MusicGenreTile(section, Modifier.weight(1f)) { openCollection = section }
                                 }
                                 if (row.size == 1) Spacer(Modifier.weight(1f))
                             }
                         }
                     }
-                    section == MusicSection.Radio -> {
-                        val stations = if (q.isEmpty()) home.radio else results
-                        if (q.isEmpty()) item(key = "radio_title") { MusicSectionTitle("Top stations") }
-                        itemsIndexed(stations, key = { _, it -> "radio:" + it.id }) { index, station ->
-                            MusicTrackRow(
-                                track = station.toMusicTrack(),
-                                isCurrent = player.current?.id == station.id,
-                                onClick = { MusicPlayer.playQueue(stations.map { it.toMusicTrack() }, index) },
-                            )
+                    MusicTab.Library -> {
+                        if (recent.isEmpty()) {
+                            item(key = "lib_empty") { MusicMessage("Songs and stations you play show up here.") }
+                        } else {
+                            item(key = "lib_title") { MusicSectionHeader("Recently played", null) }
+                            itemsIndexed(recent, key = { _, t -> "lib:" + t.id }) { index, track ->
+                                MusicTrackRow(track = track, isCurrent = player.current?.id == track.id,
+                                    onClick = { MusicPlayer.playQueue(recent, index) })
+                            }
                         }
                     }
-                    q.isNotEmpty() -> {
-                        item(key = "songs_title") { MusicSectionTitle("Songs") }
-                        itemsIndexed(results, key = { _, it -> "res:" + it.id }) { index, item ->
-                            MusicTrackRow(
-                                track = item.toMusicTrack(),
-                                isCurrent = player.current?.id == item.id,
-                                onClick = {
-                                    if (isPlayableAlbum(item)) openAlbum = item
-                                    else MusicPlayer.playQueue(results.filterNot(::isPlayableAlbum).map { it.toMusicTrack() },
-                                        results.filterNot(::isPlayableAlbum).indexOf(item).coerceAtLeast(0))
-                                },
-                            )
+                    MusicTab.Radio -> {
+                        val stations = if (query.isBlank()) sections.firstOrNull { it.kind == "radio" }?.items.orEmpty() else results
+                        musicGridItems(stations, "radio", onItem = { openItem(it, "radio", stations) })
+                    }
+                    MusicTab.Albums -> {
+                        if (query.isBlank()) {
+                            val trendingAlbums = sections.firstOrNull { it.kind == "albums" }
+                            if (trendingAlbums != null) {
+                                item(key = "alb_title") { MusicSectionHeader(trendingAlbums.title, null) }
+                                musicGridItems(trendingAlbums.items, "albums", onItem = { openAlbum = it })
+                            } else {
+                                item(key = "alb_hint") { MusicMessage("Search for an artist or album to play it start to finish.") }
+                            }
+                        } else {
+                            musicGridItems(results, "albums", onItem = { openAlbum = it })
                         }
                     }
-                    else -> {
-                        if (recent.isNotEmpty()) {
-                            item(key = "recent") {
-                                MusicSectionTitle("Jump back in")
-                                LazyRow(
-                                    contentPadding = PaddingValues(horizontal = 20.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(14.dp),
-                                ) {
-                                    items(recent, key = { "recent:" + it.id }) { track ->
-                                        MusicSquareCard(track) { MusicPlayer.playQueue(recent, recent.indexOf(track)) }
-                                    }
-                                }
-                            }
+                    MusicTab.Search -> {
+                        if (query.isBlank()) item(key = "search_hint") { MusicMessage("Search across Audius, SoundCloud, live radio and open recordings.") }
+                        musicGridItems(results, "tracks", onItem = { openItem(it, "tracks", results) })
+                    }
+                    MusicTab.Videos -> {
+                        if (query.isBlank()) item(key = "videos_hint") {
+                            MusicMessage("Official music videos play in YouTube's own player, so YouTube may show ads.")
                         }
-                        if (home.radio.isNotEmpty()) {
-                            item(key = "home_radio") {
-                                MusicSectionTitle("Live radio")
-                                LazyRow(
-                                    contentPadding = PaddingValues(horizontal = 20.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(14.dp),
-                                ) {
-                                    val stations = home.radio.take(15).map { it.toMusicTrack() }
-                                    itemsIndexed(stations, key = { _, it -> "hr:" + it.id }) { index, station ->
-                                        MusicSquareCard(station, live = true) { MusicPlayer.playQueue(stations, index) }
-                                    }
-                                }
-                            }
-                        }
-                        if (homeLoading) item(key = "home_loading") { MusicMessage("Loading music…") }
-                        if (home.trending.isNotEmpty()) {
-                            item(key = "trending_title") { MusicSectionTitle("Trending this week") }
-                            val tracks = home.trending.map { it.toMusicTrack() }
-                            itemsIndexed(tracks, key = { _, it -> "tr:" + it.id }) { index, track ->
-                                MusicTrackRow(
-                                    track = track,
-                                    position = index + 1,
-                                    isCurrent = player.current?.id == track.id,
-                                    onClick = { MusicPlayer.playQueue(tracks, index) },
-                                )
-                            }
-                        }
+                        items(videos, key = { "yt:" + it.videoId }) { video -> MusicVideoRow(video) { selectedVideo = video } }
                     }
                 }
             }
@@ -336,20 +352,172 @@ fun MusicTabScreen() {
     }
 }
 
-private suspend fun loadCatalog(manifestUrl: String, catalogId: String, search: String?, max: Int): List<MetaPreview> =
-    try {
-        fetchCatalogPage(
-            manifestUrl = manifestUrl,
-            type = "music",
-            catalogId = catalogId,
-            search = search,
-            maxItems = max,
-        ).items
-    } catch (cancel: CancellationException) {
-        throw cancel
-    } catch (_: Exception) {
-        emptyList()
+private data class MusicCardData(val title: String, val subtitle: String, val artwork: String?, val live: Boolean = false)
+
+private fun MetaPreview.toCard(kind: String): MusicCardData {
+    val track = toMusicTrack()
+    val subtitle = when {
+        kind == "radio" || track.isLive -> "Live radio"
+        kind == "albums" || isPlayableAlbum(this) -> track.artist.ifBlank { "Album" }
+        else -> track.artist.ifBlank { "Music" }
     }
+    return MusicCardData(track.title, subtitle, track.artwork, track.isLive)
+}
+
+/** Three cards per row, like Nuvio One's grids. */
+private fun androidx.compose.foundation.lazy.LazyListScope.musicGridItems(
+    items: List<MetaPreview>,
+    kind: String,
+    onItem: (MetaPreview) -> Unit,
+) {
+    items(items.chunked(3), key = { row -> kind + ":" + row.joinToString { it.id } }) { row ->
+        Row(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            row.forEach { item ->
+                MusicCard(item.toCard(kind), Modifier.weight(1f)) { onItem(item) }
+            }
+            repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+        }
+    }
+}
+
+@Composable
+private fun MusicHeader() {
+    Row(Modifier.fillMaxWidth().padding(start = 18.dp, end = 18.dp, top = 14.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            Modifier.size(40.dp).clip(CircleShape)
+                .background(Brush.linearGradient(listOf(Color(0xFF0A4DFF), MusicAccent, Color(0xFF7DE3FF)))),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Rounded.MusicNote, contentDescription = null, tint = Color.Black, modifier = Modifier.size(22.dp))
+        }
+        Spacer(Modifier.width(12.dp))
+        Text("Kable Killers Music", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+private fun MusicPillTabs(selected: MusicTab, onSelect: (MusicTab) -> Unit) {
+    Box(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp)) {
+        Row(
+            Modifier
+                .clip(RoundedCornerShape(30.dp))
+                .background(Color(0xFF111216))
+                .horizontalScroll(rememberScrollState())
+                .padding(5.dp),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            MusicTab.entries.forEach { option ->
+                val isSelected = option == selected
+                Text(
+                    option.label,
+                    color = if (isSelected) Color.Black else Color.White.copy(alpha = 0.75f),
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                    fontSize = 15.sp,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(if (isSelected) Color.White else Color.Transparent)
+                        .clickable { onSelect(option) }
+                        .padding(horizontal = 16.dp, vertical = 9.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MusicArtistChip(artist: HomeArtist, onClick: () -> Unit) {
+    Column(Modifier.width(76.dp).clickable(onClick = onClick), horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(Modifier.size(64.dp).clip(CircleShape).background(MusicSurface), contentAlignment = Alignment.Center) {
+            Text(artist.name.take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold)
+            if (artist.image.isNotBlank()) {
+                AsyncImage(model = artist.image, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(artist.name, color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+@Composable
+private fun MusicSectionHeader(title: String, onSeeAll: (() -> Unit)?) {
+    Row(Modifier.fillMaxWidth().padding(start = 18.dp, end = 10.dp, top = 22.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(title, color = Color.White, fontSize = 23.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+        if (onSeeAll != null) {
+            Text("See all", color = Color.White.copy(alpha = 0.6f), fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.clip(RoundedCornerShape(12.dp)).clickable(onClick = onSeeAll).padding(horizontal = 8.dp, vertical = 4.dp))
+        }
+    }
+}
+
+@Composable
+private fun MusicRowSection(title: String, cards: List<MusicCardData>, onCard: (Int) -> Unit, onSeeAll: (() -> Unit)? = null) {
+    Column {
+        MusicSectionHeader(title, onSeeAll)
+        LazyRow(contentPadding = PaddingValues(horizontal = 18.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            itemsIndexed(cards, key = { i, c -> "$i:${c.title}" }) { index, card ->
+                MusicCard(card, Modifier.width(150.dp)) { onCard(index) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MusicCard(card: MusicCardData, modifier: Modifier, onClick: () -> Unit) {
+    Column(modifier.clip(RoundedCornerShape(14.dp)).clickable(onClick = onClick)) {
+        Box {
+            MusicArtwork(card.artwork, Modifier.fillMaxWidth().aspectRatio(1f), corner = 14.dp)
+            if (card.live) {
+                Text("LIVE", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(8.dp).clip(RoundedCornerShape(6.dp)).background(Color(0xFFE53935)).padding(horizontal = 6.dp, vertical = 2.dp))
+            }
+        }
+        Spacer(Modifier.height(10.dp))
+        Text(card.title, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Spacer(Modifier.height(2.dp))
+        Text(card.subtitle, color = Color.White.copy(alpha = 0.55f), fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Spacer(Modifier.height(4.dp))
+    }
+}
+
+private val GenreTileColors = listOf(
+    Color(0xFF1E5BFF), Color(0xFFE5318C), Color(0xFF12A36B), Color(0xFFFF7A1A),
+    Color(0xFF8B3DFF), Color(0xFF0FA3B1), Color(0xFFD72638), Color(0xFF3D5A80),
+)
+
+@Composable
+private fun MusicGenreTile(section: MusicCollection, modifier: Modifier, onClick: () -> Unit) {
+    val color = GenreTileColors[(section.title.hashCode() and 0x7fffffff) % GenreTileColors.size]
+    val art = section.items.firstOrNull()?.poster
+    Box(
+        modifier.height(96.dp).clip(RoundedCornerShape(14.dp))
+            .background(Brush.linearGradient(listOf(color, color.copy(alpha = 0.55f))))
+            .clickable(onClick = onClick),
+    ) {
+        if (!art.isNullOrBlank()) {
+            AsyncImage(
+                model = art, contentDescription = null, contentScale = ContentScale.Crop,
+                modifier = Modifier.size(70.dp).align(Alignment.BottomEnd).padding(bottom = 0.dp)
+                    .rotate(18f).clip(RoundedCornerShape(8.dp)),
+            )
+        }
+        Text(section.title, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold,
+            modifier = Modifier.padding(12.dp).fillMaxWidth(0.7f), maxLines = 2, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+@Composable
+private fun MusicCollectionPage(collection: MusicCollection, bottomPadding: androidx.compose.ui.unit.Dp, onBack: () -> Unit, onItem: (MetaPreview) -> Unit) {
+    LazyColumn(Modifier.fillMaxSize().statusBarsPadding(), contentPadding = PaddingValues(bottom = bottomPadding)) {
+        item(key = "back") {
+            Row(Modifier.padding(start = 6.dp, top = 4.dp, end = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = Color.White,
+                    modifier = Modifier.clip(CircleShape).clickable(onClick = onBack).padding(12.dp))
+                Text(collection.title, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        }
+        musicGridItems(collection.items, collection.kind, onItem)
+    }
+}
 
 @Composable
 private fun MusicAlbumPage(album: MetaPreview, onBack: () -> Unit) {

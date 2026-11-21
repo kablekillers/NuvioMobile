@@ -123,6 +123,7 @@ open class MainActivity : AppCompatActivity() {
         com.nuvio.app.features.player.PlayerExtrasStorage.initialize(applicationContext)
         com.nuvio.app.features.music.MusicAudioEngine.initialize(applicationContext)
         com.nuvio.app.features.youtube.YouTubeTabStorage.initialize(applicationContext)
+        com.nuvio.app.features.updater.WhatsNewStorage.initialize(applicationContext)
         DebridSettingsStorage.initialize(applicationContext)
         TmdbSettingsStorage.initialize(applicationContext)
         MdbListSettingsStorage.initialize(applicationContext)

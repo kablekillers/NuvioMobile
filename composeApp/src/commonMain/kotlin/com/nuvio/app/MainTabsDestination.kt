@@ -259,6 +259,9 @@ internal fun MainTabsDestination(
                         else -> systemBottom + 72.dp
                     },
                 )
+
+                // One-time "What's new" box after an update.
+                com.nuvio.app.features.updater.WhatsNewHost()
             }
         }
     }

@@ -44,7 +44,7 @@ internal actual fun YouTubeMusicPlayerDialog(video: YouTubeMusicVideo, onClose: 
                         webChromeClient = WebChromeClient()
                         webViewClient = WebViewClient()
                         // Official YouTube embed URL. Keep player controls and branding visible.
-                        loadUrl("https://www.youtube.com/embed/${video.videoId}?playsinline=1")
+                        loadUrl(\n                            "https://www.youtube.com/embed/${video.videoId}?playsinline=1",\n                            mapOf("Referer" to "https://kablekillers.github.io/")\n                        )
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(280.dp),

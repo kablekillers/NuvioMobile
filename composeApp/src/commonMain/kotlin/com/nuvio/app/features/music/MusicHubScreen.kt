@@ -33,7 +33,7 @@ private val blue = Color(0xFF19A8FF)
 private val dark = Color(0xFF070F20)
 
 private enum class MusicTab(val title: String) {
-    SONGS("Songs & Artists"), ALBUMS("Albums"), RADIO("Live Radio")
+    SONGS("Songs"), ALBUMS("Albums"), RADIO("Radio"), YOUTUBE("YouTube")
 }
 
 /** First mobile test of the installed music addon using the existing Nuvio stream flow. */
@@ -44,6 +44,8 @@ fun MusicHubScreen(onBack: () -> Unit, onOpenTrack: (MetaPreview) -> Unit) {
     var items by remember { mutableStateOf<List<MetaPreview>>(emptyList()) }
     var loading by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf<String?>(null) }
+    var youtubeVideos by remember { mutableStateOf<List<YouTubeMusicVideo>>(emptyList()) }
+    var selectedYouTube by remember { mutableStateOf<YouTubeMusicVideo?>(null) }
     var albumLoading by remember { mutableStateOf(false) }
     var selectedAlbum by remember { mutableStateOf<Pair<String, List<MusicAlbumTrack>>?>(null) }
 
@@ -51,6 +53,7 @@ fun MusicHubScreen(onBack: () -> Unit, onOpenTrack: (MetaPreview) -> Unit) {
         delay(350)
         loading = true
         items = emptyList()
+        youtubeVideos = emptyList()
         status = null
         try {
             AddonRepository.initialize()
@@ -61,11 +64,19 @@ fun MusicHubScreen(onBack: () -> Unit, onOpenTrack: (MetaPreview) -> Unit) {
             val manifest = addon?.manifest
             if (manifest == null) {
                 status = "Install Kable Killers Music from Add-ons to use Music Hub."
+            } else if (tab == MusicTab.YOUTUBE) {
+                if (search.isNotBlank()) {
+                    youtubeVideos = findYouTubeMusic(search, manifest.transportUrl)
+                    if (youtubeVideos.isEmpty()) status = "No embeddable YouTube music videos found."
+                } else {
+                    status = "Search for an artist, song or official music video."
+                }
             } else {
                 val catalogs = when (tab) {
                     MusicTab.SONGS -> listOf("kablekillers_music_search", "kk_audius", "kk_commons")
                     MusicTab.ALBUMS -> listOf("kk_audius_albums", "kk_archive")
                     MusicTab.RADIO -> listOf("kk_radio")
+                    MusicTab.YOUTUBE -> emptyList()
                 }
                 var failures = 0
                 val found = mutableListOf<MetaPreview>()
@@ -159,6 +170,15 @@ fun MusicHubScreen(onBack: () -> Unit, onOpenTrack: (MetaPreview) -> Unit) {
         if (albumLoading) Text("Loading album track list…", color = Color.White)
         status?.let { Text(it, color = Color.White) }
         LazyColumn(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            items(youtubeVideos, key = { "yt:" + it.videoId }) { video ->
+                Column(
+                    modifier = Modifier.fillMaxWidth().background(Color(0xFF13243C))
+                        .clickable { selectedYouTube = video }.padding(15.dp)
+                ) {
+                    Text(video.title, color = Color.White)
+                    Text(video.channel + " · YouTube", color = blue)
+                }
+            }
             items(items, key = { it.type + ":" + it.id }) { result ->
                 Text(
                     result.name, color = Color.White,
@@ -177,6 +197,9 @@ fun MusicHubScreen(onBack: () -> Unit, onOpenTrack: (MetaPreview) -> Unit) {
                 )
             }
         }
+    }
+    selectedYouTube?.let { video ->
+        YouTubeMusicPlayerDialog(video = video, onClose = { selectedYouTube = null })
     }
     selectedAlbum?.let { album ->
         if (album.second.isNotEmpty()) {

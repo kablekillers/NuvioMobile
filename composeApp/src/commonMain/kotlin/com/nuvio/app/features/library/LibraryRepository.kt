@@ -1,5 +1,6 @@
 package com.nuvio.app.features.library
 
+import com.nuvio.app.features.profiles.KableKillersAccountPolicy
 import co.touchlab.kermit.Logger
 import com.nuvio.app.core.auth.AuthRepository
 import com.nuvio.app.core.auth.AuthState
@@ -215,6 +216,13 @@ object LibraryRepository {
                 intent = refreshIntent,
             )
             if (!isActiveOperation(operationToken)) return
+            publish()
+            return
+        }
+
+        // Kable Killers: household profiles on the customer login keep their
+        // Library on this phone only.
+        if (KableKillersAccountPolicy.isHouseholdProfile(profileId)) {
             publish()
             return
         }
@@ -598,6 +606,7 @@ object LibraryRepository {
             log.w { "Skipping library push: anonymous auth user=${authState.userId} profile=$profileId" }
             return
         }
+        if (KableKillersAccountPolicy.isHouseholdProfile(profileId, authState)) return
         val pushJob = syncScope.launch(start = CoroutineStart.LAZY) {
             delay(delayMs)
             nuvioSyncMutex.withLock {

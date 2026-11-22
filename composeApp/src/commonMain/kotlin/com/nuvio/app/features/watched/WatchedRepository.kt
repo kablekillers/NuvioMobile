@@ -1,5 +1,6 @@
 package com.nuvio.app.features.watched
 
+import com.nuvio.app.features.profiles.KableKillersAccountPolicy
 import co.touchlab.kermit.Logger
 import com.nuvio.app.core.auth.AuthRepository
 import com.nuvio.app.core.auth.AuthState
@@ -388,8 +389,11 @@ object WatchedRepository {
         }
         if (effectiveSource.providerId == null) {
             val authState = AuthRepository.state.value
-            if (authState !is AuthState.Authenticated || authState.isAnonymous) {
+            if (authState !is AuthState.Authenticated || authState.isAnonymous ||
+                KableKillersAccountPolicy.isHouseholdProfile(profileId, authState)
+            ) {
                 // Local watched state is authoritative when this account has no Nuvio upstream.
+                // Kable Killers: household profiles on the customer login stay on this phone.
                 nuvioHasLoaded = true
                 nuvioHasLoadedRemote = true
                 publish()
@@ -1323,7 +1327,10 @@ object WatchedRepository {
         if (items.isEmpty()) return WatchedPushOutcome(nuvioSyncSucceeded = true)
         var nuvioSyncSucceeded = false
         val succeededTrackerProviderIds = linkedSetOf<TrackingProviderId>()
-        if (source.providerId == null) {
+        if (source.providerId == null && KableKillersAccountPolicy.isHouseholdProfile(profileId)) {
+            // Kept on this phone only; nothing to upload.
+            nuvioSyncSucceeded = true
+        } else if (source.providerId == null) {
             try {
                 syncAdapter.push(profileId = profileId, items = items)
                 nuvioSyncSucceeded = true
@@ -1360,7 +1367,7 @@ object WatchedRepository {
         val (serverItems, items) = items.partition(ServerWatched::isServerItem)
         ServerWatched.apply(serverItems, played = false)
         if (items.isEmpty()) return
-        if (source.providerId == null) {
+        if (source.providerId == null && !KableKillersAccountPolicy.isHouseholdProfile(profileId)) {
             try {
                 syncAdapter.delete(profileId = profileId, items = items)
             } catch (error: CancellationException) {

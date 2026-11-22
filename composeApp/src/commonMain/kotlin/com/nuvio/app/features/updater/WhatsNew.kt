@@ -48,6 +48,9 @@ import kotlinx.serialization.json.jsonPrimitive
  */
 internal object WhatsNewNotes {
     val byVersion: Map<String, List<String>> = mapOf(
+        "0.9.0" to listOf(
+            "Fixed: each profile has its own Continue Watching, watched marks and Library again. Profile 1 syncs to the cloud; other profiles stay on this phone.",
+        ),
         "0.8.9" to listOf(
             "Faster seek previews: thumbnails are made in the background while you watch, so dragging the seek bar shows a picture right away.",
             "Seek previews now also show when you swipe left or right on the video.",

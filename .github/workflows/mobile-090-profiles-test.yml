@@ -29,6 +29,14 @@ jobs:
           printf 'sdk.dir=%s\n' "${ANDROID_HOME}" > local.properties
           printf 'NUVIO_SUPABASE_URL=https://api.nuvio.tv\n' >> local.properties
           printf 'NUVIO_SUPABASE_ANON_KEY=sb_publishable_1Clq8rlTVACkdcZuqr6_AD__xUUC_EN\n' >> local.properties
+      - name: Unit tests (profiles, watch progress, watched, library)
+        run: >
+          ./gradlew :composeApp:testAndroidHostTest
+          --tests 'com.nuvio.app.features.profiles.*'
+          --tests 'com.nuvio.app.features.watchprogress.*'
+          --tests 'com.nuvio.app.features.watched.*'
+          --tests 'com.nuvio.app.features.library.*'
+          --stacktrace --no-daemon
       - name: Build integrated full debug APK
         run: ./gradlew :androidApp:assembleFullDebug --stacktrace --no-daemon
       - name: Upload test APK

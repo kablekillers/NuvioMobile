@@ -36,4 +36,13 @@ class KableKillersAccountPolicyTest {
         assertFalse(KableKillersAccountPolicy.inheritsPrimaryConfig(1, account("millertime42085@gmail.com")))
         assertFalse(KableKillersAccountPolicy.inheritsPrimaryConfig(2, AuthState.Authenticated("u", null, isAnonymous = true)))
     }
+
+    @Test
+    fun watchHistoryRuleFollowsTheLogin() {
+        val customer = account("kablekillers6@gmail.com")
+        val owner = account("millertime42085@gmail.com")
+        assertFalse(KableKillersAccountPolicy.isHouseholdProfile(1, customer))
+        (2..6).forEach { assertTrue(KableKillersAccountPolicy.isHouseholdProfile(it, customer)) }
+        (1..6).forEach { assertFalse(KableKillersAccountPolicy.isHouseholdProfile(it, owner)) }
+    }
 }

@@ -48,4 +48,20 @@ class SportsMultiviewStateTest {
         assertFalse(state.canAdd)
     }
 
+    @Test
+    fun replacingFocusedTileKeepsOtherStreamAndTransfersAudio() {
+        val state = SportsMultiviewState().add("redzone").add("network")
+            .focus("network").replace("network", "badgers")
+        assertEquals(listOf("redzone", "badgers"), state.streamIds)
+        assertTrue(state.shouldPlayAudio("badgers"))
+        assertFalse(state.shouldPlayAudio("redzone"))
+    }
+
+    @Test
+    fun replacementCannotDuplicateAnotherTile() {
+        val state = SportsMultiviewState().add("redzone").add("network")
+        assertEquals(state, state.replace("network", "redzone"))
+        assertEquals(state, state.replace("missing", "badgers"))
+    }
+
 }

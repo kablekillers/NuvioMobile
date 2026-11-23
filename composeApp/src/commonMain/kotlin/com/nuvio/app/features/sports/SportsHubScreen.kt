@@ -326,6 +326,14 @@ internal fun SportsHubScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     when {
+                        section == SportsSection.Guide -> item {
+                            SportsGuideScreen(
+                                channels = SportsGuideChannelDiscovery.fromBroadcasts(events),
+                                programs = emptyList(),
+                                atEpochMillis = nowMillis(),
+                                onSelectChannel = { /* Stream resolution pending. */ },
+                            )
+                        }
                         section == SportsSection.AllSports -> {
                             if (combinedLoading && combinedBoards.isEmpty()) {
                                 item { CircularProgressIndicator(color = HubAccent) }

@@ -131,6 +131,9 @@ internal fun SportsHubScreen(
     var multiviewLayout by rememberSaveable { mutableStateOf(2) }
     var multiviewState by remember { mutableStateOf(SportsMultiviewState()) }
     val multiviewSources = remember { mutableStateListOf<SportsCatalogMatch>() }
+    val multiviewUrls = remember { mutableStateListOf<Pair<String, String>>() }
+    var multiviewLoading by remember { mutableStateOf(false) }
+    var multiviewError by remember { mutableStateOf<String?>(null) }
     var selectedEvent by remember { mutableStateOf<SportsEvent?>(null) }
     var board by remember(league) { mutableStateOf<SportsScoreboard?>(null) }
     var error by remember(league) { mutableStateOf(false) }
@@ -212,6 +215,25 @@ internal fun SportsHubScreen(
         (shownBoard?.events.orEmpty() + combinedBoards.flatMap { it.events }).firstOrNull { it.id == selected.id && it.league == selected.league } ?: selected
     }
     val activeAddons = addons.addons.filter { it.isActive }.map { it.copy(isRefreshing = false, errorMessage = null) }
+    LaunchedEffect(multiviewOpen, multiviewSources.toList(), activeAddons) {
+        multiviewUrls.clear()
+        multiviewError = null
+        if (!multiviewOpen || multiviewSources.isEmpty() || isIos) return@LaunchedEffect
+        multiviewLoading = true
+        try {
+            for (source in multiviewSources.toList()) {
+                val id = source.addonName + ":" + source.item.id
+                val streams = runCatching {
+                    SportsMultiviewStreamResolver.directStreams(source, activeAddons)
+                }.getOrElse { emptyList() }
+                val url = streams.firstNotNullOfOrNull { SportsMultiviewSourceSelection.directUrl(it) }
+                if (url != null) multiviewUrls.add(id to url)
+                else multiviewError = "No directly playable link for ${source.item.name}"
+            }
+        } finally {
+            multiviewLoading = false
+        }
+    }
     val events = shownBoard?.events.orEmpty()
     // My Teams: games across every league that has a favorite team.
     var myTeamGames by remember { mutableStateOf<List<SportsEvent>?>(null) }
@@ -308,7 +330,18 @@ internal fun SportsHubScreen(
                                 }) { Text("Remove", color = HubAccent) }
                             }
                         }
-                        Text("Use Add to Multi-View on a channel below. Playback integration is pending.", color = HubMuted)
+                        if (multiviewLoading) {
+                            CircularProgressIndicator(color = HubAccent)
+                        }
+                        if (multiviewUrls.isNotEmpty() && !isIos) {
+                            SportsMultiviewSurface(
+                                urls = multiviewUrls.toList(),
+                                focusedId = multiviewState.focusedId,
+                                onFocus = { multiviewState = multiviewState.focus(it) },
+                            )
+                        }
+                        multiviewError?.let { Text(it, color = HubMuted) }
+                        Text("Tap a video to switch audio. Direct links only; some add-on links require the normal player.", color = HubMuted)
                     }
                 }
                 ScoreTicker(events)

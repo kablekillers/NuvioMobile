@@ -37,7 +37,7 @@ internal object SportsAddonDiscovery {
                         val genreValue = genre?.options?.firstOrNull { it.equals("all", ignoreCase = true) }
                         if (genre != null && genreValue == null) return@async emptyList()
                         val searchRequired = required.any { it.name == "search" }
-                        val searchTerms: List<String?> = if (searchRequired) sportsSearchQueries(events) else listOf(null)
+                        val searchTerms: List<String?> = if (searchRequired) deepSearchQueries(league, events) else listOf(null)
                         if (searchTerms.isEmpty()) return@async emptyList()
                         val skipRequired = required.any { it.name == "skip" }
                         val pages = searchTerms.mapNotNull { term ->
@@ -168,6 +168,37 @@ internal object SportsAddonDiscovery {
         events.flatMap { event ->
             listOf(event.title) + event.competitors.map { it.name }
         }.map { it.trim() }.filter { it.isNotBlank() }.distinct().take(12)
+
+    /**
+     * Broader provider searches: a game may be indexed by its matchup, one team,
+     * an abbreviated team name, or its competition rather than ESPN's title.
+     * Keep the request budget bounded per catalog to avoid flooding add-ons.
+     * Returned items still require stream support and league/event filtering.
+     */
+    internal fun deepSearchQueries(league: SportsLeague, events: List<SportsEvent>): List<String> {
+        val competition = when (league) {
+            SportsLeague.COLLEGE_FOOTBALL -> listOf("College Football", "NCAA Football")
+            SportsLeague.NCAA_MEN -> listOf("NCAA Basketball", "College Basketball")
+            SportsLeague.NCAA_WOMEN -> listOf("Women's College Basketball")
+            SportsLeague.NFL -> listOf("NFL")
+            SportsLeague.NBA -> listOf("NBA")
+            SportsLeague.MLB -> listOf("MLB")
+            SportsLeague.NHL -> listOf("NHL")
+            SportsLeague.UFC -> listOf("UFC")
+            else -> listOf(league.label)
+        }
+        val liveFirst = events.sortedBy { when (it.status) {
+            SportsEventStatus.LIVE -> 0
+            SportsEventStatus.SCHEDULED -> 1
+            else -> 2
+        } }
+        val matches = liveFirst.flatMap { event ->
+            listOf(event.title, event.catalogMatchTitle.orEmpty()) +
+                event.competitors.flatMap { listOf(it.name, it.abbreviation.orEmpty()) }
+        }
+        return (matches + competition).map { it.trim() }
+            .filter { it.length >= 3 }.distinct().take(18)
+    }
 
     private val HighlightTitle = Regex("\\b(highlights?|recap)\\b", RegexOption.IGNORE_CASE)
 

@@ -105,7 +105,7 @@ private val HubLiveText = Color(0xFFFF7B86)
 private enum class SportsSection(val label: String) {
     AllSports("All Sports"), Live("Live Now"), MyTeams("My Teams"), Upcoming("Upcoming"), Final("Final"),
     Standings("Standings"), Replays("Replays"), Highlights("Highlights"), Events("Events"),
-    Channels("NFL Channels"), Guide("TV Guide"),
+    Channels("NFL Channels"),
 }
 
 private fun nowMillis(): Long = kotlin.time.Clock.System.now().toEpochMilliseconds()
@@ -127,6 +127,8 @@ internal fun SportsHubScreen(
     var league by rememberSaveable { mutableStateOf(SportsLeague.NFL) }
     var section by rememberSaveable { mutableStateOf(SportsSection.AllSports) }
     var showIntro by rememberSaveable { mutableStateOf(true) }
+    var multiviewOpen by rememberSaveable { mutableStateOf(false) }
+    var multiviewLayout by rememberSaveable { mutableStateOf(2) }
     var selectedEvent by remember { mutableStateOf<SportsEvent?>(null) }
     var board by remember(league) { mutableStateOf<SportsScoreboard?>(null) }
     var error by remember(league) { mutableStateOf(false) }
@@ -229,7 +231,7 @@ internal fun SportsHubScreen(
     }
     var nflChannels by remember { mutableStateOf<List<SportsCatalogMatch>?>(null) }
     LaunchedEffect(section, league, activeAddons, refresh) {
-        if (league == SportsLeague.NFL && section in setOf(SportsSection.Channels, SportsSection.Guide)) {
+        if (league == SportsLeague.NFL && section == SportsSection.Channels) {
             nflChannels = null
             nflChannels = SportsAddonDiscovery.findNflChannels(activeAddons)
         }
@@ -258,6 +260,30 @@ internal fun SportsHubScreen(
                 HubHeader(title = "Sports Hub", liveCount = liveGames.size, onBack = onBack, showBack = showBack) {
                     ScoreDelayChip(prefs.scoreDelaySeconds)
                 }
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TextButton(onClick = { multiviewOpen = !multiviewOpen }) {
+                        Text(if (multiviewOpen) "Close Multi-View" else "Open Multi-View", color = HubAccent)
+                    }
+                    if (multiviewOpen) {
+                        TextButton(onClick = { multiviewLayout = 2 }) {
+                            Text("2 Screens", color = if (multiviewLayout == 2) HubAccent else HubMuted)
+                        }
+                        TextButton(onClick = { multiviewLayout = 4 }) {
+                            Text("4 Screens", color = if (multiviewLayout == 4) HubAccent else HubMuted)
+                        }
+                    }
+                }
+                if (multiviewOpen) {
+                    Text(
+                        "Multi-View · $multiviewLayout screens selected. Game selection and playback are being connected; streams do not start from this panel yet.",
+                        color = HubMuted,
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
+                    )
+                }
                 ScoreTicker(events)
                 LazyRow(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
@@ -268,7 +294,7 @@ internal fun SportsHubScreen(
                             if (league != sport) {
                                 section = when {
                                     sport.scoreboardPath == null -> SportsSection.Events
-                                    sport != SportsLeague.NFL && section in setOf(SportsSection.Channels, SportsSection.Guide) -> SportsSection.Live
+                                    sport != SportsLeague.NFL && section == SportsSection.Channels -> SportsSection.Live
                                     section == SportsSection.Events || section == SportsSection.Standings &&
                                         !sport.usesTeamStats && sport != SportsLeague.UFC ->
                                         SportsSection.Live
@@ -287,12 +313,12 @@ internal fun SportsHubScreen(
                         listOf(SportsSection.AllSports, SportsSection.Events, SportsSection.Replays, SportsSection.Highlights)
                     } else {
                         val visible = SportsSection.entries.filter { tab ->
-                            tab != SportsSection.Events && (tab !in setOf(SportsSection.Channels, SportsSection.Guide) || league == SportsLeague.NFL) &&
+                            tab != SportsSection.Events && (tab != SportsSection.Channels || league == SportsLeague.NFL) &&
                                 (tab != SportsSection.Standings || isIos ||
                                 league == SportsLeague.UFC || league.usesTeamStats)
                         }
                         if (league == SportsLeague.NFL) {
-                            listOf(SportsSection.Channels, SportsSection.Guide) + visible.filterNot { it in setOf(SportsSection.Channels, SportsSection.Guide) }
+                            listOf(SportsSection.Channels) + visible.filterNot { it == SportsSection.Channels }
                         } else visible
                     }
                     items(sections) { tab ->
@@ -359,17 +385,6 @@ internal fun SportsHubScreen(
                                 }
                                 else -> itemsIndexed(nflChannels!!) { index, channel ->
                                     EnterAnimated(index) { SourceCard(channel, onOpenStream) }
-                                }
-                            }
-                        }
-                        section == SportsSection.Guide && league == SportsLeague.NFL -> {
-                            item { HubSectionTitle("SPORTS TV GUIDE") }
-                            item { HubMessage("Available NFL channels from installed add-ons. Program times appear only when a provider supplies schedule data.") }
-                            when {
-                                nflChannels == null -> item { CircularProgressIndicator(color = HubAccent) }
-                                nflChannels!!.isEmpty() -> item { HubMessage("No NFL channels found in enabled add-ons.") }
-                                else -> itemsIndexed(SportsGuide.fromChannels(nflChannels!!)) { index, entry ->
-                                    EnterAnimated(index) { SourceCard(entry.source, onOpenStream) }
                                 }
                             }
                         }

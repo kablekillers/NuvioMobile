@@ -95,7 +95,7 @@ object SportsAddonCatalogs {
         }
     }
 
-    private val additionalProviders = listOf("nebula", "pencari", "penguplay", "tennis")
+    private val additionalProviders = listOf("nebula", "pencari", "penguplay", "tennis", "cncbridge", "plaviolive", "plavio")
     private val eventTypes = setOf("sport", "sports", "tv", "channel", "livetv", "live-tv", "live_tv")
     private val replayCatalog = Regex(
         """(?:^|[^a-z])(?:replays?|highlights?|recaps?)(?:[^a-z]|$)""",

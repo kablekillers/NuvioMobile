@@ -27,7 +27,7 @@ internal object SportsAddonDiscovery {
         val matcher = SportsEventMatcher.Prepared(events)
         val useRecordingMetadata = replays && !isIos && SportsRecordingClassifier.appliesTo(league)
         val requests = addons.filter { it.isActive }.flatMap { addon ->
-            val manifest = requireNotNull(addon.manifest)
+            val manifest = addon.manifest ?: return@flatMap emptyList()
             SportsAddonCatalogs.routes(manifest, league, replays, expanded = !isIos).map { catalog ->
                 async {
                     try {
@@ -37,7 +37,8 @@ internal object SportsAddonDiscovery {
                         val genreValue = genre?.options?.firstOrNull { it.equals("all", ignoreCase = true) }
                         if (genre != null && genreValue == null) return@async emptyList()
                         val searchRequired = required.any { it.name == "search" }
-                        val searchTerms = if (searchRequired) sportsSearchQueries(events) else listOf<String?>(null)
+                        val searchTerms: List<String?> = if (searchRequired) sportsSearchQueries(events) else listOf(null)
+                        if (searchTerms.isEmpty()) return@async emptyList()
                         val skipRequired = required.any { it.name == "skip" }
                         val pages = searchTerms.mapNotNull { term ->
                             catalogRequests.withPermit {

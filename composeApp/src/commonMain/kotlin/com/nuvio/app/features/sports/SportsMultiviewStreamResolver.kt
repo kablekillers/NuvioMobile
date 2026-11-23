@@ -58,6 +58,6 @@ internal object SportsMultiviewStreamResolver {
             }
         }
         return streams.filter { SportsMultiviewSourceSelection.directUrl(it) != null }
-            .distinctBy { it.playableDirectUrl }
+            .distinctBy { it.addonId to it.playableDirectUrl }
     }
 }

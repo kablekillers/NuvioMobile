@@ -18,6 +18,14 @@ class SportsChannelRegistryTest {
         assertNull(SportsChannelRegistry.identify("ESPN Random Extra"))
     }
 
+    @Test fun recognizesInstalledAddonNamesWithoutMergingDifferentChannels() {
+        assertEquals("nfl-redzone", SportsChannelRegistry.identify("NFL RedZone")?.id)
+        assertEquals("nfl-network", SportsChannelRegistry.identify("NFL Network HD US")?.id)
+        assertEquals("nfl-network", SportsChannelRegistry.identify("🔴 LIVE: NFL Network")?.id)
+        assertEquals("nfl-network", SportsChannelRegistry.identify("NFL Network")?.id)
+        assertNull(SportsChannelRegistry.identify("NFL Channel · Pluto TV"))
+    }
+
     @Test fun channelIdsAreUnique() {
         val channels = SportsChannelRegistry.knownChannels()
         assertEquals(channels.size, channels.map { it.id }.distinct().size)

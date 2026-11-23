@@ -326,21 +326,6 @@ internal fun SportsHubScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     when {
-                        section == SportsSection.Guide -> item {
-                            SportsGuideScreen(
-                                channels = SportsGuideChannelDiscovery.merge(
-                                    SportsGuideChannelDiscovery.fromBroadcasts(events),
-                                    SportsGuideChannelDiscovery.fromAddonMatches(nflChannels.orEmpty()),
-                                ),
-                                programs = emptyList(),
-                                atEpochMillis = nowMillis(),
-                                onSelectChannel = { channel ->
-                                    nflChannels.orEmpty().firstOrNull {
-                                        SportsChannelRegistry.identify(it.item.name)?.id == channel.id
-                                    }?.let { onOpenStream(it.item) }
-                                },
-                            )
-                        }
                         section == SportsSection.AllSports -> {
                             if (combinedLoading && combinedBoards.isEmpty()) {
                                 item { CircularProgressIndicator(color = HubAccent) }

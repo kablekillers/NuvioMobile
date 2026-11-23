@@ -32,29 +32,35 @@ internal object SportsAddonDiscovery {
                 async {
                     try {
                         val required = catalog.extra.filter { it.isRequired }
-                        if (required.any { it.name != "genre" && it.name != "skip" }) return@async emptyList()
+                        if (required.any { it.name !in setOf("search", "genre", "skip") }) return@async emptyList()
                         val genre = required.firstOrNull { it.name == "genre" }
                         val genreValue = genre?.options?.firstOrNull { it.equals("all", ignoreCase = true) }
                         if (genre != null && genreValue == null) return@async emptyList()
+                        val searchRequired = required.any { it.name == "search" }
+                        val searchTerms = if (searchRequired) events.map { it.title }.filter { it.isNotBlank() }.distinct().take(6) else listOf<String?>(null)
                         val skipRequired = required.any { it.name == "skip" }
-                        val page = catalogRequests.withPermit {
-                            withTimeoutOrNull(10_000) {
-                                fetchCatalogPage(
-                                    manifestUrl = manifest.transportUrl,
-                                    type = catalog.type,
-                                    catalogId = catalog.id,
-                                    genre = genreValue,
-                                    skip = if (skipRequired) 0 else null,
-                                    includeInitialSkip = skipRequired,
-                                )
+                        val pages = searchTerms.mapNotNull { term ->
+                            catalogRequests.withPermit {
+                                withTimeoutOrNull(10_000) {
+                                    fetchCatalogPage(
+                                        manifestUrl = manifest.transportUrl,
+                                        type = catalog.type,
+                                        catalogId = catalog.id,
+                                        search = term,
+                                        genre = genreValue,
+                                        skip = if (skipRequired) 0 else null,
+                                        includeInitialSkip = skipRequired,
+                                    )
+                                }
                             }
-                        } ?: return@async emptyList()
+                        }
+                        if (pages.isEmpty()) return@async emptyList()
                         val unscoredAllowed = if (league.scoreboardPath == null) {
                             SportsAddonCatalogs.isScopedCatalog(catalog, league)
                         } else {
                             replays && isLeagueCatalog(catalog.id, league)
                         }
-                        page.items.mapNotNull { item ->
+                        pages.flatMap { it.items }.distinctBy { it.type to it.id }.mapNotNull { item ->
                             ensureActive()
                             if (!manifest.supportsResource("stream", item.type, item.id)) return@mapNotNull null
                             val score = matcher.score(item.name)

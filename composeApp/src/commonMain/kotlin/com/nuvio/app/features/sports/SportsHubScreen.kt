@@ -328,10 +328,17 @@ internal fun SportsHubScreen(
                     when {
                         section == SportsSection.Guide -> item {
                             SportsGuideScreen(
-                                channels = SportsGuideChannelDiscovery.fromBroadcasts(events),
+                                channels = SportsGuideChannelDiscovery.merge(
+                                    SportsGuideChannelDiscovery.fromBroadcasts(events),
+                                    SportsGuideChannelDiscovery.fromAddonMatches(nflChannels.orEmpty()),
+                                ),
                                 programs = emptyList(),
                                 atEpochMillis = nowMillis(),
-                                onSelectChannel = { /* Stream resolution pending. */ },
+                                onSelectChannel = { channel ->
+                                    nflChannels.orEmpty().firstOrNull {
+                                        SportsChannelRegistry.identify(it.item.name)?.id == channel.id
+                                    }?.let { onOpenStream(it.item) }
+                                },
                             )
                         }
                         section == SportsSection.AllSports -> {

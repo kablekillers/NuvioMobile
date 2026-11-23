@@ -102,7 +102,7 @@ private val HubCardBorder = Color.White.copy(alpha = 0.07f)
 private val HubLiveText = Color(0xFFFF7B86)
 
 private enum class SportsSection(val label: String) {
-    Live("Live Now"), MyTeams("My Teams"), Upcoming("Upcoming"), Final("Final"),
+    Live("Live Now"), Guide("TV Guide"), MyTeams("My Teams"), Upcoming("Upcoming"), Final("Final"),
     Standings("Standings"), Replays("Replays"), Highlights("Highlights"),
 }
 
@@ -233,6 +233,14 @@ internal fun SportsHubScreen(
                         TextButton(onClick = { refresh++ }) { Text("Retry", color = HubAccent) }
                     }
                 }
+                if (section == SportsSection.Guide) {
+                    SportsGuideScreen(
+                        channels = SportsGuideChannelDiscovery.fromBroadcasts(events), // Real broadcaster names; not yet playable.
+                        programs = emptyList(), // Populate from a real EPG feed.
+                        atEpochMillis = nowMillis(),
+                        onSelectChannel = { /* Requires a resolved playable stream before navigation. */ },
+                    )
+                }
                 val games = when (section) {
                     SportsSection.Live -> liveGames
                     SportsSection.MyTeams -> myTeamGames.orEmpty()
@@ -243,6 +251,7 @@ internal fun SportsHubScreen(
                 val clips = recordings.orEmpty().filter {
                     it.kind == if (section == SportsSection.Highlights) SportsContentKind.HIGHLIGHT else SportsContentKind.REPLAY
                 }
+                if (section != SportsSection.Guide) {
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth(),
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 120.dp),
@@ -286,6 +295,7 @@ internal fun SportsHubScreen(
                         }
                         !error || board != null -> item { HubMessage("No ${section.label.lowercase()} games for ${league.label}.") }
                     }
+                }
                 }
             }
         }

@@ -28,6 +28,15 @@ internal object SportsGuideChannelDiscovery {
         }.thenBy { it.name })
     }
 
+    /** Stream-capable entries discovered from installed add-on catalogs. */
+    fun fromAddonMatches(matches: List<SportsCatalogMatch>): List<SportsGuideChannel> =
+        matches.mapNotNull { match ->
+            SportsGuideSchedule.channelFromProviderName(match.item.name)?.copy(
+                playable = true,
+                sourceNames = setOf(match.addonName),
+            )
+        }
+
     fun fromBroadcasts(events: List<SportsEvent>): List<SportsGuideChannel> {
         val channels = events.flatMap { it.broadcasts }
             .mapNotNull { SportsGuideSchedule.channelFromProviderName(it) }

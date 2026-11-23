@@ -1,4 +1,4 @@
-name: Mobile 0.8.7 Music + Sports + NFL device test
+name: Kable Killers Mobile 0.9.0 Sports Hub Debug Test
 
 on:
   push:
@@ -39,7 +39,7 @@ jobs:
       - name: Upload test APK
         uses: actions/upload-artifact@v4
         with:
-          name: mobile-087-music-sports-test
+          name: mobile-090-sports-hub-debug-test
           path: androidApp/build/outputs/apk/full/debug/*.apk
           if-no-files-found: error
           retention-days: 7

@@ -106,8 +106,8 @@ internal object SportsAddonDiscovery {
                             .containsMatchIn("${catalog.id} ${catalog.name}") &&
                         (Regex("nfl|sport|live|channel|tv", RegexOption.IGNORE_CASE)
                             .containsMatchIn("${catalog.id} ${catalog.name}") ||
-                            Regex("sport|nfl|live", RegexOption.IGNORE_CASE)
-                                .containsMatchIn(manifest.id))
+                            Regex("sport|nfl|live|cncbridge", RegexOption.IGNORE_CASE)
+                                .containsMatchIn(manifest.id + " " + manifest.name))
                 }.take(10).map { catalog ->
                     async {
                         try {
@@ -116,20 +116,25 @@ internal object SportsAddonDiscovery {
                             val genre = required.firstOrNull { it.name == "genre" }
                             val genreValue = genre?.options?.firstOrNull { it.equals("all", true) }
                             if (genre != null && genreValue == null) return@async emptyList()
-                            val page = catalogRequests.withPermit {
-                                withTimeoutOrNull(10_000) {
-                                    fetchCatalogPage(
-                                        manifestUrl = manifest.transportUrl,
-                                        type = catalog.type,
-                                        catalogId = catalog.id,
-                                        search = if (required.any { it.name == "search" }) "NFL" else null,
-                                        genre = genreValue,
-                                        skip = if (required.any { it.name == "skip" }) 0 else null,
-                                        includeInitialSkip = required.any { it.name == "skip" },
-                                    )
+                            val queries: List<String?> = if (required.any { it.name == "search" }) {
+                                listOf("NFL", "NFL Network", "NFL RedZone", "RedZone", "Football")
+                            } else listOf(null)
+                            val pages = queries.mapNotNull { query ->
+                                catalogRequests.withPermit {
+                                    withTimeoutOrNull(10_000) {
+                                        fetchCatalogPage(
+                                            manifestUrl = manifest.transportUrl,
+                                            type = catalog.type,
+                                            catalogId = catalog.id,
+                                            search = query,
+                                            genre = genreValue,
+                                            skip = if (required.any { it.name == "skip" }) 0 else null,
+                                            includeInitialSkip = required.any { it.name == "skip" },
+                                        )
+                                    }
                                 }
-                            } ?: return@async emptyList()
-                            page.items.mapNotNull { item ->
+                            }
+                            pages.flatMap { it.items }.distinctBy { it.type to it.id }.mapNotNull { item ->
                                 ensureActive()
                                 if (nflChannelLabel(item.name) == null ||
                                     !manifest.supportsResource("stream", item.type, item.id)

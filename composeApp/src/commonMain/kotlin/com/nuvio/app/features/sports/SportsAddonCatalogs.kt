@@ -95,6 +95,28 @@ object SportsAddonCatalogs {
         }
     }
 
+    /**
+     * CNCBridge exposes sport-specific extension catalogs whose IDs are not the
+     * standard sports_* identifiers. Permit unmatched items only when the
+     * catalog explicitly names the selected sport, never for generic live lists.
+     */
+    internal fun isCncBridgeScopedCatalog(addon: AddonManifest, catalog: AddonCatalog, league: SportsLeague): Boolean {
+        val provider = (addon.id + " " + addon.name).lowercase().filter(Char::isLetterOrDigit)
+        if ("cncbridge" !in provider) return false
+        val label = (catalog.id + " " + catalog.name).lowercase()
+            .replace(Regex("[^a-z0-9]+"), " ")
+        val terms = when (league) {
+            SportsLeague.COLLEGE_FOOTBALL -> listOf("college football", "ncaa football", "ncaaf", "badgers")
+            SportsLeague.NFL -> listOf("nfl", "pro football")
+            SportsLeague.NBA -> listOf("nba", "basketball")
+            SportsLeague.MLB -> listOf("mlb", "baseball")
+            SportsLeague.NHL -> listOf("nhl", "hockey")
+            SportsLeague.UFC -> listOf("ufc", "mma")
+            else -> emptyList()
+        }
+        return terms.any { it in label }
+    }
+
     private val additionalProviders = listOf("nebula", "pencari", "penguplay", "tennis", "cncbridge", "plaviolive", "plavio")
     private val eventTypes = setOf("sport", "sports", "tv", "channel", "livetv", "live-tv", "live_tv")
     private val replayCatalog = Regex(

@@ -16,6 +16,7 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -129,6 +130,7 @@ internal fun SportsHubScreen(
     var showIntro by rememberSaveable { mutableStateOf(true) }
     var multiviewOpen by rememberSaveable { mutableStateOf(false) }
     var multiviewLayout by rememberSaveable { mutableStateOf(2) }
+    var multiviewPickerOpen by rememberSaveable { mutableStateOf(false) }
     var multiviewState by remember { mutableStateOf(SportsMultiviewState()) }
     val multiviewSources = remember { mutableStateListOf<SportsCatalogMatch>() }
     val multiviewUrls = remember { mutableStateListOf<Pair<String, String>>() }
@@ -331,6 +333,18 @@ internal fun SportsHubScreen(
                                 }) { Text("Remove", color = HubAccent) }
                             }
                         }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            TextButton(onClick = { multiviewPickerOpen = !multiviewPickerOpen }) {
+                                Text(if (multiviewPickerOpen) "Hide Stream Links" else "Choose / Change Streams", color = HubAccent)
+                            }
+                            Text("${multiviewChoices.sumOf { it.second.size }} links", color = HubMuted)
+                        }
+                        if (multiviewPickerOpen) {
+                            Column(
+                                Modifier.fillMaxWidth()
+                                    .heightIn(max = 310.dp)
+                                    .verticalScroll(rememberScrollState())
+                            ) {
                         multiviewChoices.toList().forEach { (id, streams) ->
                             Text("Available links · ${streams.size}", color = HubMuted)
                             streams.forEach { stream ->
@@ -350,6 +364,8 @@ internal fun SportsHubScreen(
                                 }
                             }
                         }
+                            }
+                        }
                         if (multiviewLoading) {
                             CircularProgressIndicator(color = HubAccent)
                         }
@@ -361,7 +377,7 @@ internal fun SportsHubScreen(
                             )
                         }
                         multiviewError?.let { Text(it, color = HubMuted) }
-                        Text("Choose a link for each screen, then tap a video to switch audio. Links requiring preparation still need the normal player.", color = HubMuted)
+                        Text("Use Choose / Change Streams to open a scrollable link picker. Tap a video to switch audio.", color = HubMuted)
                     }
                 }
                 ScoreTicker(events)

@@ -66,6 +66,16 @@ class SportsAddonCatalogsTest {
         )
     }
 
+    @Test
+    fun cncBridgeCollegeFootballExtensionCanSupplyUnmatchedGames() {
+        val college = AddonCatalog("sports", "badgers-live", "College Football")
+        val generic = AddonCatalog("sports", "live", "Live")
+        val manifest = addon("com.cncbridge", "CNCBridge", college, generic)
+        assertTrue(SportsAddonCatalogs.isCncBridgeScopedCatalog(manifest, college, SportsLeague.COLLEGE_FOOTBALL))
+        assertTrue(!SportsAddonCatalogs.isCncBridgeScopedCatalog(manifest, generic, SportsLeague.COLLEGE_FOOTBALL))
+        assertTrue(!SportsAddonCatalogs.isCncBridgeScopedCatalog(manifest, college, SportsLeague.NBA))
+    }
+
     private fun addon(id: String, name: String, vararg catalogs: AddonCatalog): AddonManifest {
         val types = catalogs.map { it.type }
         return AddonManifest(

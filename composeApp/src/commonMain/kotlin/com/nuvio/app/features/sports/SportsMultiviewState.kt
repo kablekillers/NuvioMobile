@@ -29,6 +29,14 @@ internal data class SportsMultiviewState(
         return fromIds(ids, focusedId ?: id, maxTiles)
     }
 
+    /** Swap one tile without interrupting the other selected streams. */
+    fun replace(oldId: String, newId: String): SportsMultiviewState {
+        if (oldId !in streamIds || newId.isBlank() || (newId != oldId && newId in streamIds)) return this
+        val ids = streamIds.map { if (it == oldId) newId else it }
+        val focus = if (focusedId == oldId) newId else focusedId
+        return fromIds(ids, focus, maxTiles)
+    }
+
     fun focus(id: String): SportsMultiviewState =
         if (id in streamIds) copy(focusedId = id) else this
 

@@ -1,6 +1,7 @@
 package com.nuvio.app.features.sports
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,6 +11,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -17,6 +19,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.common.PlaybackException
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 
@@ -33,6 +37,7 @@ internal fun SportsMultiviewPlayers(
     focusedId: String?,
     onFocus: (String) -> Unit,
     modifier: Modifier = Modifier,
+    onPlaybackError: (String, String) -> Unit = { _, _ -> },
 ) {
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         tiles.take(2).forEach { tile ->
@@ -40,6 +45,7 @@ internal fun SportsMultiviewPlayers(
                 tile = tile,
                 audible = tile.id == focusedId,
                 onFocus = { onFocus(tile.id) },
+                onPlaybackError = { message -> onPlaybackError(tile.id, message) },
                 modifier = Modifier.weight(1f).height(220.dp),
             )
         }
@@ -51,6 +57,7 @@ private fun SportsMultiviewPlayer(
     tile: SportsMultiviewTile,
     audible: Boolean,
     onFocus: () -> Unit,
+    onPlaybackError: (String) -> Unit,
     modifier: Modifier,
 ) {
     val context = LocalContext.current
@@ -62,6 +69,15 @@ private fun SportsMultiviewPlayer(
             prepare()
             playWhenReady = true
         }
+    }
+    DisposableEffect(player, onPlaybackError) {
+        val listener = object : Player.Listener {
+            override fun onPlayerError(error: PlaybackException) {
+                onPlaybackError(error.errorCodeName)
+            }
+        }
+        player.addListener(listener)
+        onDispose { player.removeListener(listener) }
     }
     LaunchedEffect(player, audible) {
         player.volume = if (audible) 1f else 0f
@@ -92,6 +108,8 @@ private fun SportsMultiviewPlayer(
             }
         },
         update = { view -> view.player = player },
-        modifier = modifier.clickable(onClick = onFocus),
+        modifier = modifier
+            .border(if (audible) 2.dp else 0.dp, if (audible) Color(0xFF00BFFF) else Color.Transparent)
+            .clickable(onClick = onFocus),
     )
 }

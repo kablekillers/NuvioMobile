@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
@@ -39,15 +40,21 @@ internal fun SportsMultiviewPlayers(
     modifier: Modifier = Modifier,
     onPlaybackError: (String, String) -> Unit = { _, _ -> },
 ) {
-    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        tiles.take(2).forEach { tile ->
-            SportsMultiviewPlayer(
-                tile = tile,
-                audible = tile.id == focusedId,
-                onFocus = { onFocus(tile.id) },
-                onPlaybackError = { message -> onPlaybackError(tile.id, message) },
-                modifier = Modifier.weight(1f).height(220.dp),
-            )
+    val visible = tiles.take(4)
+    val tileHeight = if (visible.size > 2) 160.dp else 220.dp
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        visible.chunked(2).forEach { pair ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                pair.forEach { tile ->
+                    SportsMultiviewPlayer(
+                        tile = tile,
+                        audible = tile.id == focusedId,
+                        onFocus = { onFocus(tile.id) },
+                        onPlaybackError = { message -> onPlaybackError(tile.id, message) },
+                        modifier = Modifier.weight(1f).height(tileHeight),
+                    )
+                }
+            }
         }
     }
 }
@@ -109,7 +116,7 @@ private fun SportsMultiviewPlayer(
         },
         update = { view -> view.player = player },
         modifier = modifier
-            .border(if (audible) 2.dp else 0.dp, if (audible) Color(0xFF00BFFF) else Color.Transparent)
+            .border(if (audible) 2.dp else 0.dp, if (audible) Color(0xFFE5B84D) else Color.Transparent)
             .clickable(onClick = onFocus),
     )
 }

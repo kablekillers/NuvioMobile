@@ -49,8 +49,8 @@ internal fun SportsGuideScreen(
                 modifier = Modifier.padding(16.dp),
             )
         } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(channels, key = { it.id }) { channel ->
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                channels.forEach { channel ->
                     val (now, next) = SportsGuideSchedule.nowAndNext(channel.id, atEpochMillis, programs)
                     Row(
                         modifier = Modifier.fillMaxWidth()

@@ -235,7 +235,7 @@ internal fun SportsHubScreen(
                 }
                 if (section == SportsSection.Guide) {
                     SportsGuideScreen(
-                        channels = emptyList(), // Populate from verified channel sources; never fabricate channels.
+                        channels = SportsGuideChannelDiscovery.fromBroadcasts(events), // Real broadcaster names; not yet playable.
                         programs = emptyList(), // Populate from a real EPG feed.
                         atEpochMillis = nowMillis(),
                         onSelectChannel = { /* Requires a resolved playable stream before navigation. */ },

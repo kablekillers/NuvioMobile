@@ -286,7 +286,7 @@ internal fun SportsHubScreen(
                             val id = source.addonName + ":" + source.item.id
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    (if (multiviewState.shouldPlayAudio(id)) "Audio · " else "Muted · ") + source.item.name,
+                                    (if (multiviewState.shouldPlayAudio(id)) "Selected for audio · " else "Not selected for audio · ") + source.item.name,
                                     color = if (multiviewState.shouldPlayAudio(id)) HubAccent else HubMuted,
                                     modifier = Modifier.weight(1f).clickable { multiviewState = multiviewState.focus(id) },
                                     maxLines = 1,

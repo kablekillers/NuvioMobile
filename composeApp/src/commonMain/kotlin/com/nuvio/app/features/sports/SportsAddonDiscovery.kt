@@ -71,6 +71,7 @@ internal object SportsAddonDiscovery {
                             val kind = when {
                                 !replays -> SportsContentKind.EVENT
                                 useRecordingMetadata -> SportsRecordingClassifier.kind(manifest.id, catalog, item)
+                                replays -> SportsRecordingClassifier.kind(manifest.id, catalog, item)
                                 "recap" in catalog.id || HighlightTitle.containsMatchIn(item.name) -> SportsContentKind.HIGHLIGHT
                                 else -> SportsContentKind.REPLAY
                             }

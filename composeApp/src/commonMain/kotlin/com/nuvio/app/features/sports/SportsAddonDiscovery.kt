@@ -59,7 +59,8 @@ internal object SportsAddonDiscovery {
                         val unscoredAllowed = if (league.scoreboardPath == null) {
                             SportsAddonCatalogs.isScopedCatalog(catalog, league)
                         } else {
-                            replays && isLeagueCatalog(catalog.id, league)
+                            (replays && isLeagueCatalog(catalog.id, league)) ||
+                                (!replays && SportsAddonCatalogs.isCncBridgeScopedCatalog(manifest, catalog, league))
                         }
                         pages.flatMap { it.items }.distinctBy { it.type to it.id }.mapNotNull { item ->
                             ensureActive()

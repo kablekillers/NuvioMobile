@@ -21,8 +21,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil3.compose.SubcomposeAsyncImage
 
-private val GuideBlue = Color(0xFF32A9FF)
-private val GuideSurface = Color(0xFF101D30)
+private val GuideGold = Color(0xFFE5B84D)
+private val GuideSurface = Color(0xFF211A18)
 
 /**
  * Sports-only guide. Data must be supplied by real channel and EPG providers.
@@ -35,10 +35,10 @@ internal fun SportsGuideScreen(
     atEpochMillis: Long,
     onSelectChannel: (SportsGuideChannel) -> Unit,
 ) {
-    Column(Modifier.fillMaxSize().background(Color(0xFF080F1C))) {
+    Column(Modifier.fillMaxSize().background(Color(0xFF100C0D))) {
         Text(
             "SPORTS TV GUIDE",
-            color = GuideBlue,
+            color = GuideGold,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(16.dp),
         )

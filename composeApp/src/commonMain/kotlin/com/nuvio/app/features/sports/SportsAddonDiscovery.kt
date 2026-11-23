@@ -26,8 +26,8 @@ internal object SportsAddonDiscovery {
     ): List<SportsCatalogMatch> = withContext(Dispatchers.Default) {
         val matcher = SportsEventMatcher.Prepared(events)
         val useRecordingMetadata = replays && !isIos && SportsRecordingClassifier.appliesTo(league)
-        val requests = addons.filter { it.isActive }.flatMap { addon ->
-            val manifest = addon.manifest ?: return@flatMap emptyList()
+        val requests: List<Deferred<List<SportsCatalogMatch>>> = addons.filter { it.isActive }.flatMap { addon ->
+            val manifest = addon.manifest ?: return@flatMap emptyList<Deferred<List<SportsCatalogMatch>>>()
             SportsAddonCatalogs.routes(manifest, league, replays, expanded = !isIos).map { catalog ->
                 async {
                     try {

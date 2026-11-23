@@ -42,8 +42,19 @@ internal object SportsChannelRegistry {
         (channel.aliases + channel.displayName).map { normalize(it) to channel }
     }.toMap()
 
-    fun identify(providerChannelName: String): SportsChannelIdentity? =
-        byAlias[normalize(providerChannelName)]
+    fun identify(providerChannelName: String): SportsChannelIdentity? {
+        // Preserve distinct linear channels: Pluto's NFL Channel is not NFL Network.
+        val cleaned = providerChannelName
+            .replace(Regex("^[\\s\\p{So}\\p{Sk}\\p{Cntrl}]+"), "")
+            .replace(Regex("(?i)^(?:live|watch)\\s*[:\\-]\\s*"), "")
+            .replace(Regex("(?i)\\s*[|·•]\\s*(?:live|hd|fhd|uhd|4k|us|usa)$"), "")
+            .trim()
+        val normalized = normalize(cleaned)
+        byAlias[normalized]?.let { return it }
+        if ("pluto" in normalized || "nfl channel" in normalized) return null
+        val withoutRegion = normalized.replace(Regex("\\s+(?:us|usa|hd|fhd|uhd|4k)(?:\\s+(?:us|usa|hd|fhd|uhd|4k))*$"), "")
+        return byAlias[withoutRegion]
+    }
 
     fun knownChannels(): List<SportsChannelIdentity> = channels
 }

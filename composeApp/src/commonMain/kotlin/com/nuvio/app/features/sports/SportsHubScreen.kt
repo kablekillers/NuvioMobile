@@ -129,6 +129,8 @@ internal fun SportsHubScreen(
     var showIntro by rememberSaveable { mutableStateOf(true) }
     var multiviewOpen by rememberSaveable { mutableStateOf(false) }
     var multiviewLayout by rememberSaveable { mutableStateOf(2) }
+    var multiviewState by remember { mutableStateOf(SportsMultiviewState()) }
+    val multiviewSources = remember { mutableStateListOf<SportsCatalogMatch>() }
     var selectedEvent by remember { mutableStateOf<SportsEvent?>(null) }
     var board by remember(league) { mutableStateOf<SportsScoreboard?>(null) }
     var error by remember(league) { mutableStateOf(false) }
@@ -269,20 +271,34 @@ internal fun SportsHubScreen(
                         Text(if (multiviewOpen) "Close Multi-View" else "Open Multi-View", color = HubAccent)
                     }
                     if (multiviewOpen) {
-                        TextButton(onClick = { multiviewLayout = 2 }) {
+                        TextButton(onClick = { multiviewLayout = 2; multiviewState = multiviewState.withLayout(2); while (multiviewSources.size > 2) multiviewSources.removeAt(multiviewSources.lastIndex) }) {
                             Text("2 Screens", color = if (multiviewLayout == 2) HubAccent else HubMuted)
                         }
-                        TextButton(onClick = { multiviewLayout = 4 }) {
+                        TextButton(onClick = { multiviewLayout = 4; multiviewState = multiviewState.withLayout(4) }) {
                             Text("4 Screens", color = if (multiviewLayout == 4) HubAccent else HubMuted)
                         }
                     }
                 }
                 if (multiviewOpen) {
-                    Text(
-                        "Multi-View · $multiviewLayout screens selected. Game selection and playback are being connected; streams do not start from this panel yet.",
-                        color = HubMuted,
-                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
-                    )
+                    Column(Modifier.padding(horizontal = 20.dp, vertical = 6.dp)) {
+                        Text("Multi-View · ${multiviewSources.size}/$multiviewLayout selected", color = HubAccent)
+                        multiviewSources.toList().forEach { source ->
+                            val id = source.addonName + ":" + source.item.id
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    (if (multiviewState.shouldPlayAudio(id)) "Audio · " else "Muted · ") + source.item.name,
+                                    color = if (multiviewState.shouldPlayAudio(id)) HubAccent else HubMuted,
+                                    modifier = Modifier.weight(1f).clickable { multiviewState = multiviewState.focus(id) },
+                                    maxLines = 1,
+                                )
+                                TextButton(onClick = {
+                                    multiviewSources.remove(source)
+                                    multiviewState = multiviewState.remove(id)
+                                }) { Text("Remove", color = HubAccent) }
+                            }
+                        }
+                        Text("Use Add to Multi-View on a channel below. Playback integration is pending.", color = HubMuted)
+                    }
                 }
                 ScoreTicker(events)
                 LazyRow(
@@ -384,7 +400,21 @@ internal fun SportsHubScreen(
                                     HubMessage("No NFL RedZone or NFL Network channel was found in the enabled add-ons.")
                                 }
                                 else -> itemsIndexed(nflChannels!!) { index, channel ->
-                                    EnterAnimated(index) { SourceCard(channel, onOpenStream) }
+                                    EnterAnimated(index) {
+                                        Column {
+                                            SourceCard(channel, onOpenStream)
+                                            if (multiviewOpen) {
+                                                TextButton(onClick = {
+                                                    val id = channel.addonName + ":" + channel.item.id
+                                                    if (multiviewSources.none { it.addonName + ":" + it.item.id == id } &&
+                                                        multiviewSources.size < multiviewLayout) {
+                                                        multiviewSources.add(channel)
+                                                        multiviewState = multiviewState.add(id)
+                                                    }
+                                                }) { Text("Add to Multi-View", color = HubAccent) }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }

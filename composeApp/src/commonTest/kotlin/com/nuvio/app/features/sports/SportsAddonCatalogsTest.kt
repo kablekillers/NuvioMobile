@@ -48,6 +48,12 @@ class SportsAddonCatalogsTest {
     }
 
     @Test
+    fun discoveryQueriesIncludeFixtureAndBothTeamNames() {
+        // Empty schedule must not generate an invalid required-search catalog request.
+        assertTrue(SportsAddonDiscovery.sportsSearchQueries(emptyList()).isEmpty())
+    }
+
+    @Test
     fun sendsSkipZeroOnlyWhenRequested() {
         val manifest = "https://example.com/manifest.json"
         assertEquals(

@@ -105,7 +105,7 @@ private val HubLiveText = Color(0xFFFF7B86)
 private enum class SportsSection(val label: String) {
     AllSports("All Sports"), Live("Live Now"), MyTeams("My Teams"), Upcoming("Upcoming"), Final("Final"),
     Standings("Standings"), Replays("Replays"), Highlights("Highlights"), Events("Events"),
-    Channels("NFL Channels"),
+    Channels("NFL Channels"), Guide("TV Guide"),
 }
 
 private fun nowMillis(): Long = kotlin.time.Clock.System.now().toEpochMilliseconds()
@@ -229,7 +229,7 @@ internal fun SportsHubScreen(
     }
     var nflChannels by remember { mutableStateOf<List<SportsCatalogMatch>?>(null) }
     LaunchedEffect(section, league, activeAddons, refresh) {
-        if (league == SportsLeague.NFL && section == SportsSection.Channels) {
+        if (league == SportsLeague.NFL && section in setOf(SportsSection.Channels, SportsSection.Guide)) {
             nflChannels = null
             nflChannels = SportsAddonDiscovery.findNflChannels(activeAddons)
         }
@@ -287,12 +287,12 @@ internal fun SportsHubScreen(
                         listOf(SportsSection.AllSports, SportsSection.Events, SportsSection.Replays, SportsSection.Highlights)
                     } else {
                         val visible = SportsSection.entries.filter { tab ->
-                            tab != SportsSection.Events && (tab != SportsSection.Channels || league == SportsLeague.NFL) &&
+                            tab != SportsSection.Events && (tab !in setOf(SportsSection.Channels, SportsSection.Guide) || league == SportsLeague.NFL) &&
                                 (tab != SportsSection.Standings || isIos ||
                                 league == SportsLeague.UFC || league.usesTeamStats)
                         }
                         if (league == SportsLeague.NFL) {
-                            listOf(SportsSection.Channels) + visible.filterNot { it == SportsSection.Channels }
+                            listOf(SportsSection.Channels, SportsSection.Guide) + visible.filterNot { it in setOf(SportsSection.Channels, SportsSection.Guide) }
                         } else visible
                     }
                     items(sections) { tab ->
@@ -359,6 +359,17 @@ internal fun SportsHubScreen(
                                 }
                                 else -> itemsIndexed(nflChannels!!) { index, channel ->
                                     EnterAnimated(index) { SourceCard(channel, onOpenStream) }
+                                }
+                            }
+                        }
+                        section == SportsSection.Guide && league == SportsLeague.NFL -> {
+                            item { HubSectionTitle("SPORTS TV GUIDE") }
+                            item { HubMessage("Available NFL channels from installed add-ons. Program times appear only when a provider supplies schedule data.") }
+                            when {
+                                nflChannels == null -> item { CircularProgressIndicator(color = HubAccent) }
+                                nflChannels!!.isEmpty() -> item { HubMessage("No NFL channels found in enabled add-ons.") }
+                                else -> itemsIndexed(SportsGuide.fromChannels(nflChannels!!)) { index, entry ->
+                                    EnterAnimated(index) { SourceCard(entry.source, onOpenStream) }
                                 }
                             }
                         }

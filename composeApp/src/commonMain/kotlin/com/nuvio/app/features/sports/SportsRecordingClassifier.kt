@@ -4,7 +4,7 @@ import com.nuvio.app.features.addons.AddonCatalog
 import com.nuvio.app.features.home.MetaPreview
 
 internal object SportsRecordingClassifier {
-    private const val FULL_REPLAY_SECONDS = 120 * 60
+    private const val FULL_REPLAY_SECONDS = 30 * 60
     private val sportNames = SportsLeague.entries.map { it.catalogSport }.toSet()
     private val sportTags = mapOf("mlb" to "baseball", "nhl" to "hockey", "nfl" to "american_football",
         "ncaaf" to "american_football", "nba" to "basketball", "wnba" to "basketball",
@@ -72,10 +72,10 @@ internal object SportsRecordingClassifier {
     fun kind(addonId: String, catalog: AddonCatalog, item: MetaPreview): SportsContentKind {
         val seconds = durationSeconds(item.runtime) ?: durationSeconds(
             item.description?.let { durationLine.find(it)?.groupValues?.get(1) },
-        )
+        ) ?: durationSeconds(item.description?.let { recordedDuration.find(it)?.groupValues?.get(1) })
         return when {
-            seconds != null && seconds >= FULL_REPLAY_SECONDS -> SportsContentKind.REPLAY
-            seconds != null && seconds <= 30 * 60 -> SportsContentKind.HIGHLIGHT
+            seconds != null && seconds > FULL_REPLAY_SECONDS -> SportsContentKind.REPLAY
+            seconds != null -> SportsContentKind.HIGHLIGHT
             highlightTitle.containsMatchIn(item.name) || item.genres.any { it.equals("highlights", true) } ->
                 SportsContentKind.HIGHLIGHT
             fullTitle.containsMatchIn(item.name) -> SportsContentKind.REPLAY

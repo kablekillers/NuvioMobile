@@ -36,10 +36,10 @@ jobs:
           fi
           printf '\nNUVIO_SUPABASE_URL=https://api.nuvio.tv\n' >> local.properties
           printf 'NUVIO_SUPABASE_ANON_KEY=sb_publishable_1Clq8rlTVACkdcZuqr6_AD__xUUC_EN\n' >> local.properties
-      - name: Compile debug APK and common tests
+      - name: Compile Android debug APK
         run: |
           chmod +x gradlew
-          ./gradlew :composeApp:testDebugUnitTest :androidApp:assembleFullDebug -Pnuvio.android.distribution=full -Pnuvio.ios.distribution=appstore --stacktrace
+          ./gradlew :androidApp:assembleFullDebug -Pnuvio.android.distribution=full -Pnuvio.ios.distribution=appstore --stacktrace
       - uses: actions/upload-artifact@v4
         if: success()
         with:

@@ -268,7 +268,7 @@ internal fun SportsHubScreen(
                             if (league != sport) {
                                 section = when {
                                     sport.scoreboardPath == null -> SportsSection.Events
-                                    sport != SportsLeague.NFL && section == SportsSection.Channels -> SportsSection.Live
+                                    sport != SportsLeague.NFL && section in setOf(SportsSection.Channels, SportsSection.Guide) -> SportsSection.Live
                                     section == SportsSection.Events || section == SportsSection.Standings &&
                                         !sport.usesTeamStats && sport != SportsLeague.UFC ->
                                         SportsSection.Live

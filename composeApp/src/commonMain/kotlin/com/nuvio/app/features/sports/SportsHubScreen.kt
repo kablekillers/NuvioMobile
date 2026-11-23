@@ -252,7 +252,18 @@ internal fun SportsHubScreen(
     }
 
     if (currentEvent != null) {
-        SportsGameDetail(currentEvent, repository, activeAddons, { selectedEvent = null }, onOpenStream)
+        SportsGameDetail(
+            currentEvent, repository, activeAddons, { selectedEvent = null }, onOpenStream,
+            multiviewOpen = multiviewOpen,
+            onAddToMultiview = { source ->
+                val id = source.addonName + ":" + source.item.id
+                if (multiviewSources.none { it.addonName + ":" + it.item.id == id } &&
+                    multiviewSources.size < multiviewLayout) {
+                    multiviewSources.add(source)
+                    multiviewState = multiviewState.add(id)
+                }
+            },
+        )
     } else {
         val liveGames = SportsEventSections.live(events)
         val combinedFeed = SportsHubCombinedEvents.combine(combinedBoards, clockNow)
@@ -847,6 +858,8 @@ private fun SportsGameDetail(
     addons: List<ManagedAddon>,
     onBack: () -> Unit,
     onOpenStream: (MetaPreview) -> Unit,
+    multiviewOpen: Boolean,
+    onAddToMultiview: (SportsCatalogMatch) -> Unit,
 ) {
     var sources by remember(event.id, event.status, addons) { mutableStateOf<List<SportsCatalogMatch>?>(null) }
     var boxScore by remember(event.id) { mutableStateOf<SportsBoxScore?>(null) }
@@ -908,7 +921,16 @@ private fun SportsGameDetail(
             when {
                 sources == null -> item { HubMessage("Checking enabled sports add-ons…") }
                 sources.orEmpty().isEmpty() -> item { HubMessage("No matching stream found in enabled sports add-ons.") }
-                else -> items(sources.orEmpty()) { source -> SourceCard(source, onOpenStream) }
+                else -> items(sources.orEmpty()) { source ->
+                    Column {
+                        SourceCard(source, onOpenStream)
+                        if (multiviewOpen) {
+                            TextButton(onClick = { onAddToMultiview(source) }) {
+                                Text("Add to Multi-View", color = HubAccent)
+                            }
+                        }
+                    }
+                }
             }
             if (event.league.usesTeamStats || event.league == SportsLeague.UFC) {
                 item { HubHeading("Player stats") }

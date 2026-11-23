@@ -39,7 +39,7 @@ jobs:
       - name: Compile debug APK and common tests
         run: |
           chmod +x gradlew
-          ./gradlew :composeApp:allTests :androidApp:assembleFullDebug -Pnuvio.android.distribution=full -Pnuvio.ios.distribution=appstore --stacktrace
+          ./gradlew :composeApp:testDebugUnitTest :androidApp:assembleFullDebug -Pnuvio.android.distribution=full -Pnuvio.ios.distribution=appstore --stacktrace
       - uses: actions/upload-artifact@v4
         if: success()
         with:

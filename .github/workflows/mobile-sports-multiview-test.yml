@@ -1,9 +1,10 @@
-name: Mobile Sports Multiview - Debug Verification
+name: Kable Killers Mobile 0.9.0 Multi-View Debug Verification
 
 on:
   push:
     branches:
       - feature/mobile-090-sports-discovery-multiview
+      - feature/sports-multiview-2-4
   workflow_dispatch:
 
 permissions:

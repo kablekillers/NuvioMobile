@@ -66,6 +66,47 @@ class SportsAddonCatalogsTest {
         )
     }
 
+    @Test
+    fun cncBridgeCollegeFootballExtensionCanSupplyUnmatchedGames() {
+        val college = AddonCatalog("sports", "badgers-live", "College Football")
+        val generic = AddonCatalog("sports", "live", "Live")
+        val manifest = addon("com.cncbridge", "CNCBridge", college, generic)
+        assertTrue(SportsAddonCatalogs.isCncBridgeScopedCatalog(manifest, college, SportsLeague.COLLEGE_FOOTBALL))
+        assertTrue(!SportsAddonCatalogs.isCncBridgeScopedCatalog(manifest, generic, SportsLeague.COLLEGE_FOOTBALL))
+        assertTrue(!SportsAddonCatalogs.isCncBridgeScopedCatalog(manifest, college, SportsLeague.NBA))
+    }
+
+    @Test
+    fun deeperSearchIncludesCollegeFootballWithoutScoreboardGames() {
+        assertEquals(
+            listOf("College Football", "NCAA Football"),
+            SportsAddonDiscovery.deepSearchQueries(SportsLeague.COLLEGE_FOOTBALL, emptyList()),
+        )
+    }
+
+    @Test
+    fun deeperSearchIncludesTeamAliasesAndStaysBounded() {
+        val events = (1..15).map { index ->
+            SportsEvent(
+                id = "game-$index",
+                league = SportsLeague.COLLEGE_FOOTBALL,
+                title = "Wisconsin vs Opponent $index",
+                startTimeEpochMillis = null,
+                status = SportsEventStatus.SCHEDULED,
+                providerName = "test",
+                competitors = listOf(
+                    SportsCompetitor(name = "Wisconsin Badgers", abbreviation = "WIS"),
+                    SportsCompetitor(name = "Opponent $index", abbreviation = "OP$index"),
+                ),
+            )
+        }
+        val queries = SportsAddonDiscovery.deepSearchQueries(SportsLeague.COLLEGE_FOOTBALL, events)
+        assertTrue("Wisconsin Badgers" in queries)
+        assertTrue("WIS" in queries)
+        assertTrue(queries.size <= 18)
+        assertEquals(queries.size, queries.distinct().size)
+    }
+
     private fun addon(id: String, name: String, vararg catalogs: AddonCatalog): AddonManifest {
         val types = catalogs.map { it.type }
         return AddonManifest(

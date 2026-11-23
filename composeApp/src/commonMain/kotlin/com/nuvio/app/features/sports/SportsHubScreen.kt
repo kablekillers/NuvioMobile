@@ -16,6 +16,7 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -49,6 +50,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -105,7 +108,7 @@ private val HubLiveText = Color(0xFFFF7B86)
 private enum class SportsSection(val label: String) {
     AllSports("All Sports"), Live("Live Now"), MyTeams("My Teams"), Upcoming("Upcoming"), Final("Final"),
     Standings("Standings"), Replays("Replays"), Highlights("Highlights"), Events("Events"),
-    Channels("NFL Channels"), Guide("TV Guide"),
+    Channels("NFL Channels"),
 }
 
 private fun nowMillis(): Long = kotlin.time.Clock.System.now().toEpochMilliseconds()
@@ -127,6 +130,16 @@ internal fun SportsHubScreen(
     var league by rememberSaveable { mutableStateOf(SportsLeague.NFL) }
     var section by rememberSaveable { mutableStateOf(SportsSection.AllSports) }
     var showIntro by rememberSaveable { mutableStateOf(true) }
+    var multiviewOpen by rememberSaveable { mutableStateOf(false) }
+    var multiviewLayout by rememberSaveable { mutableStateOf(2) }
+    var multiviewPickerOpen by rememberSaveable { mutableStateOf(false) }
+    var multiviewFullscreen by rememberSaveable { mutableStateOf(false) }
+    var multiviewState by remember { mutableStateOf(SportsMultiviewState()) }
+    val multiviewSources = remember { mutableStateListOf<SportsCatalogMatch>() }
+    val multiviewUrls = remember { mutableStateListOf<Pair<String, String>>() }
+    val multiviewChoices = remember { mutableStateListOf<Pair<String, List<com.nuvio.app.features.streams.StreamItem>>>() }
+    var multiviewLoading by remember { mutableStateOf(false) }
+    var multiviewError by remember { mutableStateOf<String?>(null) }
     var selectedEvent by remember { mutableStateOf<SportsEvent?>(null) }
     var board by remember(league) { mutableStateOf<SportsScoreboard?>(null) }
     var error by remember(league) { mutableStateOf(false) }
@@ -208,6 +221,25 @@ internal fun SportsHubScreen(
         (shownBoard?.events.orEmpty() + combinedBoards.flatMap { it.events }).firstOrNull { it.id == selected.id && it.league == selected.league } ?: selected
     }
     val activeAddons = addons.addons.filter { it.isActive }.map { it.copy(isRefreshing = false, errorMessage = null) }
+    LaunchedEffect(multiviewOpen, multiviewSources.toList(), activeAddons) {
+        multiviewUrls.clear()
+        multiviewChoices.clear()
+        multiviewError = null
+        if (!multiviewOpen || multiviewSources.isEmpty() || isIos) return@LaunchedEffect
+        multiviewLoading = true
+        try {
+            for (source in multiviewSources.toList()) {
+                val id = source.addonName + ":" + source.item.id
+                val streams = runCatching {
+                    SportsMultiviewStreamResolver.directStreams(source, activeAddons)
+                }.getOrElse { emptyList() }
+                multiviewChoices.add(id to streams)
+                if (streams.isEmpty()) multiviewError = "No directly playable link for ${source.item.name}"
+            }
+        } finally {
+            multiviewLoading = false
+        }
+    }
     val events = shownBoard?.events.orEmpty()
     // My Teams: games across every league that has a favorite team.
     var myTeamGames by remember { mutableStateOf<List<SportsEvent>?>(null) }
@@ -229,7 +261,7 @@ internal fun SportsHubScreen(
     }
     var nflChannels by remember { mutableStateOf<List<SportsCatalogMatch>?>(null) }
     LaunchedEffect(section, league, activeAddons, refresh) {
-        if (league == SportsLeague.NFL && section in setOf(SportsSection.Channels, SportsSection.Guide)) {
+        if (league == SportsLeague.NFL && section == SportsSection.Channels) {
             nflChannels = null
             nflChannels = SportsAddonDiscovery.findNflChannels(activeAddons)
         }
@@ -248,7 +280,18 @@ internal fun SportsHubScreen(
     }
 
     if (currentEvent != null) {
-        SportsGameDetail(currentEvent, repository, activeAddons, { selectedEvent = null }, onOpenStream)
+        SportsGameDetail(
+            currentEvent, repository, activeAddons, { selectedEvent = null }, onOpenStream,
+            multiviewOpen = multiviewOpen,
+            onAddToMultiview = { source ->
+                val id = source.addonName + ":" + source.item.id
+                if (multiviewSources.none { it.addonName + ":" + it.item.id == id } &&
+                    multiviewSources.size < multiviewLayout) {
+                    multiviewSources.add(source)
+                    multiviewState = multiviewState.add(id)
+                }
+            },
+        )
     } else {
         val liveGames = SportsEventSections.live(events)
         val combinedFeed = SportsHubCombinedEvents.combine(combinedBoards, clockNow)
@@ -257,6 +300,93 @@ internal fun SportsHubScreen(
             Column(Modifier.fillMaxSize().safeDrawingPadding()) {
                 HubHeader(title = "Sports Hub", liveCount = liveGames.size, onBack = onBack, showBack = showBack) {
                     ScoreDelayChip(prefs.scoreDelaySeconds)
+                }
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TextButton(onClick = { multiviewOpen = !multiviewOpen }) {
+                        Text(if (multiviewOpen) "Close Multi-View" else "Open Multi-View", color = HubAccent)
+                    }
+                    if (multiviewOpen) {
+                        TextButton(onClick = { multiviewLayout = 2; multiviewState = multiviewState.withLayout(2); while (multiviewSources.size > 2) multiviewSources.removeAt(multiviewSources.lastIndex) }) {
+                            Text("2 Screens", color = if (multiviewLayout == 2) HubAccent else HubMuted)
+                        }
+                        TextButton(onClick = { multiviewLayout = 4; multiviewState = multiviewState.withLayout(4) }) {
+                            Text("4 Screens", color = if (multiviewLayout == 4) HubAccent else HubMuted)
+                        }
+                    }
+                }
+                if (multiviewOpen) {
+                    Column(Modifier.padding(horizontal = 20.dp, vertical = 6.dp)) {
+                        Text("Multi-View · ${multiviewSources.size}/$multiviewLayout selected", color = HubAccent)
+                        multiviewSources.toList().forEach { source ->
+                            val id = source.addonName + ":" + source.item.id
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    (if (multiviewState.shouldPlayAudio(id)) "Selected for audio · " else "Not selected for audio · ") + source.item.name,
+                                    color = if (multiviewState.shouldPlayAudio(id)) HubAccent else HubMuted,
+                                    modifier = Modifier.weight(1f).clickable { multiviewState = multiviewState.focus(id) },
+                                    maxLines = 1,
+                                )
+                                TextButton(onClick = {
+                                    multiviewSources.remove(source)
+                                    multiviewState = multiviewState.remove(id)
+                                }) { Text("Remove", color = HubAccent) }
+                            }
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            TextButton(onClick = { multiviewPickerOpen = !multiviewPickerOpen }) {
+                                Text(if (multiviewPickerOpen) "Hide Stream Links" else "Choose / Change Streams", color = HubAccent)
+                            }
+                            Text("${multiviewChoices.sumOf { it.second.size }} links", color = HubMuted)
+                        }
+                        if (multiviewPickerOpen) {
+                            Column(
+                                Modifier.fillMaxWidth()
+                                    .heightIn(max = 310.dp)
+                                    .verticalScroll(rememberScrollState())
+                            ) {
+                        multiviewChoices.toList().forEach { (id, streams) ->
+                            Text("Available links · ${streams.size}", color = HubMuted)
+                            streams.forEach { stream ->
+                                val url = SportsMultiviewSourceSelection.directUrl(stream)
+                                if (url != null) {
+                                    val selected = multiviewUrls.any { it.first == id && it.second == url }
+                                    TextButton(onClick = {
+                                        multiviewUrls.removeAll { it.first == id }
+                                        multiviewUrls.add(id to url)
+                                    }) {
+                                        Text(
+                                            (if (selected) "Selected · " else "") + stream.addonName + " · " + stream.streamLabel,
+                                            color = if (selected) HubAccent else HubMuted,
+                                            maxLines = 2,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                            }
+                        }
+                        if (multiviewLoading) {
+                            CircularProgressIndicator(color = HubAccent)
+                        }
+                        if (multiviewUrls.isNotEmpty() && !isIos) {
+                            TextButton(onClick = { multiviewFullscreen = true; multiviewPickerOpen = false }) {
+                                Text("Expand Multi-View", color = HubAccent)
+                            }
+                        }
+                        if (multiviewUrls.isNotEmpty() && !isIos && !multiviewFullscreen) {
+                            SportsMultiviewSurface(
+                                urls = multiviewUrls.toList(),
+                                focusedId = multiviewState.focusedId,
+                                onFocus = { multiviewState = multiviewState.focus(it) },
+                            )
+                        }
+                        multiviewError?.let { Text(it, color = HubMuted) }
+                        Text("Use Choose / Change Streams to open a scrollable link picker. Tap a video to switch audio.", color = HubMuted)
+                    }
                 }
                 ScoreTicker(events)
                 LazyRow(
@@ -268,7 +398,7 @@ internal fun SportsHubScreen(
                             if (league != sport) {
                                 section = when {
                                     sport.scoreboardPath == null -> SportsSection.Events
-                                    sport != SportsLeague.NFL && section in setOf(SportsSection.Channels, SportsSection.Guide) -> SportsSection.Live
+                                    sport != SportsLeague.NFL && section == SportsSection.Channels -> SportsSection.Live
                                     section == SportsSection.Events || section == SportsSection.Standings &&
                                         !sport.usesTeamStats && sport != SportsLeague.UFC ->
                                         SportsSection.Live
@@ -287,12 +417,12 @@ internal fun SportsHubScreen(
                         listOf(SportsSection.AllSports, SportsSection.Events, SportsSection.Replays, SportsSection.Highlights)
                     } else {
                         val visible = SportsSection.entries.filter { tab ->
-                            tab != SportsSection.Events && (tab !in setOf(SportsSection.Channels, SportsSection.Guide) || league == SportsLeague.NFL) &&
+                            tab != SportsSection.Events && (tab != SportsSection.Channels || league == SportsLeague.NFL) &&
                                 (tab != SportsSection.Standings || isIos ||
                                 league == SportsLeague.UFC || league.usesTeamStats)
                         }
                         if (league == SportsLeague.NFL) {
-                            listOf(SportsSection.Channels, SportsSection.Guide) + visible.filterNot { it in setOf(SportsSection.Channels, SportsSection.Guide) }
+                            listOf(SportsSection.Channels) + visible.filterNot { it == SportsSection.Channels }
                         } else visible
                     }
                     items(sections) { tab ->
@@ -358,18 +488,21 @@ internal fun SportsHubScreen(
                                     HubMessage("No NFL RedZone or NFL Network channel was found in the enabled add-ons.")
                                 }
                                 else -> itemsIndexed(nflChannels!!) { index, channel ->
-                                    EnterAnimated(index) { SourceCard(channel, onOpenStream) }
-                                }
-                            }
-                        }
-                        section == SportsSection.Guide && league == SportsLeague.NFL -> {
-                            item { HubSectionTitle("SPORTS TV GUIDE") }
-                            item { HubMessage("Available NFL channels from installed add-ons. Program times appear only when a provider supplies schedule data.") }
-                            when {
-                                nflChannels == null -> item { CircularProgressIndicator(color = HubAccent) }
-                                nflChannels!!.isEmpty() -> item { HubMessage("No NFL channels found in enabled add-ons.") }
-                                else -> itemsIndexed(SportsGuide.fromChannels(nflChannels!!)) { index, entry ->
-                                    EnterAnimated(index) { SourceCard(entry.source, onOpenStream) }
+                                    EnterAnimated(index) {
+                                        Column {
+                                            SourceCard(channel, onOpenStream)
+                                            if (multiviewOpen) {
+                                                TextButton(onClick = {
+                                                    val id = channel.addonName + ":" + channel.item.id
+                                                    if (multiviewSources.none { it.addonName + ":" + it.item.id == id } &&
+                                                        multiviewSources.size < multiviewLayout) {
+                                                        multiviewSources.add(channel)
+                                                        multiviewState = multiviewState.add(id)
+                                                    }
+                                                }) { Text("Add to Multi-View", color = HubAccent) }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -413,6 +546,39 @@ internal fun SportsHubScreen(
                         !error || board != null -> item { HubMessage("No ${section.label.lowercase()} games for ${league.label}.") }
                     }
                 }
+            }
+        }
+    }
+    if (multiviewFullscreen && multiviewUrls.isNotEmpty() && !isIos) {
+        Dialog(
+            onDismissRequest = { multiviewFullscreen = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false),
+        ) {
+            Column(
+                Modifier.fillMaxSize().background(HubBackground).safeDrawingPadding(),
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text("Kable Killers · Multi-View", color = HubAccent)
+                    TextButton(onClick = { multiviewFullscreen = false }) {
+                        Text("Exit Full Screen", color = HubAccent)
+                    }
+                }
+                SportsMultiviewSurface(
+                    urls = multiviewUrls.toList(),
+                    focusedId = multiviewState.focusedId,
+                    onFocus = { multiviewState = multiviewState.focus(it) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(
+                    "Tap a screen to switch audio. Exit to change streams.",
+                    color = HubMuted,
+                    modifier = Modifier.padding(12.dp),
+                )
             }
         }
     }
@@ -802,6 +968,8 @@ private fun SportsGameDetail(
     addons: List<ManagedAddon>,
     onBack: () -> Unit,
     onOpenStream: (MetaPreview) -> Unit,
+    multiviewOpen: Boolean,
+    onAddToMultiview: (SportsCatalogMatch) -> Unit,
 ) {
     var sources by remember(event.id, event.status, addons) { mutableStateOf<List<SportsCatalogMatch>?>(null) }
     var boxScore by remember(event.id) { mutableStateOf<SportsBoxScore?>(null) }
@@ -863,7 +1031,16 @@ private fun SportsGameDetail(
             when {
                 sources == null -> item { HubMessage("Checking enabled sports add-ons…") }
                 sources.orEmpty().isEmpty() -> item { HubMessage("No matching stream found in enabled sports add-ons.") }
-                else -> items(sources.orEmpty()) { source -> SourceCard(source, onOpenStream) }
+                else -> items(sources.orEmpty()) { source ->
+                    Column {
+                        SourceCard(source, onOpenStream)
+                        if (multiviewOpen) {
+                            TextButton(onClick = { onAddToMultiview(source) }) {
+                                Text("Add to Multi-View", color = HubAccent)
+                            }
+                        }
+                    }
+                }
             }
             if (event.league.usesTeamStats || event.league == SportsLeague.UFC) {
                 item { HubHeading("Player stats") }

@@ -132,6 +132,7 @@ internal fun SportsHubScreen(
     var multiviewState by remember { mutableStateOf(SportsMultiviewState()) }
     val multiviewSources = remember { mutableStateListOf<SportsCatalogMatch>() }
     val multiviewUrls = remember { mutableStateListOf<Pair<String, String>>() }
+    val multiviewChoices = remember { mutableStateListOf<Pair<String, List<com.nuvio.app.features.streams.StreamItem>>>() }
     var multiviewLoading by remember { mutableStateOf(false) }
     var multiviewError by remember { mutableStateOf<String?>(null) }
     var selectedEvent by remember { mutableStateOf<SportsEvent?>(null) }
@@ -217,6 +218,7 @@ internal fun SportsHubScreen(
     val activeAddons = addons.addons.filter { it.isActive }.map { it.copy(isRefreshing = false, errorMessage = null) }
     LaunchedEffect(multiviewOpen, multiviewSources.toList(), activeAddons) {
         multiviewUrls.clear()
+        multiviewChoices.clear()
         multiviewError = null
         if (!multiviewOpen || multiviewSources.isEmpty() || isIos) return@LaunchedEffect
         multiviewLoading = true
@@ -226,9 +228,8 @@ internal fun SportsHubScreen(
                 val streams = runCatching {
                     SportsMultiviewStreamResolver.directStreams(source, activeAddons)
                 }.getOrElse { emptyList() }
-                val url = streams.firstNotNullOfOrNull { SportsMultiviewSourceSelection.directUrl(it) }
-                if (url != null) multiviewUrls.add(id to url)
-                else multiviewError = "No directly playable link for ${source.item.name}"
+                multiviewChoices.add(id to streams)
+                if (streams.isEmpty()) multiviewError = "No directly playable link for ${source.item.name}"
             }
         } finally {
             multiviewLoading = false
@@ -330,6 +331,25 @@ internal fun SportsHubScreen(
                                 }) { Text("Remove", color = HubAccent) }
                             }
                         }
+                        multiviewChoices.toList().forEach { (id, streams) ->
+                            Text("Available links · ${streams.size}", color = HubMuted)
+                            streams.forEach { stream ->
+                                val url = SportsMultiviewSourceSelection.directUrl(stream)
+                                if (url != null) {
+                                    val selected = multiviewUrls.any { it.first == id && it.second == url }
+                                    TextButton(onClick = {
+                                        multiviewUrls.removeAll { it.first == id }
+                                        multiviewUrls.add(id to url)
+                                    }) {
+                                        Text(
+                                            (if (selected) "Selected · " else "") + stream.addonName + " · " + stream.streamLabel,
+                                            color = if (selected) HubAccent else HubMuted,
+                                            maxLines = 2,
+                                        )
+                                    }
+                                }
+                            }
+                        }
                         if (multiviewLoading) {
                             CircularProgressIndicator(color = HubAccent)
                         }
@@ -341,7 +361,7 @@ internal fun SportsHubScreen(
                             )
                         }
                         multiviewError?.let { Text(it, color = HubMuted) }
-                        Text("Tap a video to switch audio. Direct links only; some add-on links require the normal player.", color = HubMuted)
+                        Text("Choose a link for each screen, then tap a video to switch audio. Links requiring preparation still need the normal player.", color = HubMuted)
                     }
                 }
                 ScoreTicker(events)

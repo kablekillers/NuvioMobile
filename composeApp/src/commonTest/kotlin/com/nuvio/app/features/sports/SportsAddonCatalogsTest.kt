@@ -16,6 +16,8 @@ class SportsAddonCatalogsTest {
             addon("example.pencari", "Pencari Sports", AddonCatalog("tv", "live", "Live")),
             addon("com.penguplay", "PenguPlay", AddonCatalog("channel", "live-tv", "Live TV")),
             addon("com.sleeyax.dlive-addon", "Tennis Channel", AddonCatalog("tv", "dlive_catalog", "Tennis")),
+            addon("com.cncbridge", "CNCBridge", AddonCatalog("sports", "badgers-live", "College Football")),
+            addon("org.plavio.live", "Plavio Live", AddonCatalog("channel", "sports-channels", "Sports Channels")),
         )
 
         providers.forEach { manifest ->

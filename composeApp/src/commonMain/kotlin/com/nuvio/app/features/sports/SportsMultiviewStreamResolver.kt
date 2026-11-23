@@ -15,29 +15,33 @@ import kotlinx.coroutines.withTimeoutOrNull
 /**
  * Resolve each Sports Hub catalog item independently using its actual catalog
  * type and ID. This does not mutate StreamsRepository's global picker state.
- * Only direct streams are eligible for the current multiview player.
+ * Search all compatible installed add-ons. The current player still accepts direct links only.
  */
 internal object SportsMultiviewStreamResolver {
     suspend fun directStreams(
         source: SportsCatalogMatch,
         addons: List<ManagedAddon>,
     ): List<StreamItem> {
-        val addon = addons.firstOrNull { managed ->
-            managed.isActive && managed.displayTitle == source.addonName &&
+        // Query every enabled addon that declares support for this actual catalog ID.
+        // Never manufacture an ID for an addon whose catalog uses a different scheme.
+        val targetsForItem = addons.filter { managed ->
+            managed.isActive &&
                 managed.manifest?.supportsResource("stream", source.item.type, source.item.id) == true
-        } ?: return emptyList()
-        val manifest = addon.manifest ?: return emptyList()
-        val target = InstalledStreamAddonTarget(
-            addonName = addon.displayTitle,
-            addonId = addon.streamAddonInstanceId(manifest.id),
-            manifest = manifest,
-        )
+        }.mapNotNull { addon ->
+            val manifest = addon.manifest ?: return@mapNotNull null
+            InstalledStreamAddonTarget(
+                addonName = addon.displayTitle,
+                addonId = addon.streamAddonInstanceId(manifest.id),
+                manifest = manifest,
+            )
+        }
+        if (targetsForItem.isEmpty()) return emptyList()
         val targets = StreamSearchTargets(
             type = source.item.type,
             videoId = source.item.id,
             season = null,
             episode = null,
-            streamAddons = listOf(target),
+            streamAddons = targetsForItem,
             serverSources = emptyList(),
             pluginProviderGroups = emptyList(),
         )

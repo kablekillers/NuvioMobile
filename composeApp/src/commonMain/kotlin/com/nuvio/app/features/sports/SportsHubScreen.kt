@@ -50,6 +50,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -131,6 +133,7 @@ internal fun SportsHubScreen(
     var multiviewOpen by rememberSaveable { mutableStateOf(false) }
     var multiviewLayout by rememberSaveable { mutableStateOf(2) }
     var multiviewPickerOpen by rememberSaveable { mutableStateOf(false) }
+    var multiviewFullscreen by rememberSaveable { mutableStateOf(false) }
     var multiviewState by remember { mutableStateOf(SportsMultiviewState()) }
     val multiviewSources = remember { mutableStateListOf<SportsCatalogMatch>() }
     val multiviewUrls = remember { mutableStateListOf<Pair<String, String>>() }
@@ -370,6 +373,11 @@ internal fun SportsHubScreen(
                             CircularProgressIndicator(color = HubAccent)
                         }
                         if (multiviewUrls.isNotEmpty() && !isIos) {
+                            TextButton(onClick = { multiviewFullscreen = true; multiviewPickerOpen = false }) {
+                                Text("Expand Multi-View", color = HubAccent)
+                            }
+                        }
+                        if (multiviewUrls.isNotEmpty() && !isIos && !multiviewFullscreen) {
                             SportsMultiviewSurface(
                                 urls = multiviewUrls.toList(),
                                 focusedId = multiviewState.focusedId,
@@ -538,6 +546,39 @@ internal fun SportsHubScreen(
                         !error || board != null -> item { HubMessage("No ${section.label.lowercase()} games for ${league.label}.") }
                     }
                 }
+            }
+        }
+    }
+    if (multiviewFullscreen && multiviewUrls.isNotEmpty() && !isIos) {
+        Dialog(
+            onDismissRequest = { multiviewFullscreen = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false),
+        ) {
+            Column(
+                Modifier.fillMaxSize().background(HubBackground).safeDrawingPadding(),
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text("Kable Killers · Multi-View", color = HubAccent)
+                    TextButton(onClick = { multiviewFullscreen = false }) {
+                        Text("Exit Full Screen", color = HubAccent)
+                    }
+                }
+                SportsMultiviewSurface(
+                    urls = multiviewUrls.toList(),
+                    focusedId = multiviewState.focusedId,
+                    onFocus = { multiviewState = multiviewState.focus(it) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(
+                    "Tap a screen to switch audio. Exit to change streams.",
+                    color = HubMuted,
+                    modifier = Modifier.padding(12.dp),
+                )
             }
         }
     }

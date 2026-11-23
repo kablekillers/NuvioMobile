@@ -37,7 +37,7 @@ internal object SportsAddonDiscovery {
                         val genreValue = genre?.options?.firstOrNull { it.equals("all", ignoreCase = true) }
                         if (genre != null && genreValue == null) return@async emptyList()
                         val searchRequired = required.any { it.name == "search" }
-                        val searchTerms = if (searchRequired) events.map { it.title }.filter { it.isNotBlank() }.distinct().take(6) else listOf<String?>(null)
+                        val searchTerms = if (searchRequired) sportsSearchQueries(events) else listOf<String?>(null)
                         val skipRequired = required.any { it.name == "skip" }
                         val pages = searchTerms.mapNotNull { term ->
                             catalogRequests.withPermit {
@@ -156,6 +156,15 @@ internal object SportsAddonDiscovery {
             else -> null
         }
     }
+
+    /**
+     * Some add-ons index games by one team's name instead of the ESPN fixture title.
+     * Search both formats without manufacturing stream identifiers.
+     */
+    internal fun sportsSearchQueries(events: List<SportsEvent>): List<String> =
+        events.flatMap { event ->
+            listOf(event.title) + event.competitors.map { it.name }
+        }.map { it.trim() }.filter { it.isNotBlank() }.distinct().take(12)
 
     private val HighlightTitle = Regex("\\b(highlights?|recap)\\b", RegexOption.IGNORE_CASE)
 

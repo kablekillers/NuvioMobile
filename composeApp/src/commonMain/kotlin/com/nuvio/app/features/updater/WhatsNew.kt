@@ -48,6 +48,15 @@ import kotlinx.serialization.json.jsonPrimitive
  */
 internal object WhatsNewNotes {
     val byVersion: Map<String, List<String>> = mapOf(
+        "0.9.2" to listOf(
+            "Sports Hub: new Live Events tab with live games from all your add-ons, grouped by sport.",
+            "Sports Hub: new US Channels tab for ESPN, ESPN2, FS1, NFL Network, TNT and more, all links in one place.",
+            "Sports Hub: search for a team, channel or event, like Packers, ESPN2 or UFC.",
+            "Multi-View fixed: tap Add to Multi-View under any stream, pick a link, and watch up to four at once.",
+            "Links that don't work are tested and hidden, and the best sports add-ons are listed first.",
+            "Replays now show full games and Highlights show the short clips.",
+            "Going back from a stream keeps the links that already loaded, so nothing reloads.",
+        ),
         "0.9.0" to listOf(
             "Fixed: each profile has its own Continue Watching, watched marks and Library again. Profile 1 syncs to the cloud; other profiles stay on this phone.",
         ),

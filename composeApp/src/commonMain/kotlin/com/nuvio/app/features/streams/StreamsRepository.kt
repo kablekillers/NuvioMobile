@@ -32,6 +32,9 @@ object StreamsRepository {
 
     private var activeJob: Job? = null
     private var activeRequestKey: String? = null
+    /** Content type of the list being shown; live TV / sports lists get their links tested. */
+    var activeType: String? = null
+        private set
 
     fun requestToken(
         type: String,
@@ -94,6 +97,7 @@ object StreamsRepository {
         }
 
         activeRequestKey = requestKey
+        activeType = type
         activeJob?.cancel()
         _uiState.value = StreamsUiState(requestToken = requestToken)
 

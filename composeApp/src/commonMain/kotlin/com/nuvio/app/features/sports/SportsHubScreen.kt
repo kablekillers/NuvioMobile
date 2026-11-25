@@ -95,6 +95,8 @@ import com.nuvio.app.core.time.EpisodeReleaseDatePlatform
 import com.nuvio.app.features.addons.AddonRepository
 import com.nuvio.app.features.addons.ManagedAddon
 import com.nuvio.app.features.home.MetaPreview
+import com.nuvio.app.features.streams.LinkHealth
+import com.nuvio.app.features.streams.LiveLinkChecker
 import com.nuvio.app.features.player.FullscreenPlayerDialog
 import com.nuvio.app.features.player.LockPlayerToLandscape
 import kotlinx.coroutines.CancellationException
@@ -233,6 +235,7 @@ internal fun SportsHubScreen(
             multiviewChoices = runCatching {
                 SportsMultiviewStreamResolver.directStreams(source, activeAddons)
             }.getOrElse { if (it is CancellationException) throw it; emptyList() }
+            LiveLinkChecker.check(multiviewChoices)
         } finally {
             multiviewSearching = false
         }
@@ -503,9 +506,23 @@ internal fun SportsHubScreen(
                         color = HubMuted,
                     )
                     else -> {
-                        Text("Pick a link · ${multiviewChoices.size} found", color = HubMuted)
+                        // Only links that answered the test are offered.
+                        val working = multiviewChoices.filter { LiveLinkChecker.health(it) == LinkHealth.Ok }
+                        val testing = multiviewChoices.count { LiveLinkChecker.health(it) == LinkHealth.Checking }
+                        val dead = multiviewChoices.count { LiveLinkChecker.health(it) == LinkHealth.Dead }
+                        Text(
+                            buildString {
+                                append(if (working.isEmpty() && testing > 0) "Testing links…" else "Pick a link · ${working.size} working")
+                                if (testing > 0 && working.isNotEmpty()) append(" · testing $testing more")
+                                if (dead > 0) append(" · $dead hidden (not working)")
+                            },
+                            color = HubMuted,
+                        )
+                        if (working.isEmpty() && testing == 0) {
+                            Text("None of these links are working right now. Try another stream.", color = HubMuted)
+                        }
                         Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
-                            multiviewChoices.forEach { stream ->
+                            working.forEach { stream ->
                                 val tile = SportsMultiviewSession.tileFor(source.item.name, stream) ?: return@forEach
                                 val added = SportsMultiviewSession.tiles.any { it.id == tile.id }
                                 Column(
@@ -1048,6 +1065,19 @@ private fun SportsGameDetail(
             when {
                 sources == null -> item { HubMessage("Checking enabled sports add-ons…") }
                 sources.orEmpty().isEmpty() -> item { HubMessage("No matching stream found in enabled sports add-ons.") }
+                event.status == SportsEventStatus.FINAL -> {
+                    // Full games first, then the short highlight clips, each under its own heading.
+                    val full = sources.orEmpty().filter { it.kind != SportsContentKind.HIGHLIGHT }
+                    val clips = sources.orEmpty().filter { it.kind == SportsContentKind.HIGHLIGHT }
+                    if (full.isNotEmpty()) {
+                        item { HubMessage("Full game replays") }
+                        items(full) { source -> SourceCard(source, onOpenStream) }
+                    }
+                    if (clips.isNotEmpty()) {
+                        item { HubMessage("Highlights") }
+                        items(clips) { source -> SourceCard(source, onOpenStream) }
+                    }
+                }
                 else -> items(sources.orEmpty()) { source ->
                     Column {
                         SourceCard(source, onOpenStream)

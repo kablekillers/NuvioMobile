@@ -16,8 +16,14 @@ internal object SportsRecordingClassifier {
     private val leagueLabels = Regex(
         """\b(?:mlb|nba|wnba|nfl|ncaaf|ncaam|ncaaw|ncaab|nhl|ahl|khl|echl|pwhl)\b|\b(?:college football|(?:ncaa |college )?women'?s (?:college )?basketball|(?:ncaa |college )?men'?s (?:college )?basketball)\b""",
     )
-    private val highlightTitle = Regex("""\b(?:highlights?|condensed game|recaps?)\b""", RegexOption.IGNORE_CASE)
-    private val fullTitle = Regex("""\b(?:full (?:game|match|replay|broadcast)|replay)\b""", RegexOption.IGNORE_CASE)
+    private val highlightTitle = Regex(
+        """\b(?:highlights?|condensed(?: game)?|recaps?|top plays|best plays|all goals|goals? (?:&|and) highlights|mini ?match|in \d{1,2} min(?:ute)?s?)\b""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val fullTitle = Regex(
+        """\b(?:full (?:game|match|fight|race|event|replay|broadcast)|complete (?:game|match)|whole game|replays?)\b""",
+        RegexOption.IGNORE_CASE,
+    )
     private val durationLine = Regex("""^\s*(?:duration|runtime)\s*:\s*([^\r\n]+)""", setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE))
     private val recordedDuration = Regex("""^\s*Recorded\s*[·•]\s*([^\r\n]+)""", setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE))
     private val recapStreamLabel = Regex("""^Recap\b""", RegexOption.IGNORE_CASE)
@@ -76,13 +82,19 @@ internal object SportsRecordingClassifier {
         return when {
             seconds != null && seconds > FULL_REPLAY_SECONDS -> SportsContentKind.REPLAY
             seconds != null -> SportsContentKind.HIGHLIGHT
-            highlightTitle.containsMatchIn(item.name) || item.genres.any { it.equals("highlights", true) } ->
+            highlightTitle.containsMatchIn(item.name) || item.genres.any { highlightTitle.containsMatchIn(it) } ->
                 SportsContentKind.HIGHLIGHT
-            fullTitle.containsMatchIn(item.name) -> SportsContentKind.REPLAY
+            fullTitle.containsMatchIn(item.name) || item.genres.any { fullTitle.containsMatchIn(it) } -> SportsContentKind.REPLAY
+            // Description hints ("Full match replay", "Extended highlights") when the title has none.
+            item.description?.let { highlightTitle.containsMatchIn(it) && !fullTitle.containsMatchIn(it) } == true ->
+                SportsContentKind.HIGHLIGHT
+            item.description?.let { fullTitle.containsMatchIn(it) } == true -> SportsContentKind.REPLAY
             isSportsStreams(addonId) && catalog.id == "sports_recaps" -> SportsContentKind.REPLAY
             addonId == SportsAddonCatalogs.NUVIO_LIVE && catalog.id == "nuvio_sports_replays_hockey" ->
                 SportsContentKind.HIGHLIGHT
-            highlightTitle.containsMatchIn(catalog.name) -> SportsContentKind.HIGHLIGHT
+            // A list named for highlights (e.g. StremVerse "Match Highlights") holds short clips.
+            highlightTitle.containsMatchIn(catalog.name) || highlightTitle.containsMatchIn(catalog.id.replace('_', ' ')) ->
+                SportsContentKind.HIGHLIGHT
             else -> SportsContentKind.REPLAY
         }
     }

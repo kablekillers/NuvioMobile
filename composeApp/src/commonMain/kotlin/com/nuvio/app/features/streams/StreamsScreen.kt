@@ -697,6 +697,26 @@ internal fun StreamList(
     resumeProgressFraction: Float?,
     modifier: Modifier = Modifier,
 ) {
+    // Live sports / TV: test links first and only list the ones that answer.
+    val liveCheck = LiveLinkChecker.appliesTo(StreamsRepository.activeType)
+    val rawUiState = uiState
+    val testedStreams = if (liveCheck) rawUiState.groups.flatMap { it.streams } else emptyList()
+    LaunchedEffect(testedStreams) { if (testedStreams.isNotEmpty()) LiveLinkChecker.check(testedStreams) }
+    val deadLinks = testedStreams.count { LiveLinkChecker.health(it) == LinkHealth.Dead }
+    @Suppress("NAME_SHADOWING")
+    val uiState = if (!liveCheck) rawUiState else {
+        var anyPending = false
+        rawUiState.copy(
+            groups = rawUiState.groups.map { group ->
+                val pending = group.streams.any { LiveLinkChecker.health(it) == LinkHealth.Checking }
+                anyPending = anyPending || pending
+                group.copy(
+                    streams = group.streams.filter { LiveLinkChecker.health(it).let { h -> h == null || h == LinkHealth.Ok } },
+                    isLoading = group.isLoading || pending,
+                )
+            },
+        ).let { it.copy(isAnyLoading = it.isAnyLoading || anyPending) }
+    }
     val filteredGroups = uiState.filteredGroups
     val hasGroups = filteredGroups.isNotEmpty()
     val hasAnyStreams = filteredGroups.any { it.streams.isNotEmpty() }
@@ -752,6 +772,16 @@ internal fun StreamList(
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                 }
+            }
+        }
+        if (liveCheck && deadLinks > 0) {
+            item(key = "dead_links_hidden") {
+                Text(
+                    text = if (deadLinks == 1) "1 link didn't work and was hidden" else "$deadLinks links didn't work and were hidden",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp),
+                )
             }
         }
         when {

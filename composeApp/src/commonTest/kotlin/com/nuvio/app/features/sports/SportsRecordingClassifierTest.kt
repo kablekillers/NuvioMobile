@@ -29,6 +29,21 @@ class SportsRecordingClassifierTest {
     }
 
     @Test
+    fun stremVerseReplaysAreFullGamesAndHighlightsAreClips() {
+        val replays = AddonCatalog("tv", "stremverse_replays", "Match Replays")
+        val highlights = AddonCatalog("tv", "stremverse_highlights", "Match Highlights")
+        val game = item("sv1", "Chiefs vs Bills")
+        assertEquals(SportsContentKind.REPLAY, SportsRecordingClassifier.kind(SportsAddonCatalogs.STREMVERSE, replays, game))
+        assertEquals(SportsContentKind.HIGHLIGHT, SportsRecordingClassifier.kind(SportsAddonCatalogs.STREMVERSE, highlights, game))
+        assertEquals(SportsContentKind.HIGHLIGHT,
+            SportsRecordingClassifier.kind(SportsAddonCatalogs.STREMVERSE, replays, item("sv2", "Chiefs vs Bills Extended Highlights")))
+        assertEquals(SportsContentKind.REPLAY,
+            SportsRecordingClassifier.kind(SportsAddonCatalogs.STREMVERSE, highlights, item("sv3", "Chiefs vs Bills", runtime = "3h 05m")))
+        assertEquals(SportsContentKind.REPLAY,
+            SportsRecordingClassifier.kind("x", replays, item("sv4", "Chiefs vs Bills", description = "Full match replay")))
+    }
+
+    @Test
     fun baseballCannotEnterCollegeTabsEvenWhenTeamWordsCoincide() {
         val collegeLeagues = listOf(SportsLeague.COLLEGE_FOOTBALL, SportsLeague.NCAA_MEN, SportsLeague.NCAA_WOMEN)
         for (league in collegeLeagues) {

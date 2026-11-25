@@ -20,6 +20,12 @@ internal object SportsRecordingClassifier {
         """\b(?:highlights?|condensed(?: game)?|recaps?|top plays|best plays|all goals|goals? (?:&|and) highlights|mini ?match|in \d{1,2} min(?:ute)?s?)\b""",
         RegexOption.IGNORE_CASE,
     )
+    // Genres and descriptions: Sports Streams tags every recording "Recap" (full
+    // games included), so only explicit highlight words count there.
+    private val highlightWords = Regex(
+        """\b(?:highlights?|condensed(?: game)?|top plays|best plays|all goals)\b""",
+        RegexOption.IGNORE_CASE,
+    )
     private val fullTitle = Regex(
         """\b(?:full (?:game|match|fight|race|event|replay|broadcast)|complete (?:game|match)|whole game|replays?)\b""",
         RegexOption.IGNORE_CASE,
@@ -82,11 +88,11 @@ internal object SportsRecordingClassifier {
         return when {
             seconds != null && seconds > FULL_REPLAY_SECONDS -> SportsContentKind.REPLAY
             seconds != null -> SportsContentKind.HIGHLIGHT
-            highlightTitle.containsMatchIn(item.name) || item.genres.any { highlightTitle.containsMatchIn(it) } ->
+            highlightTitle.containsMatchIn(item.name) || item.genres.any { highlightWords.containsMatchIn(it) } ->
                 SportsContentKind.HIGHLIGHT
             fullTitle.containsMatchIn(item.name) || item.genres.any { fullTitle.containsMatchIn(it) } -> SportsContentKind.REPLAY
             // Description hints ("Full match replay", "Extended highlights") when the title has none.
-            item.description?.let { highlightTitle.containsMatchIn(it) && !fullTitle.containsMatchIn(it) } == true ->
+            item.description?.let { highlightWords.containsMatchIn(it) && !fullTitle.containsMatchIn(it) } == true ->
                 SportsContentKind.HIGHLIGHT
             item.description?.let { fullTitle.containsMatchIn(it) } == true -> SportsContentKind.REPLAY
             isSportsStreams(addonId) && catalog.id == "sports_recaps" -> SportsContentKind.REPLAY

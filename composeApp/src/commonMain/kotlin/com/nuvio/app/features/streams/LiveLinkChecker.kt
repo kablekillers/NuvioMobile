@@ -22,7 +22,8 @@ internal enum class LinkHealth { Checking, Ok, Dead }
 internal expect suspend fun probeLiveLink(url: String, headers: Map<String, String>): Boolean?
 
 /**
- * Tests live sports / TV links before they're listed, so dead ones stay hidden.
+ * Tests live sports / TV links in the background and hides the ones that are
+ * clearly dead. Links show right away while they're tested.
  * Results are kept for 10 minutes and shared by the stream list and Multi-View.
  * Links that aren't plain direct URLs (torrents, debrid, external apps) aren't
  * tested and always show.
@@ -60,9 +61,10 @@ internal object LiveLinkChecker {
             val headers = headersOf(stream)
             scope.launch {
                 val alive = gate.withPermit {
-                    // One retry: a slow or dropped first answer from a busy host isn't a dead link.
-                    val first = withTimeoutOrNull(10_000) { probeLiveLink(url, headers) ?: true } ?: false
-                    if (first) true else withTimeoutOrNull(10_000) { probeLiveLink(url, headers) ?: true } ?: false
+                    // Only a clear "dead" counts, and it has to happen twice. Slow or
+                    // unclear answers count as working so a good link is never hidden.
+                    val first = withTimeoutOrNull(20_000) { probeLiveLink(url, headers) } ?: true
+                    first || (withTimeoutOrNull(20_000) { probeLiveLink(url, headers) } ?: true)
                 }
                 withContext(Dispatchers.Main) {
                     results[key] = (if (alive) LinkHealth.Ok else LinkHealth.Dead) to now()

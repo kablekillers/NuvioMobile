@@ -89,6 +89,7 @@ internal object SportsAddonDiscovery {
         val channelQueries = if (replays) emptyList() else SportsChannelMatcher.searchQueries(league, events)
         val requests: List<Deferred<List<SportsCatalogMatch>>> = addons.filter { it.isActive }.flatMap { addon ->
             val manifest = addon.manifest ?: return@flatMap emptyList<Deferred<List<SportsCatalogMatch>>>()
+            val listed = SportsAddonCatalogs.isListedProvider(manifest)
             SportsAddonCatalogs.routes(manifest, league, replays, expanded = !isIos).map { catalog ->
                 async {
                     try {
@@ -98,13 +99,14 @@ internal object SportsAddonDiscovery {
                         if (genres.isEmpty()) return@async emptyList()
                         val searchRequired = required.any { it.name == "search" }
                         val searchTerms: List<String?> = if (searchRequired) {
-                            (deepSearchQueries(league, events) + channelQueries).distinct()
+                            // Unlisted live TV add-ons are only asked for the networks, not every team.
+                            if (listed) (deepSearchQueries(league, events) + channelQueries).distinct() else channelQueries
                         } else listOf(null)
                         if (searchTerms.isEmpty()) return@async emptyList()
                         val skipRequired = required.any { it.name == "skip" }
                         val pages = genres.flatMap { genreValue -> searchTerms.map { genreValue to it } }.mapNotNull { (genreValue, term) ->
                             catalogRequests.withPermit {
-                                withTimeoutOrNull(10_000) {
+                                withTimeoutOrNull(15_000) {
                                     fetchCatalogPage(
                                         manifestUrl = manifest.transportUrl,
                                         type = catalog.type,
@@ -127,6 +129,13 @@ internal object SportsAddonDiscovery {
                         pages.flatMap { it.items }.distinctBy { it.type to it.id }.mapNotNull { item ->
                             ensureActive()
                             if (!manifest.supportsResource("stream", item.type, item.id)) return@mapNotNull null
+                            // Replays: drop recordings labelled for another sport (MLB "Kansas City" in NFL).
+                            if (replays && !useRecordingMetadata && SportsAddonCatalogs.namesOtherSport(
+                                    (item.genres + item.id.replace('_', ' ') + item.name + catalog.id.replace('_', ' ') + catalog.name)
+                                        .joinToString(" "),
+                                    league,
+                                )
+                            ) return@mapNotNull null
                             val gameScore = matcher.score(item.name)
                             // A channel showing the game ranks after real game matches.
                             val score = if (gameScore == 0 && SportsChannelMatcher.matches(item.name, channelTerms)) 1 else gameScore

@@ -157,6 +157,30 @@ object SportsAddonCatalogs {
         else -> listOf("other sports", "others", "other")
     }
 
+    /** Add-ons on the curated lists (searched deeply); others only get live channel lookups. */
+    internal fun isListedProvider(addon: AddonManifest): Boolean {
+        val identity = (addon.id + " " + addon.name).lowercase().filter(Char::isLetterOrDigit)
+        return addon.id in expandedProviders || additionalProviders.any { it in identity } ||
+            "stremverse" in identity
+    }
+
+    /**
+     * True when the text names a different sport and not this league's (an MLB
+     * replay that slipped into NFL because "Kansas City" matched).
+     */
+    internal fun namesOtherSport(label: String, league: SportsLeague): Boolean {
+        if (namesSport(label, league)) return false
+        val text = words(label)
+        return SportsLeague.entries.any {
+            it.catalogSport != league.catalogSport && it.catalogSport != "other" && if (
+                it.catalogSport == "football" && league.catalogSport == "american_football"
+            ) {
+                // A bare "Football" list is ambiguous for NFL; only clear soccer words count.
+                sportTerms(it).any { term -> term != "football" && " $term " in text }
+            } else namesSport(label, it)
+        }
+    }
+
     internal fun namesSport(label: String, league: SportsLeague): Boolean {
         val text = words(label)
         // "football" alone is soccer; American football catalogs say so.
@@ -234,8 +258,10 @@ object SportsAddonCatalogs {
                 (known || liveAddon || liveLabel.containsMatchIn(label)) &&
                 addon.resources.any { it.name == "stream" && (it.types.isEmpty() || catalog.type in it.types) }
         }
-        // Unlisted add-ons: same reach as NFL Channels, capped so a huge add-on can't slow the hub.
-        return if (known) catalogs else catalogs.take(10)
+        if (known) return catalogs
+        // Unlisted add-ons are live TV / channel add-ons: live lists only (no replays),
+        // capped so they can't slow the hub down or flood Replays with other sports.
+        return if (replays) emptyList() else catalogs.take(6)
     }
 
 }

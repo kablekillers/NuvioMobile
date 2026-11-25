@@ -506,21 +506,16 @@ internal fun SportsHubScreen(
                         color = HubMuted,
                     )
                     else -> {
-                        // Only links that answered the test are offered.
-                        val working = multiviewChoices.filter { LiveLinkChecker.health(it) == LinkHealth.Ok }
-                        val testing = multiviewChoices.count { LiveLinkChecker.health(it) == LinkHealth.Checking }
+                        // Links tested in the background; clearly dead ones drop out (unless all are).
                         val dead = multiviewChoices.count { LiveLinkChecker.health(it) == LinkHealth.Dead }
+                        val working = if (dead in 1 until multiviewChoices.size) {
+                            multiviewChoices.filter { LiveLinkChecker.health(it) != LinkHealth.Dead }
+                        } else multiviewChoices
+                        val hidden = multiviewChoices.size - working.size
                         Text(
-                            buildString {
-                                append(if (working.isEmpty() && testing > 0) "Testing links…" else "Pick a link · ${working.size} working")
-                                if (testing > 0 && working.isNotEmpty()) append(" · testing $testing more")
-                                if (dead > 0) append(" · $dead hidden (not working)")
-                            },
+                            "Pick a link · ${working.size} found" + if (hidden > 0) " · $hidden not working (hidden)" else "",
                             color = HubMuted,
                         )
-                        if (working.isEmpty() && testing == 0) {
-                            Text("None of these links are working right now. Try another stream.", color = HubMuted)
-                        }
                         Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
                             working.forEach { stream ->
                                 val tile = SportsMultiviewSession.tileFor(source.item.name, stream) ?: return@forEach

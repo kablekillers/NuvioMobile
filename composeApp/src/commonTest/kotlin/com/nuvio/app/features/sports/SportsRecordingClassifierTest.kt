@@ -29,6 +29,21 @@ class SportsRecordingClassifierTest {
     }
 
     @Test
+    fun recapGenreAloneDoesNotMakeAFullGameAHighlight() {
+        val game = item("recap:streamed_american_football_kc_buf", "Chiefs vs Bills", genres = listOf("american_football", "Recap"))
+        assertEquals(SportsContentKind.REPLAY, SportsRecordingClassifier.kind(SportsAddonCatalogs.SPORTS_STREAMS, recaps, game))
+    }
+
+    @Test
+    fun otherSportsAreKeptOutOfNflReplays() {
+        assertTrue(SportsAddonCatalogs.namesOtherSport("recap streamed baseball royals tigers Kansas City Royals vs Detroit Tigers", SportsLeague.NFL))
+        assertTrue(SportsAddonCatalogs.namesOtherSport("MLB Kansas City Royals vs Detroit Tigers", SportsLeague.NFL))
+        assertFalse(SportsAddonCatalogs.namesOtherSport("recap streamed american football Chiefs vs Bills", SportsLeague.NFL))
+        assertFalse(SportsAddonCatalogs.namesOtherSport("Football Replays Chiefs vs Bills", SportsLeague.NFL))
+        assertFalse(SportsAddonCatalogs.namesOtherSport("Sport Recaps Chiefs vs Bills", SportsLeague.NFL))
+    }
+
+    @Test
     fun stremVerseReplaysAreFullGamesAndHighlightsAreClips() {
         val replays = AddonCatalog("tv", "stremverse_replays", "Match Replays")
         val highlights = AddonCatalog("tv", "stremverse_highlights", "Match Highlights")

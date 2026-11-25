@@ -697,26 +697,22 @@ internal fun StreamList(
     resumeProgressFraction: Float?,
     modifier: Modifier = Modifier,
 ) {
-    // Live sports / TV: test links first and only list the ones that answer.
+    // Live sports / TV: links show right away and are tested in the background;
+    // the ones that are clearly dead drop out. If every tested link fails, all stay.
     val liveCheck = LiveLinkChecker.appliesTo(StreamsRepository.activeType)
     val rawUiState = uiState
     val testedStreams = if (liveCheck) rawUiState.groups.flatMap { it.streams } else emptyList()
     LaunchedEffect(testedStreams) { if (testedStreams.isNotEmpty()) LiveLinkChecker.check(testedStreams) }
-    val deadLinks = testedStreams.count { LiveLinkChecker.health(it) == LinkHealth.Dead }
+    val checkable = testedStreams.filter { LiveLinkChecker.health(it) != null }
+    val deadCount = checkable.count { LiveLinkChecker.health(it) == LinkHealth.Dead }
+    val hideDead = liveCheck && deadCount > 0 && deadCount < checkable.size
+    val deadLinks = if (hideDead) deadCount else 0
     @Suppress("NAME_SHADOWING")
-    val uiState = if (!liveCheck) rawUiState else {
-        var anyPending = false
-        rawUiState.copy(
-            groups = rawUiState.groups.map { group ->
-                val pending = group.streams.any { LiveLinkChecker.health(it) == LinkHealth.Checking }
-                anyPending = anyPending || pending
-                group.copy(
-                    streams = group.streams.filter { LiveLinkChecker.health(it).let { h -> h == null || h == LinkHealth.Ok } },
-                    isLoading = group.isLoading || pending,
-                )
-            },
-        ).let { it.copy(isAnyLoading = it.isAnyLoading || anyPending) }
-    }
+    val uiState = if (!hideDead) rawUiState else rawUiState.copy(
+        groups = rawUiState.groups.map { group ->
+            group.copy(streams = group.streams.filter { LiveLinkChecker.health(it) != LinkHealth.Dead })
+        },
+    )
     val filteredGroups = uiState.filteredGroups
     val hasGroups = filteredGroups.isNotEmpty()
     val hasAnyStreams = filteredGroups.any { it.streams.isNotEmpty() }

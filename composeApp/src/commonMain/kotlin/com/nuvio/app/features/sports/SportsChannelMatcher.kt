@@ -33,6 +33,36 @@ internal object SportsChannelMatcher {
         else -> emptyList()
     }
 
+    // Streaming services aren't TV channels: a game "on Netflix" or "on Prime Video"
+    // must not pull in every "NETFLIX ..." 24/7 loop channel.
+    private val streamingServices = setOf(
+        "netflix", "primevideo", "amazonprimevideo", "amazon", "prime", "peacock", "espnplus", "espn+",
+        "appletv", "appletvplus", "paramountplus", "paramount", "max", "hbomax", "youtube", "youtubetv",
+        "fubo", "dazn", "nflplus", "nbaleaguepass", "mlbtv", "nhltv", "sling", "hulu", "tubi", "roku",
+    )
+
+    private val usTags = setOf("us", "usa", "en", "eng", "4k", "uhd", "fhd", "hd", "vip")
+    private val countryCodes = setOf(
+        "ca", "uk", "gb", "au", "nz", "ie", "mx", "es", "fr", "de", "it", "pt", "br", "ar", "co", "cl", "pe",
+        "za", "in", "nl", "be", "tr", "pl", "se", "no", "dk", "fi", "gr", "ro", "sa", "ae", "latam", "lat",
+    )
+    private val loopChannel = Regex("""\b24\s*/\s*7\b|\b247\b""", RegexOption.IGNORE_CASE)
+
+    /**
+     * Foreign feeds ("UK: ...", "CA - NFL NETWORK HD", "SA| ESPN 1") and 24/7 loop
+     * channels (replaying shows on repeat) are never a live game.
+     */
+    internal fun isForeignOrLoop(name: String): Boolean {
+        if (loopChannel.containsMatchIn(name)) return true
+        Regex("""^\s*[\[(]?([A-Za-z0-9 ]{1,8})[\])]?\s*[|:]\s*\S""").find(name)?.let { match ->
+            if (match.groupValues[1].trim().lowercase() !in usTags) return true
+        }
+        Regex("""^\s*[\[(]?([A-Za-z]{2,5})[\])]?\s+-\s+\S""").find(name)?.let { match ->
+            if (match.groupValues[1].lowercase() in countryCodes) return true
+        }
+        return false
+    }
+
     private fun words(text: String): List<String> =
         text.lowercase().replace("+", " plus").split(Regex("[^a-z0-9]+")).filter { it.isNotBlank() }
 
@@ -45,18 +75,19 @@ internal object SportsChannelMatcher {
             .map { compact(it) }
             .filter { it.length >= 2 }
             .map { aliases[it] ?: it }
+            .filter { it !in streamingServices }
         return (broadcast + leagueChannels(league)).toSet()
     }
 
     /** Search words for channel catalogs that only answer searches. */
     fun searchQueries(league: SportsLeague, events: List<SportsEvent>): List<String> =
         events.flatMap { it.broadcasts }.flatMap { it.split('/', ',', '&') }.map { it.trim() }
-            .filter { it.length >= 2 }.distinct().take(6)
+            .filter { it.length >= 2 && compact(it) !in streamingServices }.distinct().take(6)
 
     private val excluded = Regex("""\b(news|weather|replays?|highlights?|recaps?|condensed)\b""", RegexOption.IGNORE_CASE)
 
     fun matches(channelName: String, terms: Set<String>): Boolean {
-        if (terms.isEmpty() || excluded.containsMatchIn(channelName)) return false
+        if (terms.isEmpty() || excluded.containsMatchIn(channelName) || isForeignOrLoop(channelName)) return false
         val name = words(channelName)
         // A term matches a run of whole words: "fox" fits "FOX 5 New York" but not "Foxtel".
         for (start in name.indices) {

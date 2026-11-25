@@ -39,4 +39,19 @@ class SportsLiveTvTest {
         kotlin.test.assertTrue(SportsHubSearch.matches("brew", "Milwaukee Brewers vs Chicago Cubs"))
         kotlin.test.assertTrue(!SportsHubSearch.matches("packers", "Milwaukee Brewers vs Chicago Cubs"))
     }
+
+    @Test
+    fun streamingGamesDoNotPullInLoopOrForeignChannels() {
+        val event = SportsEvent(
+            id = "1", league = SportsLeague.NFL, title = "Green Bay Packers at Los Angeles Rams",
+            startTimeEpochMillis = null, status = SportsEventStatus.SCHEDULED, providerName = "ESPN",
+            broadcasts = listOf("Netflix"),
+        )
+        val terms = SportsChannelMatcher.terms(SportsLeague.NFL, listOf(event))
+        kotlin.test.assertTrue("netflix" !in terms)
+        kotlin.test.assertTrue(!SportsChannelMatcher.matches("UK: 24/7 NETFLIX ACTION 1 RAW", terms + "netflix"))
+        kotlin.test.assertTrue(!SportsChannelMatcher.matches("CA - NFL NETWORK HD", terms))
+        kotlin.test.assertTrue(SportsChannelMatcher.matches("NFL RedZone", terms))
+        assertNull(SportsLiveTv.usChannelName("CA - NFL NETWORK HD"))
+    }
 }

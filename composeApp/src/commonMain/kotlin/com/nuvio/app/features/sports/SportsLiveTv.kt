@@ -82,7 +82,7 @@ internal object SportsLiveTv {
     /** The US channel this item is, or null (foreign feed, news, not a known channel). */
     internal fun usChannelName(title: String): String? {
         val raw = title.trim()
-        if (excluded.containsMatchIn(raw)) return null
+        if (excluded.containsMatchIn(raw) || SportsChannelMatcher.isForeignOrLoop(raw)) return null
         // "SA| ESPN 1 HD", "CO|CLARO-ESPN2", "MX: FOX Sports" -> tag before | or :
         val tagMatch = Regex("""^\s*[\[(]?([A-Za-z0-9 ]{1,8})[\])]?\s*[|:]\s*(.+)$""").find(raw)
         val name = if (tagMatch != null) {

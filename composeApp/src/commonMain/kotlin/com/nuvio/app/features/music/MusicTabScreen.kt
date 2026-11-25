@@ -79,7 +79,6 @@ import com.nuvio.app.features.addons.fetchAddonResponseText
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
-
 /** Kable Killers electric blue, matching the brand. */
 internal val MusicAccent = Color(0xFF19A8FF)
 internal val MusicBackground = Color.Black
@@ -659,33 +658,6 @@ private fun MusicSearchPill(value: String, placeholder: String, onValueChange: (
 }
 
 @Composable
-private fun MusicChip(label: String, icon: ImageVector, selected: Boolean, onClick: () -> Unit) {
-    Row(
-        Modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(if (selected) MusicAccent else MusicSurface)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 9.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(icon, contentDescription = null, tint = if (selected) Color.Black else Color.White, modifier = Modifier.size(16.dp))
-        Spacer(Modifier.width(6.dp))
-        Text(label, color = if (selected) Color.Black else Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-    }
-}
-
-@Composable
-private fun MusicSectionTitle(title: String) {
-    Text(
-        title,
-        color = Color.White,
-        fontSize = 19.sp,
-        fontWeight = FontWeight.Bold,
-        modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 10.dp),
-    )
-}
-
-@Composable
 private fun MusicMessage(text: String) {
     Text(text, color = Color.White.copy(alpha = 0.65f), fontSize = 14.sp, modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp))
 }
@@ -734,46 +706,6 @@ internal fun MusicTrackRow(
         }
         if (isCurrent) {
             Icon(Icons.Rounded.GraphicEq, contentDescription = "Now playing", tint = MusicAccent, modifier = Modifier.size(20.dp))
-        }
-    }
-}
-
-@Composable
-private fun MusicSquareCard(track: MusicTrack, live: Boolean = false, onClick: () -> Unit) {
-    Column(Modifier.width(132.dp).clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick)) {
-        Box {
-            MusicArtwork(track.artwork, Modifier.size(132.dp), corner = 12.dp)
-            if (live || track.isLive) {
-                Text(
-                    "LIVE",
-                    color = Color.White,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(Color(0xFFE53935))
-                        .padding(horizontal = 6.dp, vertical = 2.dp),
-                )
-            }
-        }
-        Spacer(Modifier.height(8.dp))
-        Text(track.title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        if (track.artist.isNotBlank()) {
-            Text(track.artist, color = Color.White.copy(alpha = 0.6f), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
-    }
-}
-
-@Composable
-private fun MusicAlbumCard(item: MetaPreview, modifier: Modifier, onClick: () -> Unit) {
-    val track = item.toMusicTrack()
-    Column(modifier.clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick)) {
-        MusicArtwork(track.artwork, Modifier.fillMaxWidth().aspectRatio(1f), corner = 12.dp)
-        Spacer(Modifier.height(8.dp))
-        Text(track.title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-        if (track.artist.isNotBlank()) {
-            Text(track.artist, color = Color.White.copy(alpha = 0.6f), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }

@@ -41,9 +41,3 @@ sealed interface CatalogTarget {
     ) : CatalogTarget
 }
 
-@Serializable
-enum class CatalogTargetKind {
-    ADDON,
-    LIBRARY,
-    COLLECTION_SOURCE,
-}

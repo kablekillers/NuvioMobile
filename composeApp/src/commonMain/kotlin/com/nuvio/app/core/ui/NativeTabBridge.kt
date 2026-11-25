@@ -192,10 +192,6 @@ class NativeProfileSwitcherController {
     }
 }
 
-fun nativeTabSelect(tabName: String) {
-    NativeTabBridge.requestTab(tabName)
-}
-
 internal expect fun isLiquidGlassNativeTabBarSupported(): Boolean
 
 internal expect fun publishLiquidGlassNativeTabBarEnabled(enabled: Boolean)

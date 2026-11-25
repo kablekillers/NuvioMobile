@@ -106,6 +106,9 @@ import com.nuvio.app.features.player.FullscreenPlayerDialog
 import com.nuvio.app.features.player.LockPlayerToLandscape
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.async
 
 private val HubAccent = CinemaGold.Base
 private val HubBackground = Color(0xFF08080A)
@@ -174,18 +177,22 @@ internal fun SportsHubScreen(
             board = merged(members.mapNotNull { repository.cached(it) })
             var force = refresh > 0
             while (true) {
-                val boards = mutableListOf<SportsScoreboard>()
-                var failed = false
-                for (member in members) {
-                    try {
-                        boards += repository.scoreboard(member, forceRefresh = force)
-                    } catch (cancelled: CancellationException) {
-                        throw cancelled
-                    } catch (_: Exception) {
-                        failed = true
-                        repository.cached(member)?.let { boards += it }
-                    }
+                // All leagues of the choice at once instead of one after another.
+                val results = coroutineScope {
+                    members.map { member ->
+                        async {
+                            try {
+                                repository.scoreboard(member, forceRefresh = force) to false
+                            } catch (cancelled: CancellationException) {
+                                throw cancelled
+                            } catch (_: Exception) {
+                                repository.cached(member) to true
+                            }
+                        }
+                    }.awaitAll()
                 }
+                val boards = results.mapNotNull { it.first }
+                val failed = results.any { it.second }
                 merged(boards)?.let { board = it }
                 error = failed && boards.isEmpty()
                 force = true
@@ -201,18 +208,23 @@ internal fun SportsHubScreen(
         owner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
             var force = refresh > 0
             while (true) {
-                val fetched = mutableListOf<SportsScoreboard>()
-                var failures = 0
-                for (sport in leagues.filter { it.scoreboardPath != null }) {
-                    try {
-                        fetched += repository.scoreboard(sport, forceRefresh = force)
-                    } catch (cancelled: CancellationException) {
-                        throw cancelled
-                    } catch (_: Exception) {
-                        failures++
-                        repository.cached(sport)?.let { fetched += it }
-                    }
+                // Every league in parallel: the All Sports feed used to wait for ~20
+                // scoreboards one after another.
+                val results = coroutineScope {
+                    leagues.filter { it.scoreboardPath != null }.map { sport ->
+                        async {
+                            try {
+                                repository.scoreboard(sport, forceRefresh = force) to false
+                            } catch (cancelled: CancellationException) {
+                                throw cancelled
+                            } catch (_: Exception) {
+                                repository.cached(sport) to true
+                            }
+                        }
+                    }.awaitAll()
                 }
+                val fetched = results.mapNotNull { it.first }
+                val failures = results.count { it.second }
                 combinedBoards = fetched
                 combinedError = failures > 0
                 combinedLoading = false
@@ -247,7 +259,9 @@ internal fun SportsHubScreen(
     val currentEvent = selectedEvent?.let { selected ->
         (shownBoard?.events.orEmpty() + combinedBoards.flatMap { it.events }).firstOrNull { it.id == selected.id && it.league == selected.league } ?: selected
     }
-    val activeAddons = addons.addons.filter { it.isActive }.map { it.copy(isRefreshing = false, errorMessage = null) }
+    val activeAddons = remember(addons.addons) {
+        addons.addons.filter { it.isActive }.map { it.copy(isRefreshing = false, errorMessage = null) }
+    }
     LaunchedEffect(multiviewPending) {
         val source = multiviewPending ?: return@LaunchedEffect
         multiviewChoices = emptyList()
@@ -304,10 +318,11 @@ internal fun SportsHubScreen(
             repository.cached(sport)?.let { boards += it }
         }
         searchBoards = boards.toList()
-        for (sport in leagues.filter { it.scoreboardPath != null }) {
-            if (boards.any { it.league == sport }) continue
-            runCatching { repository.scoreboard(sport) }.getOrNull()?.let { boards += it; searchBoards = boards.toList() }
+        val missing = leagues.filter { it.scoreboardPath != null && boards.none { b -> b.league == it } }
+        val fresh = coroutineScope {
+            missing.map { sport -> async { runCatching { repository.scoreboard(sport) }.getOrNull() } }.awaitAll()
         }
+        searchBoards = boards + fresh.filterNotNull()
     }
     LaunchedEffect(searchActive, activeAddons) {
         if (!searchActive) return@LaunchedEffect
@@ -350,12 +365,16 @@ internal fun SportsHubScreen(
             // Replays/Highlights: every league in the choice. Events: the ones with no
             // ESPN scoreboard (boxing, wrestling, world soccer) from add-on event lists.
             val targets = if (vod) hub.members else hub.catalogMembers
-            val found = targets.flatMap { member ->
-                val memberEvents = events.filter { it.league == member }
-                val replaySchedule = if (vod && !isIos && activeAddons.isNotEmpty() && SportsRecordingClassifier.appliesTo(member)) {
-                    (memberEvents + repository.recentResults(member)).distinctBy { it.id }
-                } else memberEvents
-                SportsAddonDiscovery.find(member, replaySchedule, activeAddons, replays = vod)
+            val found = coroutineScope {
+                targets.map { member ->
+                    async {
+                        val memberEvents = events.filter { it.league == member }
+                        val replaySchedule = if (vod && !isIos && activeAddons.isNotEmpty() && SportsRecordingClassifier.appliesTo(member)) {
+                            (memberEvents + repository.recentResults(member)).distinctBy { it.id }
+                        } else memberEvents
+                        SportsAddonDiscovery.find(member, replaySchedule, activeAddons, replays = vod)
+                    }
+                }.awaitAll().flatten()
             }
             recordings = SportsAddonPriority.sorted(found.distinctBy { Triple(it.addonName, it.item.type, it.item.id) }) { it.addonName }
         }

@@ -45,14 +45,6 @@ internal fun List<MetaVideo>.filterUnavailableFutureSeasons(
     }
 }
 
-internal fun MetaDetails.firstPlayableEpisode(): MetaVideo? =
-    sortedPlayableEpisodes().firstOrNull()
-
-internal fun MetaDetails.firstReleasedPlayableEpisode(todayIsoDate: String): MetaVideo? =
-    sortedPlayableEpisodes().firstOrNull { video ->
-        video.isReleasedBy(todayIsoDate)
-    }
-
 internal fun MetaDetails.nextReleasedEpisodeAfter(
     completedEntry: WatchProgressEntry,
     todayIsoDate: String,

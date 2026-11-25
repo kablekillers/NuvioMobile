@@ -398,30 +398,6 @@ fun NuvioInfoBadge(
 }
 
 @Composable
-fun NuvioInlineMetadata(
-    title: String,
-    value: String,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.nuvio.colors.textMuted,
-        )
-        Spacer(modifier = Modifier.width(NuvioTokens.Space.s6))
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.nuvio.colors.textPrimary,
-        )
-    }
-}
-
-@Composable
 fun NuvioStatusModal(
     title: String,
     message: String,

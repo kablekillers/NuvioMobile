@@ -67,9 +67,6 @@ fun localizedMediaTypeLabel(type: String): String {
     }
 }
 
-fun localizedMovieTypeLabel(): String = resourceString("Movie") { getString(Res.string.media_movie) }
-
-
 private val genericEpisodeTitleRegex = Regex("""(?i)^Episode\s+(\d+)$""")
 
 /** Same idea as NuvioTV localizeEpisodeTitle: "Episode 12" -> localized word + number. */
@@ -122,23 +119,6 @@ fun localizedUpNextLabel(seasonNumber: Int?, episodeNumber: Int?): String =
         resourceString("Next Up") { getString(Res.string.continue_watching_up_next) }
     }
 
-fun localizedMonthName(month: Int): String =
-    when (month) {
-        1 -> resourceString("January") { getString(Res.string.date_month_january) }
-        2 -> resourceString("February") { getString(Res.string.date_month_february) }
-        3 -> resourceString("March") { getString(Res.string.date_month_march) }
-        4 -> resourceString("April") { getString(Res.string.date_month_april) }
-        5 -> resourceString("May") { getString(Res.string.date_month_may) }
-        6 -> resourceString("June") { getString(Res.string.date_month_june) }
-        7 -> resourceString("July") { getString(Res.string.date_month_july) }
-        8 -> resourceString("August") { getString(Res.string.date_month_august) }
-        9 -> resourceString("September") { getString(Res.string.date_month_september) }
-        10 -> resourceString("October") { getString(Res.string.date_month_october) }
-        11 -> resourceString("November") { getString(Res.string.date_month_november) }
-        12 -> resourceString("December") { getString(Res.string.date_month_december) }
-        else -> month.toString()
-    }
-
 fun localizedShortMonthName(month: Int): String =
     when (month) {
         1 -> resourceString("Jan") { getString(Res.string.date_month_short_jan) }
@@ -184,9 +164,6 @@ fun localizedByteUnit(unit: String): String =
         "KB" -> resourceString("KB") { getString(Res.string.unit_bytes_kb) }
         else -> resourceString("B") { getString(Res.string.unit_bytes_b) }
     }
-
-fun localizedPlayerPictureInPicture(): String =
-    resourceString("Nuvio is playing in Picture in Picture mode") { getString(Res.string.player_picture_in_picture) }
 
 private fun resourceString(
     fallback: String,

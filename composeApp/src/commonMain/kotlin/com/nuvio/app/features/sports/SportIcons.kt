@@ -87,30 +87,6 @@ fun SportIcon(glyph: SportGlyph, modifier: Modifier = Modifier, size: Dp = 26.dp
     }
 }
 
-/** Header badge: the sports grouped as overlapping electric-blue medallions. */
-@Composable
-fun SportsHeaderBadge(modifier: Modifier = Modifier, accent: Color, background: Color) {
-    val glyphs = listOf(
-        SportGlyph.FOOTBALL, SportGlyph.BASKETBALL, SportGlyph.BASEBALL,
-        SportGlyph.HOCKEY, SportGlyph.MMA, SportGlyph.COLLEGE_FOOTBALL
-    )
-    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
-        glyphs.forEachIndexed { index, glyph ->
-            Box(
-                modifier = Modifier
-                    .offset(x = (-10 * index).dp)
-                    .size(44.dp)
-                    .background(background, CircleShape)
-                    .border(2.dp, accent, CircleShape)
-                    .padding(8.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                SportIcon(glyph, size = 28.dp, color = if (index % 2 == 0) Color.White else accent)
-            }
-        }
-    }
-}
-
 private fun DrawScope.ballRect(widthFraction: Float, heightFraction: Float): Rect {
     val w = size.width * widthFraction
     val h = size.height * heightFraction

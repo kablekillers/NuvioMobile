@@ -480,8 +480,6 @@ object FolderDetailRepository {
     }
 }
 
-private fun Boolean?.orFalse(): Boolean = this == true
-
 private fun CatalogPage.withUnreleasedFilter(): CatalogPage {
     if (!HomeCatalogSettingsRepository.snapshot().hideUnreleasedContent) return this
     val filteredItems = items.filterReleasedItems(CurrentDateProvider.todayIsoDate())

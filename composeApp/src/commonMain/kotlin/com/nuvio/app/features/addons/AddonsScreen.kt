@@ -60,26 +60,6 @@ import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
-fun AddonsScreen(
-    modifier: Modifier = Modifier,
-    title: String? = null,
-    onBack: (() -> Unit)? = null,
-) {
-    NuvioScreen(modifier = modifier) {
-        stickyHeader {
-            NuvioScreenHeader(
-                title = title ?: stringResource(Res.string.addon_title),
-                onBack = onBack,
-            ) {
-            }
-        }
-        item {
-            AddonsSettingsPageContent()
-        }
-    }
-}
-
-@Composable
 internal fun AddonsSettingsPageContent(
     modifier: Modifier = Modifier,
 ) {

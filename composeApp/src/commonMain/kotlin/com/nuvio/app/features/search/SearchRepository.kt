@@ -696,10 +696,3 @@ private fun List<MetaPreview>.previewNames(limit: Int = 5): String {
 private fun String.displayLabel(): String =
     localizedMediaTypeLabel(this)
 
-private fun String.typeSortKey(): String =
-    when (lowercase()) {
-        "movie" -> "0_movie"
-        "series" -> "1_series"
-        "anime" -> "2_anime"
-        else -> "9_$this"
-    }

@@ -119,8 +119,6 @@ private fun buildAddonHttpClient(cache: Cache? = null): OkHttpClient =
         }
         .build()
 
-private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
-
 private data class LimitedReadResult(
     val bytes: ByteArray,
     val truncated: Boolean,
@@ -158,22 +156,6 @@ private fun readAtMostBytes(stream: InputStream, maxBytes: Int): LimitedReadResu
     }
 
     return LimitedReadResult(out.toByteArray(), truncated)
-}
-
-private fun readResponseBodyLimited(body: ResponseBody?, maxBytes: Int): String {
-    if (body == null) return ""
-    val charset = body.contentType()?.charset(Charsets.UTF_8) ?: Charsets.UTF_8
-    val readResult = body.byteStream().use { stream ->
-        readAtMostBytes(stream, maxBytes.coerceAtLeast(0))
-    }
-
-    val decoded = try {
-        String(readResult.bytes, charset)
-    } catch (_: Exception) {
-        String(readResult.bytes, Charsets.UTF_8)
-    }
-
-    return if (readResult.truncated) "$decoded\n...[truncated]" else decoded
 }
 
 private fun readResponseBody(body: ResponseBody?): String {

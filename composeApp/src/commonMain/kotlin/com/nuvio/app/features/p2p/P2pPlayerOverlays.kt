@@ -26,66 +26,6 @@ import nuvio.composeapp.generated.resources.player_torrent_stats
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
-fun P2pStatsOverlay(
-    visible: Boolean,
-    downloadSpeed: Long,
-    uploadSpeed: Long,
-    peers: Int,
-    seeds: Int,
-    totalProgress: Float,
-    modifier: Modifier = Modifier,
-) {
-    AnimatedVisibility(
-        visible = visible,
-        enter = fadeIn(),
-        exit = fadeOut(),
-        modifier = modifier,
-    ) {
-        Column(
-            modifier = Modifier
-                .background(
-                    color = Color.Black.copy(alpha = 0.7f),
-                    shape = RoundedCornerShape(8.dp),
-                )
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = "P2P",
-                    color = Color(0xFF4CAF50),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-                Text(
-                    text = "↓ ${formatP2pSpeed(downloadSpeed)}",
-                    color = Color.White,
-                    fontSize = 11.sp,
-                )
-                Text(
-                    text = "↑ ${formatP2pSpeed(uploadSpeed)}",
-                    color = Color.White.copy(alpha = 0.7f),
-                    fontSize = 11.sp,
-                )
-            }
-            Text(
-                text = stringResource(
-                    Res.string.player_torrent_stats,
-                    peers,
-                    seeds,
-                    (totalProgress * 100).toInt(),
-                ),
-                color = Color.White.copy(alpha = 0.6f),
-                fontSize = 10.sp,
-            )
-        }
-    }
-}
-
-@Composable
 fun P2pLoadingStatus(
     message: String?,
     progress: Float?,

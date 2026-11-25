@@ -97,7 +97,6 @@ jobs:
           chmod +x gradlew
           ./gradlew :androidApp:assembleFullRelease \
             -Pnuvio.android.distribution=full \
-            -Pnuvio.ios.distribution=appstore \
             -PreleaseMinifyEnabled=${{ steps.version.outputs.minify }} \
             "-Dorg.gradle.jvmargs=-Xmx7g -XX:MaxMetaspaceSize=1536m -Dfile.encoding=UTF-8" \
             -Pkotlin.compiler.execution.strategy=in-process \

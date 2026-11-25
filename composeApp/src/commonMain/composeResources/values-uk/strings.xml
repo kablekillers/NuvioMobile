@@ -34,7 +34,6 @@
     <string name="action_save">Зберегти</string>
     <string name="action_saving">Збереження…</string>
     <string name="action_switch">Перемкнути</string>
-    <string name="action_validate">Перевірити</string>
     <string name="addon_installing">Встановлення</string>
     <string name="addon_title">Аддони</string>
     <string name="addons_badge_active">Активний</string>
@@ -52,8 +51,6 @@
     <string name="addons_appstore_empty_title">Зробіть Kable Killers Mobile своїм.</string>
     <string name="addons_appstore_input_placeholder">URL-адреса аддона</string>
     <string name="addons_appstore_install_button">Додати аддон</string>
-    <string name="store_empty_unavailable_title">Тут поки порожньо</string>
-    <string name="store_empty_unavailable_message">Вашим поточним аддонам тут нічого показати.</string>
     <string name="addons_empty_subtitle">Додайте URL маніфесту, щоб почати завантажувати каталоги, метадані, потоки або субтитри в Nuvio.</string>
     <string name="addons_empty_title">Аддони ще не встановлено.</string>
     <string name="addons_error_enter_url">Введіть URL-адресу аддона.</string>
@@ -93,7 +90,6 @@
     <string name="collections_editor_cover_none">Немає</string>
     <string name="collections_editor_cover">Обкладинка</string>
     <string name="collections_editor_create_collection">Створити колекцію</string>
-    <string name="collections_editor_done">Готово</string>
     <string name="collections_editor_edit_collection">Редагувати колекцію</string>
     <string name="collections_editor_edit_folder">Редагувати папку</string>
     <string name="collections_editor_folder_editor_help">Налаштуйте назву, вигляд і джерела каталогів папки за тим самим принципом, що й у головному редакторі колекцій.</string>
@@ -256,11 +252,8 @@
     <string name="collections_editor_trakt_sort_popular">Популярність</string>
     <string name="collections_editor_trakt_sort_percentage">Рейтинг (%)</string>
     <string name="collections_editor_trakt_sort_votes">Голоси</string>
-    <string name="collections_editor_trakt_enter_name_url_or_id">Введіть назву, URL або ID списку Trakt</string>
-    <string name="collections_editor_trakt_enter_id_or_url">Введіть ID або URL списку Trakt</string>
     <string name="collections_editor_trakt_load_failed">Не вдалося завантажити список Trakt</string>
     <string name="collections_editor_trakt_no_lists_found">Списків Trakt не знайдено</string>
-    <string name="collections_editor_trakt_resolved_subtitle">Знайдений список Trakt</string>
     <string name="collections_editor_trakt_fallback_title">Список Trakt %1$d</string>
     <string name="collections_editor_tmdb_genre_action">Бойовик</string>
     <string name="collections_editor_tmdb_genre_adventure">Пригоди</string>
@@ -343,7 +336,6 @@
     <string name="trailer_enter_fullscreen">На весь екран</string>
     <string name="trailer_exit_fullscreen">Вийти з повноекранного режиму</string>
     <string name="player_seek_position">Позиція відтворення</string>
-    <string name="compose_action_reload">Перезавантажити</string>
     <string name="compose_auth_already_have_account">Уже маєте обліковий запис? </string>
     <string name="compose_auth_continue_without_account">Продовжити без облікового запису</string>
     <string name="compose_auth_create_account">Створити обліковий запис</string>
@@ -430,7 +422,6 @@
     <string name="compose_player_capture_line">Захопити</string>
     <string name="compose_player_close">Закрити плеєр</string>
     <string name="compose_player_color">Колір</string>
-    <string name="compose_player_currently_playing">Зараз відтворюється</string>
     <string name="compose_player_episode_code_episode_only">E%1$d</string>
     <string name="compose_player_episode_code_full">S%1$d E%2$d</string>
     <string name="compose_player_episode_title_format">S%1$d E%2$d • %3$s</string>
@@ -461,7 +452,6 @@
     <string name="compose_player_go_back">Повернутися назад</string>
     <string name="compose_player_reload">Перезавантажити</string>
     <string name="compose_player_reset">Скинути</string>
-    <string name="compose_player_reset_defaults">Скинути до стандартних</string>
     <string name="compose_player_resize_fill">Заповнити</string>
     <string name="compose_player_resize_fit">Вписати</string>
     <string name="compose_player_resize_zoom">Масштаб</string>
@@ -493,8 +483,6 @@
     <string name="compose_search_discover_title">Огляд</string>
     <string name="compose_search_empty_failed_message">Встановлені аддони не змогли повернути дійсні результати пошуку.</string>
     <string name="compose_search_empty_failed_title">Помилка пошуку</string>
-    <string name="compose_search_empty_no_active_addons_message">Увімкніть або додайте аддон перед пошуком.</string>
-    <string name="compose_search_empty_no_active_addons_title">Немає активних аддонів</string>
     <string name="compose_search_empty_no_results_message">У встановлених каталогах із пошуком не знайдено збігів за цим запитом.</string>
     <string name="compose_search_empty_no_results_title">Нічого не знайдено</string>
     <string name="compose_search_empty_no_search_catalogs_message">Ваші увімкнені аддони не підтримують пошук по каталогах.</string>
@@ -503,11 +491,9 @@
     <string name="compose_search_recent_searches">Нещодавні пошуки</string>
     <string name="compose_search_remove_recent_search">Видалити нещодавній пошук</string>
     <string name="compose_settings_category_about">Про додаток</string>
-    <string name="compose_settings_category_general">Загальні</string>
     <string name="compose_settings_page_account">Обліковий запис</string>
     <string name="compose_settings_page_addons">Аддони</string>
     <string name="compose_settings_page_advanced">Додатково</string>
-    <string name="compose_settings_page_appearance">Макет</string>
     <string name="compose_settings_page_content_discovery">Контент і пошук джерел</string>
     <string name="compose_settings_page_continue_watching">Продовжити перегляд</string>
     <string name="compose_settings_page_debrid">Підключені сервіси</string>
@@ -527,29 +513,21 @@
     <string name="settings_appearance_section_streams">ПОТОКИ</string>
     <string name="compose_settings_page_supporters_contributors">Спонсори та учасники</string>
     <string name="compose_settings_page_tmdb_enrichment">Збагачення TMDB</string>
-    <string name="compose_settings_page_trakt">Trakt</string>
     <string name="compose_settings_page_tracking">Відстеження</string>
     <string name="compose_settings_root_about_section">ПРО ДОДАТОК</string>
     <string name="compose_settings_root_account_description">Стан облікового запису та синхронізації</string>
     <string name="compose_settings_root_account_section">ОБЛІКОВИЙ ЗАПИС</string>
     <string name="compose_settings_root_advanced_description">Поведінка під час запуску та профілів.</string>
-    <string name="compose_settings_root_advanced_section">ДОДАТКОВО</string>
-    <string name="compose_settings_root_appearance_description">Головна, потоки, колекції та сторінки опису</string>
     <string name="compose_settings_root_check_updates_description">Завантажити найновіший випуск</string>
     <string name="compose_settings_root_check_updates_title">Перевірити оновлення</string>
     <string name="compose_settings_root_content_discovery_description">Керування аддонами та джерелами контенту.</string>
-    <string name="compose_settings_root_content_discovery_description_appstore">Керуйте аддонами та вибирайте, що відображається в Kable Killers Mobile.</string>
-    <string name="compose_settings_root_downloads_description">Керування завантаженими фільмами та серіями.</string>
-    <string name="compose_settings_root_downloads_description_appstore">Керуйте збереженим на цьому пристрої контентом.</string>
     <string name="compose_settings_root_downloads_title">Завантаження</string>
-    <string name="compose_settings_root_general_section">ЗАГАЛЬНІ</string>
     <string name="compose_settings_root_integrations_description">Керування доступними інтеграціями</string>
     <string name="compose_settings_root_notifications_description">Налаштування сповіщень про нові серії та надсилання тестового сповіщення.</string>
     <string name="compose_settings_root_privacy_policy_description">Дізнайтеся, як Nuvio обробляє ваші дані</string>
     <string name="compose_settings_root_streams_description">Відображення результатів потоків і правила URL-значків.</string>
     <string name="compose_settings_root_switch_profile_description">Перейти на інший профіль.</string>
     <string name="compose_settings_root_switch_profile_title">Змінити профіль</string>
-    <string name="compose_settings_root_trakt_description">Відкрити екран підключення Trakt</string>
     <string name="compose_settings_root_tracking_description">Підключіть сервіси відстеження та виберіть, який із них відповідатиме за медіатеку та розділ «Продовжити перегляд».</string>
     <string name="settings_search_empty">Налаштувань не знайдено.</string>
     <string name="settings_search_placeholder">Пошук налаштувань...</string>
@@ -609,19 +587,15 @@
     <string name="settings_licenses_attributions_exoplayer_title">AndroidX Media3 ExoPlayer 1.8.0</string>
     <string name="settings_licenses_attributions_exoplayer_body">Використовується для відтворення у збірках для Android.</string>
     <string name="settings_licenses_attributions_exoplayer_license">Ліцензовано за Apache License, версія 2.0.</string>
-    <string name="compose_trakt_list_picker_loading">Завантаження ваших списків Trakt…</string>
-    <string name="compose_trakt_list_picker_subtitle">Виберіть, куди зберегти цей тайтл у Trakt</string>
     <string name="compose_tracking_list_picker_loading">Завантаження списків…</string>
     <string name="compose_tracking_list_picker_subtitle">Виберіть, куди зберегти цей тайтл</string>
     <string name="action_donate">Підтримати</string>
-    <string name="action_support_nuvio">Підтримати Nuvio</string>
     <string name="cw_action_go_to_details">Перейти до опису</string>
     <string name="cw_action_remove">Вилучити</string>
     <string name="cw_action_start_from_beginning">Почати спочатку</string>
     <string name="detail_btn_play">Відтворити</string>
     <string name="detail_comments_badge_rating">%1$d/10</string>
     <string name="detail_comments_badge_review">Відгук</string>
-    <string name="detail_comments_badge_spoiler">Спойлер</string>
     <string name="detail_comments_empty">Відгуків на Trakt поки немає.</string>
     <string name="detail_comments_likes">Вподобань: %1$d</string>
     <string name="detail_comments_spoiler_card">Цей коментар містить спойлери.</string>
@@ -655,7 +629,6 @@
     <string name="home_view_all">Переглянути все</string>
     <string name="play_manually">Відтворити вручну</string>
     <string name="poster_logo_content_description">Логотип %1$s</string>
-    <string name="settings_account">Обліковий запис</string>
     <string name="settings_account_delete_account">Видалити обліковий запис</string>
     <string name="settings_account_delete_account_description">Це назавжди видалить ваш обліковий запис і всі пов’язані з ним дані.</string>
     <string name="settings_account_delete_confirm_message">Цю дію неможливо скасувати. Усі ваші дані, профілі та історія синхронізації будуть остаточно видалені.</string>
@@ -687,7 +660,6 @@
     <string name="settings_appearance_app_language_restart_title">Потрібен перезапуск</string>
     <string name="settings_appearance_app_language_restart_message">Закрийте та знову відкрийте додаток, щоб оновити інтерфейс для цієї мови.</string>
     <string name="settings_appearance_nav_bar_style">Панель навігації</string>
-    <string name="settings_appearance_nav_bar_style_sheet_title">Стиль панелі навігації</string>
     <string name="settings_nav_bar_glow">Скляне світіння</string>
     <string name="settings_nav_bar_glow_description">Додає м’яке підсвічування навколо плаваючої панелі.</string>
     <string name="settings_nav_bar_glow_on">Світіння увімк.</string>
@@ -798,7 +770,6 @@
     <string name="settings_custom_poster_description">Вкажіть шаблон URL-адреси постера зі стороннього сервісу. Якщо для певного тайтла підстановка не має значення, використовуватиметься оригінальний постер.</string>
     <string name="settings_custom_poster_placeholder">https://example.com/poster?id={id}&amp;id_type={id_type}&amp;type={type}</string>
     <string name="settings_custom_poster_active">Власне джерело постерів активне</string>
-    <string name="settings_custom_poster_none">Шаблон не налаштовано</string>
     <string name="settings_custom_poster_save">Зберегти</string>
     <string name="settings_custom_poster_clear">Очистити</string>
     <!-- Custom Poster URL - Screen Toggles -->
@@ -849,7 +820,6 @@
     <string name="settings_continue_watching_up_next_title">Наступна серія від найдальшої переглянутої</string>
     <string name="settings_continue_watching_use_episode_thumbnails_description">Надавати перевагу кадрам із серій, якщо вони доступні.</string>
     <string name="settings_continue_watching_use_episode_thumbnails_title">Використовувати кадри серій у «Продовжити перегляд»</string>
-    <string name="settings_content_discovery_section_home">ГОЛОВНА</string>
     <string name="settings_content_discovery_section_sources">ДЖЕРЕЛА</string>
     <string name="settings_content_discovery_section_search">ПОШУК</string>
     <string name="settings_content_discovery_recent_searches">Нещодавні пошуки</string>
@@ -946,9 +916,7 @@
     <string name="settings_fusion_badge_preview_empty">За цим URL немає зображень значків у стилі Fusion.</string>
     <string name="settings_fusion_badge_group_title">Група %1$d</string>
     <string name="settings_fusion_badge_other_group_title">Інші значки Fusion</string>
-    <string name="settings_debrid_key_valid">API-ключ підтверджено.</string>
     <string name="settings_debrid_key_invalid">Не вдалося перевірити цей API-ключ.</string>
-    <string name="settings_mdb_add_api_key_first">Спершу додайте свій API-ключ MDBList нижче, перш ніж вмикати рейтинги.</string>
     <string name="settings_mdb_api_key_description">Потрібен для отримання рейтингів із MDBList</string>
     <string name="settings_mdb_api_key_label">API-ключ</string>
     <string name="settings_mdb_api_key_title">API-ключ</string>
@@ -963,8 +931,6 @@
     <string name="settings_meta_actions_description">Кнопки відтворення та збереження.</string>
     <string name="settings_meta_cast">Актори</string>
     <string name="settings_meta_cast_description">Основний акторський склад.</string>
-    <string name="settings_meta_cinematic_background">Кінематографічний фон</string>
-    <string name="settings_meta_cinematic_background_description">Розмите фонове зображення позаду контенту, як на екрані потоків.</string>
     <string name="settings_meta_background_mode">Режим фону</string>
     <string name="settings_meta_background_mode_description">Виберіть спосіб відображення фону на сторінках опису.</string>
     <string name="settings_meta_poster_transition">Анімація переходу постера</string>
@@ -1020,8 +986,6 @@
     <string name="settings_notifications_test_for_title">Надіслати локальне тестове сповіщення для «%1$s».</string>
     <string name="settings_notifications_test_requires_saved_show">Спершу збережіть серіал у медіатеці, щоб перевірити сповіщення.</string>
     <string name="settings_notifications_test_title">Тестове сповіщення</string>
-    <string name="community_section_title">Спільнота</string>
-    <string name="community_section_description">Дізнайтеся, хто створює та підтримує Nuvio на мобільних пристроях, ТБ та у вебверсії.</string>
     <string name="community_membership_title">Підписка спонсора Nuvio</string>
     <string name="community_membership_description">Підтримка Nuvio допомагає оплачувати інфраструктуру та подальшу розробку, залишаючи основні функції безкоштовними для всіх.</string>
     <string name="community_view_supporter_membership">Переглянути рівні підтримки</string>
@@ -1045,7 +1009,6 @@
     <string name="community_tab_supporters">Спонсори</string>
     <string name="community_open_github">Відкрити GitHub</string>
     <string name="community_github_profile_unavailable">Профіль GitHub недоступний</string>
-    <string name="community_no_message_attached">Повідомлення не додано.</string>
     <string name="community_loading_contributors">Завантаження учасників...</string>
     <string name="community_loading_supporters">Завантаження спонсорів...</string>
     <string name="community_load_contributors_failed">Не вдалося завантажити учасників</string>
@@ -1056,7 +1019,6 @@
     <string name="community_error_unable_load_supporters">Не вдалося завантажити список спонсорів.</string>
     <string name="community_error_contributors_request_failed">Зараз не вдалося завантажити список учасників.</string>
     <string name="community_error_supporters_request_failed">Зараз не вдалося завантажити список спонсорів.</string>
-    <string name="community_total_commits">Усього комітів: %1$d</string>
     <string name="community_month_jan">Січ</string>
     <string name="community_month_feb">Лют</string>
     <string name="community_month_mar">Бер</string>
@@ -1090,7 +1052,6 @@
     <string name="settings_playback_decoder_prefer_app">Надавати перевагу декодерам додатка (FFmpeg)</string>
     <string name="settings_playback_decoder_prefer_device">Надавати перевагу декодерам пристрою</string>
     <string name="settings_playback_decoder_priority">Пріоритет декодера</string>
-    <string name="settings_playback_dialog_close">Торкніться за межами вікна, щоб закрити</string>
     <string name="settings_playback_dialog_save_close">Торкніться за межами вікна, щоб зберегти й закрити</string>
     <string name="settings_playback_duration_day_one">%1$d день</string>
     <string name="settings_playback_duration_days">Днів: %1$d</string>
@@ -1101,7 +1062,6 @@
     <string name="settings_playback_external_player">Зовнішній плеєр</string>
     <string name="settings_playback_external_player_app">Додаток зовнішнього плеєра</string>
     <string name="settings_playback_external_player_description_android">Відкривати нове відтворення у стандартному відеоплеєрі Android або через системний вибір.</string>
-    <string name="settings_playback_external_player_description_ios">Відкривати нове відтворення у вибраному встановленому плеєрі.</string>
     <string name="settings_playback_external_player_forward_subtitles">Передавати субтитри у зовнішній плеєр</string>
     <string name="settings_playback_external_player_forward_subtitles_description">Завантажувати субтитри з аддонів бажаною мовою та передавати їх у зовнішній плеєр.</string>
     <string name="settings_playback_external_player_send_skip_segments">Передавати мітки заставок і титрів</string>
@@ -1131,13 +1091,6 @@
     <string name="settings_playback_option_original_hint">Потрібне увімкнене збагачення TMDB</string>
     <string name="settings_playback_option_forced">Примусові (Forced)</string>
     <string name="settings_playback_option_none">Немає</string>
-    <string name="settings_playback_addon_subtitle_startup_all">Усі субтитри аддонів</string>
-    <string name="settings_playback_addon_subtitle_startup_all_description">Попередньо завантажувати та підключати всі субтитри аддонів перед початком відтворення. Найповільніший запуск.</string>
-    <string name="settings_playback_addon_subtitle_startup_fast">Швидкий запуск</string>
-    <string name="settings_playback_addon_subtitle_startup_fast_description">Починати відтворення миттєво. Вибір субтитрів аддона може один раз перезавантажити плеєр.</string>
-    <string name="settings_playback_addon_subtitle_startup_mode">Завантаження субтитрів аддонів</string>
-    <string name="settings_playback_addon_subtitle_startup_preferred">Бажані мови</string>
-    <string name="settings_playback_addon_subtitle_startup_preferred_description">Попередньо завантажувати субтитри аддонів перед відтворенням і підключати доріжки бажаною та додатковою мовами.</string>
     <string name="settings_playback_prefer_binge_group">Надавати перевагу Binge Group (наступна серія)</string>
     <string name="settings_playback_prefer_binge_group_description">Спершу пробувати той самий профіль джерела (той самий аддон/групу якості) перед звичайними правилами автовідтворення.</string>
     <string name="settings_playback_reuse_binge_group">Повторно використовувати Binge Group</string>
@@ -1163,9 +1116,7 @@
     <string name="settings_playback_regex_preset_quality_4k_remux">4K / Remux</string>
     <string name="settings_playback_regex_preset_quality_720p_smaller">720p / Менший розмір</string>
     <string name="settings_playback_regex_preset_web_sources">WEB-джерела</string>
-    <string name="settings_playback_render_type">Режим рендерингу libass</string>
     <string name="settings_playback_render_scale">Роздільна здатність рендерингу субтитрів</string>
-    <string name="settings_playback_render_scale_description">Нижча роздільна здатність підвищує продуктивність за складного оформлення субтитрів ціною чіткості</string>
     <string name="settings_playback_render_mode">Режим рендерингу ASS</string>
     <string name="settings_playback_render_mode_description">Спосіб накладання субтитрів ASS/SSA на відео</string>
     <string name="settings_playback_render_mode_tunneled">Тунельне відтворення обходить конвеєр відеоефектів. Автоматично використовується режим накладання.</string>
@@ -1207,11 +1158,9 @@
     <string name="settings_playback_parental_guide_description">Показувати вікові застереження на початку відтворення.</string>
     <string name="settings_playback_subtitle_background_color">Колір фону</string>
     <string name="settings_playback_subtitle_bold">Жирний</string>
-    <string name="settings_playback_subtitle_bold_description">Використовувати жирніше накреслення шрифту субтитрів.</string>
     <string name="settings_playback_subtitle_color_transparent">Прозорий</string>
     <string name="settings_playback_subtitle_outline">Контур</string>
     <string name="settings_playback_subtitle_outline_color">Колір контуру</string>
-    <string name="settings_playback_subtitle_outline_description">Малювати обведення навколо тексту субтитрів.</string>
     <string name="settings_playback_subtitle_show_preferred_only">Показувати лише бажані мови</string>
     <string name="settings_playback_subtitle_show_preferred_only_description">Показувати лише субтитри, що відповідають вибраним бажаним мовам.</string>
     <string name="settings_playback_subtitle_size">Розмір субтитрів</string>
@@ -1247,7 +1196,6 @@
     <string name="settings_playback_fallback_startup_timeout">Час на запуск джерела</string>
     <string name="settings_playback_fallback_next_source_blocked_by_engine_switch">Вимкніть автоперемикання рушія в разі помилки відтворення, щоб скористатися цією функцією.</string>
     <string name="player_error_source_startup_timeout">Джерело не запустилося протягом %1$d с.</string>
-    <string name="settings_playback_threshold_minutes">Поріг у хвилинах</string>
     <string name="settings_playback_threshold_mode">Режим порогу наступної серії</string>
     <string name="settings_playback_threshold_mode_minutes_before_end">Хвилин до кінця</string>
     <string name="settings_playback_threshold_mode_percentage">Відсоток</string>
@@ -1328,7 +1276,6 @@
     <string name="settings_tmdb_section_modules">МОДУЛІ</string>
     <string name="settings_tmdb_section_title">ЗБАГАЧЕННЯ TMDB</string>
     <string name="settings_trakt_approval_redirect">Після підтвердження вас буде автоматично перенаправлено назад.</string>
-    <string name="settings_trakt_authentication">АВТЕНТИФІКАЦІЯ</string>
     <string name="settings_trakt_comments">Коментарі</string>
     <string name="settings_trakt_comments_description">Показувати відгуки Trakt на сторінках опису</string>
     <string name="settings_trakt_connect">Підключити Trakt</string>
@@ -1336,7 +1283,6 @@
     <string name="settings_trakt_default_user">Користувач Trakt</string>
     <string name="settings_trakt_disconnect">Відключити</string>
     <string name="settings_trakt_failed_open_browser">Не вдалося відкрити браузер</string>
-    <string name="settings_trakt_features">ФУНКЦІЇ</string>
     <string name="settings_trakt_finish_sign_in">Завершити підтвердження підключення</string>
     <string name="settings_trakt_intro_description">Синхронізуйте список перегляду, прогрес, розділ «Продовжити перегляд», скроблінг та особисті списки з Trakt.</string>
     <string name="settings_trakt_missing_credentials">У local.properties відсутні TRAKT_CLIENT_ID / TRAKT_CLIENT_SECRET.</string>
@@ -1407,8 +1353,6 @@
     <string name="settings_simkl_authorization_revoked">Авторизацію Simkl відкликано. Підключіться знову.</string>
     <string name="settings_tracking_not_connected">Не підключено</string>
     <string name="tracking_source_simkl">Simkl</string>
-    <string name="tracking_library_source_simkl_selected">Вибрано список перегляду Simkl</string>
-    <string name="tracking_watch_progress_simkl_selected">Джерелом прогресу перегляду встановлено Simkl</string>
     <string name="tracking_watch_progress_dialog_subtitle">Виберіть сервіс, із якого Nuvio братиме прогрес для відновлення та розділу «Продовжити перегляд». Скроблінг залишається активним для всіх підключених сервісів.</string>
     <string name="trakt_library_source_title">Джерело медіатеки</string>
     <string name="trakt_library_source_subtitle">Виберіть джерело даних для вашої медіатеки в Nuvio</string>
@@ -1416,16 +1360,11 @@
     <string name="trakt_library_source_dialog_subtitle">Виберіть сервіс, із якого Nuvio зчитуватиме вашу медіатеку. Перегляди скробляться в усі підключені сервіси.</string>
     <string name="trakt_library_source_trakt">Trakt</string>
     <string name="trakt_library_source_nuvio">Медіатека Nuvio</string>
-    <string name="trakt_library_source_trakt_selected">Вибрано медіатеку Trakt</string>
-    <string name="trakt_library_source_nuvio_selected">Вибрано медіатеку Nuvio</string>
     <string name="trakt_watch_progress_title">Прогрес перегляду</string>
     <string name="trakt_watch_progress_subtitle">Виберіть джерело прогресу для відновлення та розділу «Продовжити перегляд»</string>
     <string name="trakt_watch_progress_dialog_title">Прогрес перегляду</string>
-    <string name="trakt_watch_progress_dialog_subtitle">Виберіть, чи використовувати для відновлення та «Продовжити перегляд» дані Trakt або Nuvio Sync, поки скроблінг у Trakt залишається активним.</string>
     <string name="trakt_watch_progress_source_trakt">Trakt</string>
     <string name="trakt_watch_progress_source_nuvio">Nuvio Sync</string>
-    <string name="trakt_watch_progress_trakt_selected">Джерелом прогресу перегляду встановлено Trakt</string>
-    <string name="trakt_watch_progress_nuvio_selected">Джерелом прогресу перегляду встановлено Nuvio Sync</string>
     <string name="trakt_more_like_this_source_title">Джерело блоку «Схоже»</string>
     <string name="trakt_more_like_this_source_subtitle">Виберіть, звідки брати рекомендації на сторінках опису</string>
     <string name="trakt_more_like_this_source_dialog_title">Джерело блоку «Схоже»</string>
@@ -1566,7 +1505,6 @@
     <string name="lang_zulu">Зулу</string>
     <string name="action_clear">Очистити</string>
     <string name="action_continue">Продовжити</string>
-    <string name="action_ignore">Ігнорувати</string>
     <string name="action_install">Встановити</string>
     <string name="action_later">Пізніше</string>
     <string name="action_no">Ні</string>
@@ -1608,7 +1546,6 @@
     <string name="discover_empty_no_catalogs_title">Немає каталогів для огляду</string>
     <string name="discover_empty_no_results_message">За вибраним каталогом і фільтрами нічого не знайдено.</string>
     <string name="discover_empty_no_results_title">Нічого не знайдено</string>
-    <string name="discover_empty_no_active_addons_message">Увімкніть або додайте аддон перед переглядом розділу «Огляд».</string>
     <string name="discover_select_catalog">Виберіть каталог</string>
     <string name="discover_select_genre">Виберіть жанр</string>
     <string name="discover_select_type">Виберіть тип</string>
@@ -1624,7 +1561,6 @@
     <string name="home_continue_watching_watched">Переглянуто %1$s</string>
     <string name="home_continue_watching_hours_minutes_left">Залишилося %1$dh %2$dm</string>
     <string name="home_continue_watching_minutes_left">Залишилося %1$dm</string>
-    <string name="home_empty_no_active_addons_message">Увімкніть або додайте аддон, щоб бачити каталоги на головному екрані.</string>
     <string name="home_empty_no_rows_message">Ваші увімкнені аддони не надають каталогів для головного екрана.</string>
     <string name="home_empty_no_rows_title">Немає доступного контенту для головної</string>
     <string name="home_load_failed_title">Не вдалося завантажити головну</string>
@@ -1647,8 +1583,6 @@
     <string name="meta_section_trailers_description">Рядок трейлерів і швидкий запуск відтворення.</string>
     <string name="network_back_online">З’єднання відновлено</string>
     <string name="network_cannot_reach_servers">Не вдається зв’язатися із серверами</string>
-    <string name="network_error_empty_response_body">Порожнє тіло відповіді</string>
-    <string name="network_error_request_failed_http">Помилка запиту з кодом HTTP %1$d</string>
     <string name="network_no_internet_connection">Немає підключення до інтернету</string>
     <string name="person_age">(вік: %1$d)</string>
     <string name="person_born">Дата народження: %1$s%2$s</string>
@@ -1698,8 +1632,6 @@
     <string name="profile_select_avatar">Виберіть аватар для цього профілю.</string>
     <string name="profile_set_pin_lock">Встановити PIN-код</string>
     <string name="profile_unnamed">Профіль без назви</string>
-    <string name="profile_use_primary_addons">Використовувати основні аддони</string>
-    <string name="profile_use_primary_addons_description">Використовувати набір аддонів головного профілю замість ведення окремого списку.</string>
     <string name="profile_who_is_watching">Хто дивиться?</string>
     <string name="profile_already_active">Ви вже використовуєте профіль &quot;%1$s&quot;</string>
     <string name="provider_downloaded">Завантажено</string>
@@ -1714,9 +1646,6 @@
     <string name="streams_empty_load_failed_title">Не вдалося завантажити потоки</string>
     <string name="playback_unavailable">Відтворення недоступне</string>
     <string name="playback_unavailable_message">Відтворення недоступне для цього тайтла з вашими поточними налаштуваннями.</string>
-    <string name="streams_empty_no_addons_message">Спершу встановіть аддон, щоб завантажити потоки для цього тайтла.</string>
-    <string name="streams_empty_no_stream_addon_message">Ваші встановлені аддони не надають потоків для цього типу контенту.</string>
-    <string name="streams_empty_no_stream_addon_title">Немає аддонів із потоками</string>
     <string name="streams_empty_no_streams_message">Жоден зі встановлених аддонів не повернув потоків для цього тайтла.</string>
     <string name="streams_episode_badge">S%1$d E%2$d</string>
     <string name="streams_episode_fallback_title">Серія</string>
@@ -1757,7 +1686,6 @@
     <string name="trailer_close">Закрити трейлер</string>
     <string name="trailer_unable_to_play">Не вдалося відтворити трейлер</string>
     <string name="trakt_lists_load_failed">Не вдалося завантажити списки Trakt</string>
-    <string name="trakt_lists_update_failed">Не вдалося оновити списки Trakt</string>
     <string name="tracking_lists_update_failed">Не вдалося оновити списки відстеження</string>
     <string name="tracking_list_status_rewritten">%1$s додав цей тайтл до «%2$s» замість «%3$s»</string>
     <string name="tracking_remove_confirmation_title">Вилучити з %1$s?</string>
@@ -1765,11 +1693,8 @@
     <string name="tracking_removal_impact_history">історію переглядів</string>
     <string name="tracking_removal_impact_rating">оцінку</string>
     <string name="tracking_removal_impact_history_and_rating">історію переглядів та оцінку</string>
-    <string name="updates_asset_line">%1$s • %2$s</string>
     <string name="updates_check_failed">Не вдалося перевірити оновлення</string>
     <string name="updates_download_failed">Помилка завантаження</string>
-    <string name="updates_download_empty_body">Порожній файл завантаження</string>
-    <string name="updates_download_file_missing">Завантажений файл оновлення відсутній.</string>
     <string name="updates_downloading_progress">Завантаження %1$d%</string>
     <string name="updates_debug_test_complete">Перевірку банера завершено</string>
     <string name="updates_debug_test_description">Попередній перегляд банера та імітація завантаження оновлення.</string>
@@ -1777,8 +1702,6 @@
     <string name="updates_install_failed">Не вдалося розпочати встановлення</string>
     <string name="updates_latest_version">Ви використовуєте найновішу версію.</string>
     <string name="updates_message_allow_installs">Дозвольте встановлення додатків для Nuvio, а потім поверніться та продовжте.</string>
-    <string name="updates_message_downloading">Завантаження оновлення...</string>
-    <string name="updates_message_no_updates">Оновлень не знайдено.</string>
     <string name="updates_message_ready">Нова версія готова до встановлення.</string>
     <string name="updates_not_available">Оновлення всередині додатка недоступні в цій збірці.</string>
     <string name="updates_no_release_notes">Приміток до випуску не надано.</string>
@@ -1786,7 +1709,6 @@
     <string name="updates_release_notes">Примітки до випуску</string>
     <string name="updates_title_allow_installs">Дозвольте встановлення для продовження</string>
     <string name="updates_title_available">Доступне оновлення</string>
-    <string name="updates_title_status">Стан оновлення</string>
     <string name="addon_already_installed">Цей аддон уже встановлено.</string>
     <string name="addon_invalid_url">Введіть дійсний URL аддона</string>
     <string name="addon_load_manifest_failed">Не вдалося завантажити маніфест</string>
@@ -1812,10 +1734,6 @@
     <string name="downloads_live_downloading_with_total">Завантаження %1$s • %2$s / %3$s</string>
     <string name="downloads_live_failed">Помилка завантаження</string>
     <string name="downloads_live_paused">Призупинено %1$s</string>
-    <string name="library_remove_confirm">Вилучити</string>
-    <string name="library_remove_from_list_message">Вилучити %1$s зі списку %2$s?</string>
-    <string name="library_remove_message">Вилучити %1$s із вашої медіатеки?</string>
-    <string name="library_remove_title">Вилучити з медіатеки?</string>
     <string name="media_movie">Фільм</string>
     <string name="notifications_channel_episode_releases_description">Сповіщення про вихід нової серії збереженого серіалу.</string>
     <string name="notifications_test_preview_body">Попередній перегляд сповіщення про нову серію.</string>
@@ -1831,7 +1749,6 @@
 
 Спробуйте інше джерело. [%1$s]</string>
     <string name="player_error_unsupported_format">Цей потік використовує формат, який ваш пристрій може не підтримувати. Спробуйте інше джерело. [%1$s]</string>
-    <string name="player_engine_unavailable_rebuild">Рушій плеєра MPV недоступний. Перезберіть додаток.</string>
     <string name="profile_pin_changed_requires_refresh">PIN-код цього профілю змінено. Підключіться до мережі один раз, щоб оновити блокування на цьому пристрої.</string>
     <string name="profile_pin_clear_failed">Не вдалося зняти PIN-код. Спробуйте ще раз.</string>
     <string name="profile_pin_clear_requires_internet">Підключіться до інтернету, щоб зняти блокування PIN-кодом.</string>
@@ -1840,13 +1757,10 @@
     <string name="profile_pin_set_requires_internet">Підключіться до інтернету, щоб встановити PIN-код.</string>
     <string name="profile_primary_addons_required">Цей профіль використовує основні аддони.</string>
     <string name="streams_failed_to_load_scraper">Не вдалося завантажити %1$s</string>
-    <string name="stream_default_name">Потік</string>
     <string name="source_embedded">Вбудований</string>
     <string name="trakt_authorization_denied">Авторизацію відхилено</string>
     <string name="trakt_authorization_expired_reconnect">Ваша авторизація Trakt більше не дійсна. Підключіть обліковий запис Trakt повторно.</string>
     <string name="trakt_complete_sign_in_browser">Завершіть вхід у Trakt у браузері</string>
-    <string name="trakt_connected">Підключено до Trakt</string>
-    <string name="trakt_disconnected">Відключено від Trakt</string>
     <string name="trakt_invalid_callback">Недійсний зворотний виклик Trakt</string>
     <string name="trakt_invalid_callback_state">Недійсний стан зворотного виклику Trakt</string>
     <string name="trakt_invalid_token_response">Недійсна відповідь токена Trakt</string>
@@ -1855,16 +1769,6 @@
     <string name="trakt_missing_auth_code">Trakt не повернув код авторизації</string>
     <string name="trakt_missing_credentials">Відсутні облікові дані Trakt</string>
     <string name="trakt_progress_load_failed">Не вдалося завантажити прогрес Trakt</string>
-    <string name="trakt_public_list">Публічний список Trakt</string>
-    <string name="trakt_public_list_enter_valid_id_or_url">Введіть дійсний ID або URL списку Trakt</string>
-    <string name="trakt_public_list_items_count">Елементів: %1$d</string>
-    <string name="trakt_public_list_likes_count">Вподобань: %1$d</string>
-    <string name="trakt_public_list_missing_credentials">У local.properties відсутні облікові дані Trakt (TRAKT_CLIENT_ID).</string>
-    <string name="trakt_public_list_missing_id">Відсутній ID списку Trakt</string>
-    <string name="trakt_public_list_missing_numeric_id">Список Trakt не містить числового ID</string>
-    <string name="trakt_public_list_not_found_or_not_public">Список Trakt не знайдено або він не публічний</string>
-    <string name="trakt_public_list_rate_limit_reached">Досягнуто ліміт запитів Trakt</string>
-    <string name="trakt_public_list_request_failed">Помилка запиту до Trakt</string>
     <string name="trakt_sign_in_complete_failed">Не вдалося завершити вхід у Trakt</string>
     <string name="trakt_user_fallback">Користувач Trakt</string>
     <string name="trakt_watchlist">Список перегляду</string>
@@ -1878,29 +1782,9 @@
     <string name="trakt_error_add_list_failed">Не вдалося додати до списку Trakt</string>
     <string name="trakt_error_missing_ids">Відсутні сумісні ID Trakt</string>
     <string name="trakt_error_empty_response">Порожнє тіло відповіді</string>
-    <string name="tmdb_sources_collection_fallback_title">Колекція TMDB %1$d</string>
-    <string name="tmdb_sources_collection_not_found">Колекцію TMDB не знайдено</string>
-    <string name="tmdb_sources_company_fallback_title">Студія TMDB %1$d</string>
-    <string name="tmdb_sources_company_not_found">Компанію TMDB не знайдено</string>
-    <string name="tmdb_sources_director_fallback_title">Режисер TMDB %1$d</string>
-    <string name="tmdb_sources_discover_no_data">TMDB Discover не повернув даних</string>
-    <string name="tmdb_sources_discover_title">TMDB Discover</string>
-    <string name="tmdb_sources_invalid_id_or_url">Введіть дійсний ID або URL TMDB.</string>
-    <string name="tmdb_sources_list_fallback_title">Список TMDB %1$d</string>
-    <string name="tmdb_sources_list_not_found">Список TMDB не знайдено</string>
-    <string name="tmdb_sources_load_failed">Не вдалося завантажити джерело TMDB</string>
-    <string name="tmdb_sources_missing_collection_id">Відсутній ID колекції TMDB</string>
-    <string name="tmdb_sources_missing_list_id">Відсутній ID списку TMDB</string>
-    <string name="tmdb_sources_missing_person_id">Відсутній ID персони TMDB</string>
-    <string name="tmdb_sources_network_fallback_title">Телемережа TMDB %1$d</string>
-    <string name="tmdb_sources_network_not_found">Телемережу TMDB не знайдено</string>
-    <string name="tmdb_sources_person_credits_not_found">Фільмографію персони TMDB не знайдено</string>
-    <string name="tmdb_sources_person_fallback_title">Персона TMDB %1$d</string>
-    <string name="tmdb_sources_person_not_found">Персону TMDB не знайдено</string>
     <string name="generic_trailer">Трейлер</string>
     <string name="generic_unknown">Невідомо</string>
     <string name="generic_addon">Аддон</string>
-    <string name="action_saved">Збережено</string>
     <string name="action_play_episode">Відтворити %1$s</string>
     <string name="action_resume_episode">Продовжити %1$s</string>
     <string name="collections_import_error_empty_json">JSON порожній.</string>
@@ -1916,18 +1800,6 @@
     <string name="collections_folder_addon_not_found">Аддон не знайдено: %1$s</string>
     <string name="collections_folder_trakt_movie_list">Список фільмів Trakt</string>
     <string name="collections_folder_trakt_series_list">Список серіалів Trakt</string>
-    <string name="date_month_january">Січень</string>
-    <string name="date_month_february">Лютий</string>
-    <string name="date_month_march">Березень</string>
-    <string name="date_month_april">Квітень</string>
-    <string name="date_month_may">Травень</string>
-    <string name="date_month_june">Червень</string>
-    <string name="date_month_july">Липень</string>
-    <string name="date_month_august">Серпень</string>
-    <string name="date_month_september">Вересень</string>
-    <string name="date_month_october">Жовтень</string>
-    <string name="date_month_november">Листопад</string>
-    <string name="date_month_december">Грудень</string>
     <string name="date_month_short_jan">Січ</string>
     <string name="date_month_short_feb">Лют</string>
     <string name="date_month_short_mar">Бер</string>
@@ -1963,14 +1835,6 @@
     <string name="downloads_enqueue_replaced">Попереднє завантаження замінено</string>
     <string name="downloads_enqueue_started">Завантаження розпочато</string>
     <string name="downloads_enqueue_unsupported_format">Формат потоку не підтримується для завантаження</string>
-    <string name="downloads_error_empty_body">Порожнє тіло відповіді</string>
-    <string name="downloads_error_finalize_failed">Не вдалося завершити збереження завантаженого файлу</string>
-    <string name="downloads_error_http_failed">Помилка запиту з кодом HTTP %1$d</string>
-    <string name="downloads_error_not_initialized">Систему завантажень не ініціалізовано</string>
-    <string name="downloads_error_open_partial_failed">Не вдалося відкрити файл часткового завантаження</string>
-    <string name="downloads_error_partial_not_open">Файл часткового завантаження не відкрито</string>
-    <string name="downloads_error_request_failed">Помилка запиту на завантаження</string>
-    <string name="downloads_error_write_partial_failed">Не вдалося записати файл часткового завантаження</string>
     <string name="home_catalog_default_title">%1$s - %2$s</string>
     <string name="library_empty_message">Збережені тайтли з’являться тут після натискання «Зберегти» на екрані опису.</string>
     <string name="library_empty_title">Ваша медіатека порожня</string>
@@ -2067,7 +1931,6 @@
     <string name="unit_bytes_mb">МБ</string>
     <string name="unit_bytes_gb">ГБ</string>
     <!-- PlayerControls a11y -->
-    <string name="player_action_submit_intro">Надіслати мітку заставки</string>
     <string name="player_action_video_settings">Налаштування відео</string>
     <!-- CloudLibrary -->
     <string name="cloud_library_provider_unavailable">Хмарна бібліотека недоступна для %1$s.</string>
@@ -2201,14 +2064,9 @@
     <string name="settings_debrid_rule_excluded_release_groups_desc">Приховувати вибрані реліз-групи.</string>
     <!-- Submit intro/recap/outro dialog -->
     <string name="submit_intro_title">Надіслати часові мітки</string>
-    <string name="submit_intro_segment_type">ТИП СЕГМЕНТА</string>
     <string name="submit_intro_segment_intro">Заставка</string>
     <string name="submit_intro_segment_recap">Повтор</string>
     <string name="submit_intro_segment_outro">Титри</string>
-    <string name="submit_intro_start_time">ЧАС ПОЧАТКУ (ХВ:СС)</string>
-    <string name="submit_intro_end_time">ЧАС ЗАВЕРШЕННЯ (ХВ:СС)</string>
-    <string name="submit_intro_submit">Надіслати</string>
-    <string name="submit_intro_capture">Захопити</string>
     <!-- iOS advanced playback -->
     <string name="settings_playback_ios_hw_decoder_dialog">Апаратний декодер</string>
     <string name="settings_playback_ios_audio_output_dialog">Виведення аудіо</string>
@@ -2217,7 +2075,6 @@
     <!-- Collection editor -->
     <string name="collections_editor_resolved_trakt_list">Знайдений список Trakt</string>
     <string name="collections_editor_tmdb_discover">TMDB Discover</string>
-    <string name="collections_editor_watch_region_placeholder">US, KR, JP, IN</string>
     <!-- Collection editor error messages -->
     <string name="collections_editor_trakt_input_required">Введіть назву, URL або ID списку Trakt</string>
     <string name="collections_editor_tmdb_invalid_id_error">Введіть дійсний ID або URL TMDB.</string>
@@ -2234,17 +2091,13 @@
     <!-- Cloud library -->
     <string name="cloud_library_playback_disabled">Хмарну бібліотеку вимкнено.</string>
     <!-- IntroDB settings -->
-    <string name="settings_playback_introdb_invalid_api_key">Недійсний API-ключ або помилка з’єднання</string>
     <string name="addons_manifest_missing_field">У маніфесті відсутнє поле &quot;%1$s&quot;</string>
     <string name="collections_editor_tmdb_collection_title_format">Колекція TMDB %1$s</string>
     <string name="collections_editor_tmdb_director_title_format">Режисер TMDB %1$s</string>
-    <string name="collections_editor_tmdb_discover_title">TMDB Discover</string>
-    <string name="collections_editor_tmdb_invalid_id_or_url">Введіть дійсний ID або URL TMDB.</string>
     <string name="collections_editor_tmdb_list_title_format">Список TMDB %1$s</string>
     <string name="collections_editor_tmdb_network_title_format">Телемережа TMDB %1$s</string>
     <string name="collections_editor_tmdb_person_title_format">Персона TMDB %1$s</string>
     <string name="collections_editor_tmdb_production_title_format">Студія TMDB %1$s</string>
-    <string name="collections_editor_tmdb_source_load_failed">Не вдалося завантажити джерело TMDB</string>
     <string name="collections_editor_trakt_list_id_format">ID %1$s</string>
     <string name="collections_tmdb_collection_not_found">Колекцію TMDB не знайдено</string>
     <string name="collections_tmdb_company_not_found">Компанію TMDB не знайдено</string>
@@ -2271,17 +2124,12 @@
     <string name="details_runtime_hours_minutes">%1$dh %2$dm</string>
     <string name="details_runtime_hours_only">%1$dh</string>
     <string name="details_runtime_minutes_only">%1$dm</string>
-    <string name="downloads_error_finalize_file_failed">Не вдалося завершити збереження завантаженого файлу</string>
-    <string name="downloads_error_open_partial_file_failed">Не вдалося відкрити файл часткового завантаження</string>
-    <string name="downloads_error_partial_file_not_open">Файл часткового завантаження не відкрито</string>
-    <string name="downloads_error_write_partial_file_failed">Не вдалося записати файл часткового завантаження</string>
     <string name="library_local_tab_title">Медіатека Kable Killers</string>
     <string name="network_connection_issue">Проблема зі з’єднанням</string>
     <string name="network_empty_response_body">Порожнє тіло відповіді</string>
     <string name="network_please_check_connection">Перевірте підключення до інтернету та спробуйте ще раз.</string>
     <string name="network_request_failed_http">Помилка запиту з кодом HTTP %1$d</string>
     <string name="player_addon_subtitle_display_format">%1$s (%2$s)</string>
-    <string name="player_error_mpv_unavailable">Рушій плеєра MPV недоступний. Перезберіть додаток.</string>
     <string name="player_error_unable_to_play_stream">Не вдалося відтворити цей потік.</string>
     <string name="plugins_badge_disabled">Плагіни вимкнено</string>
     <string name="plugins_badge_enabled">Плагіни увімкнено</string>
@@ -2299,19 +2147,13 @@
     <string name="plugins_empty_repos_title">Репозиторіїв плагінів ще не встановлено.</string>
     <string name="plugins_enable_globally_desc">Використовувати провайдерів плагінів під час пошуку потоків.</string>
     <string name="plugins_enable_globally_title">Увімкнути провайдерів плагінів глобально</string>
-    <string name="plugins_error_already_installed">Цей репозиторій плагінів уже встановлено.</string>
     <string name="plugins_error_enter_repo_url">Введіть URL репозиторію плагінів.</string>
     <string name="plugins_error_enter_valid_url">Введіть дійсний URL плагіна.</string>
-    <string name="plugins_error_install_failed">Не вдалося встановити репозиторій плагінів</string>
     <string name="plugins_error_provider_not_found">Провайдера не знайдено</string>
-    <string name="plugins_error_refresh_failed">Не вдалося оновити репозиторій</string>
     <string name="plugins_error_unavailable_build">Плагіни недоступні в цій збірці.</string>
     <string name="plugins_group_by_repo_desc">У списку потоків показувати одного провайдера на репозиторій замість окремого для кожного джерела.</string>
     <string name="plugins_group_by_repo_title">Групувати провайдерів плагінів за репозиторієм</string>
     <string name="plugins_input_manifest_placeholder">URL маніфесту плагіна</string>
-    <string name="plugins_manifest_error_name_missing">У маніфесті відсутня назва.</string>
-    <string name="plugins_manifest_error_no_providers">У маніфесті немає провайдерів.</string>
-    <string name="plugins_manifest_error_version_missing">У маніфесті відсутня версія.</string>
     <string name="plugins_manifest_name_missing">У маніфесті відсутня назва.</string>
     <string name="plugins_manifest_no_providers">У маніфесті немає провайдерів.</string>
     <string name="plugins_manifest_version_missing">У маніфесті відсутня версія.</string>
@@ -2343,12 +2185,10 @@
     <string name="trakt_connected_status">Підключено до Trakt</string>
     <string name="trakt_disconnected_status">Відключено від Trakt</string>
     <string name="unit_bytes_tb">ТБ</string>
-    <string name="updates_apk_asset_missing">У випуску не знайдено APK-файл</string>
     <string name="updates_download_failed_http">Помилка завантаження HTTP %1$d</string>
     <string name="updates_downloaded_file_missing">Завантажений файл оновлення відсутній.</string>
     <string name="updates_empty_download_body">Порожній файл завантаження</string>
     <string name="updates_github_api_error">Помилка GitHub Releases API: %1$d</string>
-    <string name="updates_no_channel_release">Оновлень ще не опубліковано.</string>
     <string name="updates_channel_title">Канал оновлень</string>
     <string name="updates_channel_description">Виберіть тип оновлень додатка, які бажаєте отримувати</string>
     <string name="updates_channel_stable">Стабільний</string>
@@ -2356,7 +2196,6 @@
     <string name="updates_channel_stable_description">Призначений для повсякденного використання.</string>
     <string name="updates_channel_beta_description">Ранні оновлення, які можуть містити помилки, порушувати роботу функцій або працювати нестабільно.</string>
     <string name="updates_waiting_for_stable">Ви отримаєте наступний стабільний випуск, щойно він стане доступним</string>
-    <string name="updates_release_missing_title">У випуску відсутній тег або назва</string>
     <!-- Continue Watching air date display -->
     <string name="cw_airs_date">Вийде %1$s</string>
     <string name="cw_airs_today">Виходить сьогодні</string>
@@ -2366,15 +2205,6 @@
         <item quantity="few">Вийде через %1$d дні</item>
         <item quantity="many">Вийде через %1$d днів</item>
         <item quantity="other">Вийде через %1$d дня</item>
-    </plurals>
-    <string name="cw_airs_date_short">%1$s</string>
-    <string name="cw_airs_today_short">Сьогодні</string>
-    <string name="cw_airs_tomorrow_short">Завтра</string>
-    <plurals name="cw_airs_in_days_short">
-        <item quantity="one">Через %1$d день</item>
-        <item quantity="few">Через %1$d дні</item>
-        <item quantity="many">Через %1$d днів</item>
-        <item quantity="other">Через %1$d дня</item>
     </plurals>
     <string name="cw_new_episode">Нова серія</string>
     <string name="cw_new_season">Новий сезон</string>
@@ -2411,10 +2241,6 @@
     <string name="settings_p2p_clear_cache_done">Очищено %1$s неактивних даних торрентів</string>
     <string name="settings_p2p_clear_cache_failed">Не вдалося очистити кеш торрентів</string>
     <string name="player_torrent_peer_info">Сідів: %1$d · пірів: %2$d</string>
-    <string name="player_torrent_buffered_status">Буферизовано %1$s · %2$s · %3$s</string>
-    <string name="player_torrent_status">%1$s · %2$s</string>
-    <string name="player_torrent_stats">Пірів: %1$d · сідів: %2$d · %3$d%%</string>
-    <string name="player_torrent_connecting_peers">Підключення до пірів…</string>
     <string name="player_torrent_starting_engine">Запуск P2P-рушія…</string>
     <string name="player_torrent_fetching_metadata">Отримання метаданих торрента…</string>
     <string name="player_torrent_preparing_stream">Підготовка торрент-потоку…</string>
@@ -2461,7 +2287,6 @@
     <string name="layout_ratings_hide_unwatched">Приховувати для непереглянутих</string>
     <string name="settings_playback_legacy_layout">Класичний макет</string>
     <string name="settings_playback_legacy_layout_description">Використовувати початковий вигляд елементів керування плеєром.</string>
-    <string name="compose_player_episode_code">S%1$d E%2$d</string>
     <string name="compose_player_more_actions">Більше елементів керування</string>
     <string name="compose_player_fewer_actions">Менше елементів керування</string>
     <string name="compose_player_speed">Швидкість відтворення</string>
@@ -2562,7 +2387,6 @@
     <string name="settings_playback_page_p2p_description">Відтворення торрентів, профіль і кеш</string>
     <string name="settings_appearance_description">Теми, іконка додатка та мова</string>
     <string name="settings_appearance_title">Вигляд</string>
-    <string name="subtitle_appearance">Вигляд</string>
     <string name="subtitle_preview">Попередній перегляд</string>
     <string name="subtitle_preview_text">Кожна історія починається з краплі цікавості.</string>
     <string name="subtitle_appearance_hint">Застосовується до текстових субтитрів. Стилізовані субтитри ASS та графічні субтитри зберігають свій початковий вигляд.</string>

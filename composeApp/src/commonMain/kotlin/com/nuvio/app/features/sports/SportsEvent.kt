@@ -184,7 +184,3 @@ object SportsEventSections {
     fun highlights(events: List<SportsEvent>) = events.filter { it.kind == SportsContentKind.HIGHLIGHT }
 }
 
-/** Until a vetted schedule provider is configured, no events are displayed as live. */
-object UnconfiguredSportsEventProvider : SportsEventProvider {
-    override suspend fun events(league: SportsLeague): List<SportsEvent> = emptyList()
-}

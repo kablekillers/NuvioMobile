@@ -19,7 +19,6 @@
     <string name="action_retry">Coba Lagi</string>
     <string name="action_save">Simpan</string>
     <string name="action_saving">Sedang menyimpan…</string>
-    <string name="action_validate">Validasi</string>
     <string name="addon_installing">Menginstal</string>
     <string name="addon_title">Addon</string>
     <string name="addons_badge_active">Aktif</string>
@@ -36,8 +35,6 @@
     <string name="addons_appstore_empty_title">Jadikan Kable Killers Mobile milik Anda.</string>
     <string name="addons_appstore_input_placeholder">URL Addon</string>
     <string name="addons_appstore_install_button">Tambah Addon</string>
-    <string name="store_empty_unavailable_title">Belum ada apa pun di sini</string>
-    <string name="store_empty_unavailable_message">Addon yang Anda gunakan belum memiliki apa pun untuk ditampilkan di sini.</string>
     <string name="addons_empty_subtitle">Tambahkan URL manifes untuk mulai memuat katalog, metadata, streaming, atau subtitle ke Nuvio.</string>
     <string name="addons_empty_title">Belum ada addon yang terpasang.</string>
     <string name="addons_error_enter_url">Masukkan URL addon.</string>
@@ -76,7 +73,6 @@
     <string name="collections_editor_cover_none">Tidak Ada</string>
     <string name="collections_editor_cover">Sampul</string>
     <string name="collections_editor_create_collection">Buat Koleksi</string>
-    <string name="collections_editor_done">Selesai</string>
     <string name="collections_editor_edit_collection">Edit Koleksi</string>
     <string name="collections_editor_edit_folder">Edit Folder</string>
     <string name="collections_editor_folder_editor_help">Atur identitas, tampilan, dan sumber katalog folder dengan struktur yang sama seperti editor koleksi utama.</string>
@@ -295,7 +291,6 @@
     <string name="compose_action_off">Nonaktif</string>
     <string name="compose_action_on">Aktif</string>
     <string name="compose_action_pause">Jeda</string>
-    <string name="compose_action_reload">Muat Ulang</string>
     <string name="compose_auth_already_have_account">Sudah punya akun? </string>
     <string name="compose_auth_continue_without_account">Lanjutkan Tanpa Akun</string>
     <string name="compose_auth_create_account">Buat Akun</string>
@@ -325,7 +320,6 @@
     <string name="compose_player_capture_line">Tangkap</string>
     <string name="compose_player_close">Tutup pemutar</string>
     <string name="compose_player_color">Warna</string>
-    <string name="compose_player_currently_playing">Sedang diputar</string>
     <string name="compose_player_episode_code_episode_only">E%1$d</string>
     <string name="compose_player_episode_code_full">S%1$d E%2$d</string>
     <string name="compose_player_episode_title_format">S%1$d E%2$d • %3$s</string>
@@ -349,7 +343,6 @@
     <string name="compose_player_go_back">Kembali</string>
     <string name="compose_player_reload">Muat Ulang</string>
     <string name="compose_player_reset">Setelan Bawaan</string>
-    <string name="compose_player_reset_defaults">Kembalikan ke Setelan Bawaan</string>
     <string name="compose_player_resize_fill">Penuh</string>
     <string name="compose_player_resize_fit">Sesuaikan</string>
     <string name="compose_player_resize_zoom">Perbesar</string>
@@ -381,8 +374,6 @@
     <string name="compose_search_discover_title">Temukan</string>
     <string name="compose_search_empty_failed_message">Addon yang terpasang gagal menyediakan hasil pencarian yang valid.</string>
     <string name="compose_search_empty_failed_title">Pencarian gagal</string>
-    <string name="compose_search_empty_no_active_addons_message">Pasang dan validasi setidaknya satu addon sebelum mencari.</string>
-    <string name="compose_search_empty_no_active_addons_title">Tidak ada addon aktif</string>
     <string name="compose_search_empty_no_results_message">Katalog yang dapat dicari tidak menyediakan hasil untuk pencarian ini.</string>
     <string name="compose_search_empty_no_results_title">Tidak ada hasil ditemukan</string>
     <string name="compose_search_empty_no_search_catalogs_message">Addon yang terpasang tidak menyediakan pencarian katalog.</string>
@@ -391,10 +382,8 @@
     <string name="compose_search_recent_searches">Pencarian Terbaru</string>
     <string name="compose_search_remove_recent_search">Hapus pencarian terbaru</string>
     <string name="compose_settings_category_about">Tentang</string>
-    <string name="compose_settings_category_general">Umum</string>
     <string name="compose_settings_page_account">Akun</string>
     <string name="compose_settings_page_addons">Addon</string>
-    <string name="compose_settings_page_appearance">Tata Letak</string>
     <string name="compose_settings_page_content_discovery">Konten &amp; Penemuan</string>
     <string name="compose_settings_page_continue_watching">Lanjutkan Menonton</string>
     <string name="compose_settings_page_debrid">Layanan Debrid</string>
@@ -411,24 +400,17 @@
     <string name="compose_settings_page_root">Pengaturan</string>
     <string name="compose_settings_page_supporters_contributors">Kontributor &amp; Donatur</string>
     <string name="compose_settings_page_tmdb_enrichment">Pengayaan TMDB</string>
-    <string name="compose_settings_page_trakt">Trakt</string>
     <string name="compose_settings_root_about_section">TENTANG</string>
     <string name="compose_settings_root_account_description">Status akun dan sinkronisasi</string>
     <string name="compose_settings_root_account_section">AKUN</string>
-    <string name="compose_settings_root_appearance_description">Struktur beranda dan gaya poster</string>
     <string name="compose_settings_root_check_updates_description">Unduh versi terbaru</string>
     <string name="compose_settings_root_check_updates_title">Periksa pembaruan</string>
     <string name="compose_settings_root_content_discovery_description">Kelola addon dan sumber penemuan.</string>
-    <string name="compose_settings_root_content_discovery_description_appstore">Kelola addon dan pilih apa yang tampil di Kable Killers Mobile.</string>
-    <string name="compose_settings_root_downloads_description">Kelola film dan episode yang telah diunduh.</string>
-    <string name="compose_settings_root_downloads_description_appstore">Kelola yang Anda simpan di perangkat ini.</string>
     <string name="compose_settings_root_downloads_title">Unduhan</string>
-    <string name="compose_settings_root_general_section">UMUM</string>
     <string name="compose_settings_root_integrations_description">Kelola integrasi yang tersedia</string>
     <string name="compose_settings_root_notifications_description">Kelola peringatan rilis episode dan kirim notifikasi uji coba.</string>
     <string name="compose_settings_root_switch_profile_description">Beralih ke profil yang berbeda.</string>
     <string name="compose_settings_root_switch_profile_title">Ganti Profil</string>
-    <string name="compose_settings_root_trakt_description">Buka layar koneksi Trakt</string>
     <string name="settings_search_empty">Tidak ada pengaturan ditemukan.</string>
     <string name="settings_search_placeholder">Cari pengaturan...</string>
     <string name="settings_search_results_section">HASIL</string>
@@ -458,8 +440,6 @@
     <string name="settings_licenses_attributions_exoplayer_title">AndroidX Media3 ExoPlayer 1.8.0</string>
     <string name="settings_licenses_attributions_exoplayer_body">Digunakan untuk pemutaran pada build Android.</string>
     <string name="settings_licenses_attributions_exoplayer_license">Dilisensikan di bawah Apache License, Versi 2.0.</string>
-    <string name="compose_trakt_list_picker_loading">Memuat daftar Trakt Anda…</string>
-    <string name="compose_trakt_list_picker_subtitle">Pilih tempat menyimpan judul ini di Trakt</string>
     <string name="action_donate">Donasi</string>
     <string name="cw_action_go_to_details">Lihat detail</string>
     <string name="cw_action_remove">Hapus</string>
@@ -467,7 +447,6 @@
     <string name="detail_btn_play">Putar</string>
     <string name="detail_comments_badge_rating">%1$d/10</string>
     <string name="detail_comments_badge_review">Ulasan</string>
-    <string name="detail_comments_badge_spoiler">Spoiler</string>
     <string name="detail_comments_empty">Belum ada ulasan Trakt tersedia.</string>
     <string name="detail_comments_likes">%1$d suka</string>
     <string name="detail_comments_spoiler_card">Komentar ini mengandung spoiler.</string>
@@ -498,7 +477,6 @@
     <string name="home_view_all">Lihat Semua</string>
     <string name="play_manually">Putar secara manual</string>
     <string name="poster_logo_content_description">Logo %1$s</string>
-    <string name="settings_account">Akun</string>
     <string name="settings_account_delete_account">Hapus Akun</string>
     <string name="settings_account_delete_account_description">Ini akan menghapus akun dan semua data terkait Anda secara permanen.</string>
     <string name="settings_account_delete_confirm_message">Tindakan ini tidak dapat dibatalkan. Semua data, profil, dan riwayat sinkronisasi Anda akan dihapus secara permanen.</string>
@@ -601,7 +579,6 @@
     <string name="settings_continue_watching_up_next_title">Berikutnya dari Episode Terjauh</string>
     <string name="settings_continue_watching_use_episode_thumbnails_description">Utamakan thumbnail episode jika tersedia.</string>
     <string name="settings_continue_watching_use_episode_thumbnails_title">Utamakan Thumbnail Episode di Lanjutkan Menonton</string>
-    <string name="settings_content_discovery_section_home">BERANDA</string>
     <string name="settings_content_discovery_section_sources">SUMBER</string>
     <string name="settings_content_discovery_addons_description">Pasang, hapus, perbarui, dan urutkan sumber konten Anda.</string>
     <string name="settings_content_discovery_addons_description_appstore">Tambahkan dan kelola addon yang Anda gunakan dengan Kable Killers Mobile.</string>
@@ -656,9 +633,7 @@
     <string name="settings_debrid_description_template_description">Mengatur bagaimana metadata ditampilkan di bawah masing-masing hasil sumber.</string>
     <string name="settings_debrid_formatter_reset_title">Atur Ulang Format</string>
     <string name="settings_debrid_formatter_reset_subtitle">Kembalikan format hasil ke setelan bawaan.</string>
-    <string name="settings_debrid_key_valid">Kunci API valid.</string>
     <string name="settings_debrid_key_invalid">Kunci API ini tidak dapat divalidasi.</string>
-    <string name="settings_mdb_add_api_key_first">Tambahkan kunci API MDBList Anda di bawah sebelum mengaktifkan rating.</string>
     <string name="settings_mdb_api_key_description">Diperlukan untuk mengambil rating dari MDBList</string>
     <string name="settings_mdb_api_key_label">Kunci API</string>
     <string name="settings_mdb_api_key_title">Kunci API</string>
@@ -671,8 +646,6 @@
     <string name="settings_meta_actions_description">Kontrol putar dan simpan.</string>
     <string name="settings_meta_cast">Pemeran</string>
     <string name="settings_meta_cast_description">Daftar pemeran utama.</string>
-    <string name="settings_meta_cinematic_background">Latar Sinematik</string>
-    <string name="settings_meta_cinematic_background_description">Latar belakang buram di belakang konten, mirip dengan layar streaming.</string>
     <string name="settings_meta_collection">Koleksi</string>
     <string name="settings_meta_collection_description">Baris koleksi atau waralaba terkait.</string>
     <string name="settings_meta_comments">Komentar</string>
@@ -716,14 +689,11 @@
     <string name="settings_notifications_test_for_title">Kirim notifikasi uji coba lokal untuk %1$s.</string>
     <string name="settings_notifications_test_requires_saved_show">Simpan serial ke pustaka Anda terlebih dahulu untuk menguji notifikasi.</string>
     <string name="settings_notifications_test_title">Notifikasi uji coba</string>
-    <string name="community_section_title">Komunitas</string>
-    <string name="community_section_description">Lihat orang-orang yang membangun dan mendukung Nuvio di Mobile, TV, dan Web.</string>
     <string name="community_supporters_not_configured">API Donatur tidak dikonfigurasi. Tambahkan DONATIONS_BASE_URL ke local.properties.</string>
     <string name="community_tab_contributors">Kontributor</string>
     <string name="community_tab_supporters">Donatur</string>
     <string name="community_open_github">Buka GitHub</string>
     <string name="community_github_profile_unavailable">Profil GitHub tidak tersedia</string>
-    <string name="community_no_message_attached">Tidak ada pesan terlampir.</string>
     <string name="community_loading_contributors">Memuat kontributor...</string>
     <string name="community_loading_supporters">Memuat donatur...</string>
     <string name="community_load_contributors_failed">Gagal memuat kontributor</string>
@@ -734,7 +704,6 @@
     <string name="community_error_unable_load_supporters">Tidak dapat memuat donatur.</string>
     <string name="community_error_contributors_request_failed">Tidak dapat memuat kontributor saat ini.</string>
     <string name="community_error_supporters_request_failed">Tidak dapat memuat donatur saat ini.</string>
-    <string name="community_total_commits">%1$d total commit</string>
     <string name="community_month_jan">Jan</string>
     <string name="community_month_feb">Feb</string>
     <string name="community_month_mar">Mar</string>
@@ -766,7 +735,6 @@
     <string name="settings_playback_decoder_prefer_app">Utamakan dekoder aplikasi (FFmpeg)</string>
     <string name="settings_playback_decoder_prefer_device">Utamakan dekoder perangkat</string>
     <string name="settings_playback_decoder_priority">Prioritas Dekoder</string>
-    <string name="settings_playback_dialog_close">Ketuk di luar untuk menutup</string>
     <string name="settings_playback_dialog_save_close">Ketuk di luar untuk menyimpan &amp; menutup</string>
     <string name="settings_playback_duration_day_one">%1$d hari</string>
     <string name="settings_playback_duration_days">%1$d hari</string>
@@ -777,7 +745,6 @@
     <string name="settings_playback_external_player">Player Eksternal</string>
     <string name="settings_playback_external_player_app">Applikasi Pemutar Video Eksternal</string>
     <string name="settings_playback_external_player_description_android">Buka pemutaran baru dengan aplikasi video bawaan Android atau pemilih sistem.</string>
-    <string name="settings_playback_external_player_description_ios">Buka pemutaran baru dengan pemutar video yang dipilih.</string>
     <string name="settings_playback_external_player_none_available">Tidak ada pemutar eksternal yang didukung</string>
     <string name="settings_playback_hold_speed">Kecepatan Putar saat Ditahan</string>
     <string name="settings_playback_hold_to_speed">Tahan untuk Mempercepat</string>
@@ -795,13 +762,6 @@
     <string name="settings_playback_option_device_language">Bahasa perangkat</string>
     <string name="settings_playback_option_forced">Paksa</string>
     <string name="settings_playback_option_none">Tidak Ada</string>
-    <string name="settings_playback_addon_subtitle_startup_all">Semua subtitle addon</string>
-    <string name="settings_playback_addon_subtitle_startup_all_description">Pra-ambil dan lampirkan semua subtitle addon sebelum pemutaran. Startup paling lambat.</string>
-    <string name="settings_playback_addon_subtitle_startup_fast">Mulai cepat</string>
-    <string name="settings_playback_addon_subtitle_startup_fast_description">Mulai pemutaran segera. Memilih subtitle addon mungkin memuat ulang pemutar sekali.</string>
-    <string name="settings_playback_addon_subtitle_startup_mode">Pemuatan Subtitle Addon</string>
-    <string name="settings_playback_addon_subtitle_startup_preferred">Bahasa yang diutamakan</string>
-    <string name="settings_playback_addon_subtitle_startup_preferred_description">Pra-ambil subtitle addon sebelum pemutaran dan lampirkan trek bahasa yang diutamakan/kedua.</string>
     <string name="settings_playback_prefer_binge_group">Utamakan Grup Maraton (Episode Berikutnya)</string>
     <string name="settings_playback_prefer_binge_group_description">Coba profil sumber yang sama terlebih dahulu (addon/grup kualitas yang sama) sebelum aturan putar otomatis normal.</string>
     <string name="settings_playback_reuse_binge_group">Gunakan Kembali Grup Maraton</string>
@@ -825,7 +785,6 @@
     <string name="settings_playback_regex_preset_quality_4k_remux">4K / Remux</string>
     <string name="settings_playback_regex_preset_quality_720p_smaller">720p / Lebih Kecil</string>
     <string name="settings_playback_regex_preset_web_sources">Sumber WEB</string>
-    <string name="settings_playback_render_type">Mode Render Libass</string>
     <string name="settings_playback_reuse_last_link">Gunakan Ulang Tautan Terakhir</string>
     <string name="settings_playback_reuse_last_link_description">Putar otomatis stream terakhir yang berfungsi untuk film/episode yang sama ketika cache masih valid</string>
     <string name="settings_playback_secondary_audio_language">Bahasa Audio Sekunder</string>
@@ -843,11 +802,9 @@
     <string name="settings_playback_show_loading_overlay_description">Tampilkan layar pemuatan sampai frame video pertama muncul.</string>
     <string name="settings_playback_subtitle_background_color">Warna Latar Belakang</string>
     <string name="settings_playback_subtitle_bold">Tebal</string>
-    <string name="settings_playback_subtitle_bold_description">Gunakan bobot teks terjemahan yang lebih berat.</string>
     <string name="settings_playback_subtitle_color_transparent">Transparan</string>
     <string name="settings_playback_subtitle_outline">Garis Tepi</string>
     <string name="settings_playback_subtitle_outline_color">Warna Garis Tepi</string>
-    <string name="settings_playback_subtitle_outline_description">Tambahkan garis tepi di sekeliling teks terjemahan.</string>
     <string name="settings_playback_subtitle_show_preferred_only">Tampilkan hanya bahasa favorit</string>
     <string name="settings_playback_subtitle_show_preferred_only_description">Hanya tampilkan terjemahan yang sesuai dengan bahasa favorit Anda.</string>
     <string name="settings_playback_subtitle_size">Ukuran Terjemahan</string>
@@ -875,7 +832,6 @@
     <string name="settings_playback_stream_selection_mode_regex_description">Putar sumber pertama yang teksnya cocok dengan pola regex Anda.</string>
     <string name="settings_playback_stream_timeout">Batas Waktu Pemilihan Stream</string>
     <string name="settings_playback_stream_timeout_description">Waktu tunggu addon sebelum memilih.</string>
-    <string name="settings_playback_threshold_minutes">Menit Ambang Batas</string>
     <string name="settings_playback_threshold_mode">Mode Ambang Batas Episode Berikutnya</string>
     <string name="settings_playback_threshold_mode_minutes_before_end">Menit sebelum selesai</string>
     <string name="settings_playback_threshold_mode_percentage">Persentase</string>
@@ -918,7 +874,6 @@
     <string name="settings_tmdb_section_modules">MODUL</string>
     <string name="settings_tmdb_section_title">PENGAYAAN TMDB</string>
     <string name="settings_trakt_approval_redirect">Setelah disetujui, Anda akan diarahkan kembali secara otomatis.</string>
-    <string name="settings_trakt_authentication">AUTENTIKASI</string>
     <string name="settings_trakt_comments">Komentar</string>
     <string name="settings_trakt_comments_description">Tampilkan ulasan Trakt di halaman metadata</string>
     <string name="settings_trakt_connect">Hubungkan Trakt</string>
@@ -926,7 +881,6 @@
     <string name="settings_trakt_default_user">Pengguna Trakt</string>
     <string name="settings_trakt_disconnect">Putuskan Koneksi</string>
     <string name="settings_trakt_failed_open_browser">Gagal membuka browser</string>
-    <string name="settings_trakt_features">FITUR</string>
     <string name="settings_trakt_finish_sign_in">Selesaikan masuk Trakt di browser Anda</string>
     <string name="settings_trakt_intro_description">Sinkronkan daftar tonton, progres menonton, lanjutkan menonton, scrobble, dan daftar pribadi Anda dengan Trakt.</string>
     <string name="settings_trakt_missing_credentials">Kredensial Trakt hilang di local.properties (TRAKT_CLIENT_ID / TRAKT_CLIENT_SECRET).</string>
@@ -939,16 +893,11 @@
     <string name="trakt_library_source_dialog_subtitle">Pilih tempat menyimpan dan mengelola item pustaka Anda</string>
     <string name="trakt_library_source_trakt">Trakt</string>
     <string name="trakt_library_source_nuvio">Pustaka Nuvio</string>
-    <string name="trakt_library_source_trakt_selected">Pustaka Trakt dipilih</string>
-    <string name="trakt_library_source_nuvio_selected">Pustaka Nuvio dipilih</string>
     <string name="trakt_watch_progress_title">Progres Menonton</string>
     <string name="trakt_watch_progress_subtitle">Pilih sumber progres mana yang digunakan untuk melanjutkan menonton</string>
     <string name="trakt_watch_progress_dialog_title">Progres Menonton</string>
-    <string name="trakt_watch_progress_dialog_subtitle">Pilih apakah resume dan lanjutkan menonton harus menggunakan Trakt atau Nuvio Sync sementara scrobbling Trakt tetap aktif.</string>
     <string name="trakt_watch_progress_source_trakt">Trakt</string>
     <string name="trakt_watch_progress_source_nuvio">Nuvio Sync</string>
-    <string name="trakt_watch_progress_trakt_selected">Sumber progres menonton diatur ke Trakt</string>
-    <string name="trakt_watch_progress_nuvio_selected">Sumber progres menonton diatur ke Nuvio Sync</string>
     <string name="trakt_continue_watching_window">Jendela Lanjutkan Menonton</string>
     <string name="trakt_continue_watching_subtitle">Lanjutkan menonton berdasarkan riwayat Trakt</string>
     <string name="trakt_cw_window_title">Jendela Lanjutkan Menonton</string>
@@ -1060,7 +1009,6 @@
     <string name="lang_zulu">Zulu</string>
     <string name="action_clear">Hapus</string>
     <string name="action_continue">Lanjutkan</string>
-    <string name="action_ignore">Abaikan</string>
     <string name="action_install">Pasang</string>
     <string name="action_later">Nanti</string>
     <string name="action_no">Tidak</string>
@@ -1091,7 +1039,6 @@
     <string name="discover_empty_no_catalogs_title">Tidak ada katalog temuan</string>
     <string name="discover_empty_no_results_message">Katalog dan filter yang dipilih tidak menyediakan item apa pun.</string>
     <string name="discover_empty_no_results_title">Tidak ada judul ditemukan</string>
-    <string name="discover_empty_no_active_addons_message">Pasang dan validasi setidaknya satu addon sebelum menelusuri katalog temuan.</string>
     <string name="discover_select_catalog">Pilih Katalog</string>
     <string name="discover_select_genre">Pilih Genre</string>
     <string name="discover_select_type">Pilih Tipe</string>
@@ -1105,7 +1052,6 @@
     <string name="episode_mark_watched">Tandai sebagai sudah ditonton</string>
     <string name="home_continue_watching_up_next">Berikutnya</string>
     <string name="home_continue_watching_watched">%1$s ditonton</string>
-    <string name="home_empty_no_active_addons_message">Pasang dan validasi setidaknya satu addon sebelum memuat baris katalog di Beranda.</string>
     <string name="home_empty_no_rows_message">Addon yang terpasang saat ini tidak mengekspos katalog yang kompatibel tanpa tambahan yang diperlukan.</string>
     <string name="home_empty_no_rows_title">Tidak ada baris beranda tersedia</string>
     <string name="home_view_details">Lihat Detail</string>
@@ -1176,8 +1122,6 @@
     <string name="profile_select_avatar">Pilih avatar untuk profil ini.</string>
     <string name="profile_set_pin_lock">Atur Kunci PIN</string>
     <string name="profile_unnamed">Profil tanpa nama</string>
-    <string name="profile_use_primary_addons">Gunakan Addon Utama</string>
-    <string name="profile_use_primary_addons_description">Bagikan pengaturan addon profil utama alih-alih mengelola daftar terpisah.</string>
     <string name="profile_who_is_watching">Siapa yang menonton?</string>
     <string name="provider_downloaded">Diunduh</string>
     <string name="resume_prompt_action">Lanjutkan</string>
@@ -1189,9 +1133,6 @@
     <string name="streams_open_internal_player">Buka menggunakan player internal</string>
     <string name="streams_empty_load_failed_message">Addon stream yang terpasang gagal menyediakan respons stream yang valid.</string>
     <string name="streams_empty_load_failed_title">Tidak dapat memuat stream</string>
-    <string name="streams_empty_no_addons_message">Pasang addon terlebih dahulu untuk memuat stream untuk judul ini.</string>
-    <string name="streams_empty_no_stream_addon_message">Addon yang terpasang tidak menyediakan stream untuk tipe judul ini.</string>
-    <string name="streams_empty_no_stream_addon_title">Tidak ada addon stream tersedia</string>
     <string name="streams_empty_no_streams_message">Tidak ada addon yang terpasang yang menyediakan stream untuk judul ini.</string>
     <string name="streams_episode_badge">S%1$d E%2$d</string>
     <string name="streams_episode_fallback_title">Episode</string>
@@ -1217,23 +1158,18 @@
     <string name="trailer_close">Tutup trailer</string>
     <string name="trailer_unable_to_play">Tidak dapat memutar trailer</string>
     <string name="trakt_lists_load_failed">Gagal memuat daftar Trakt</string>
-    <string name="trakt_lists_update_failed">Gagal memperbarui daftar Trakt</string>
-    <string name="updates_asset_line">%1$s • %2$s</string>
     <string name="updates_check_failed">Pemeriksaan pembaruan gagal</string>
     <string name="updates_download_failed">Unduhan gagal</string>
     <string name="updates_downloading_progress">Mengunduh %1$d%</string>
     <string name="updates_install_failed">Tidak dapat memulai instalasi</string>
     <string name="updates_latest_version">Anda menggunakan versi terbaru.</string>
     <string name="updates_message_allow_installs">Aktifkan instalasi aplikasi untuk Nuvio, lalu kembali dan lanjutkan.</string>
-    <string name="updates_message_downloading">Mengunduh pembaruan...</string>
-    <string name="updates_message_no_updates">Tidak ada pembaruan ditemukan.</string>
     <string name="updates_message_ready">Versi baru siap untuk dipasang.</string>
     <string name="updates_not_available">Pembaruan dalam aplikasi tidak tersedia di build ini.</string>
     <string name="updates_preparing_download">Mempersiapkan unduhan</string>
     <string name="updates_release_notes">Catatan rilis</string>
     <string name="updates_title_allow_installs">Izinkan instalasi untuk melanjutkan</string>
     <string name="updates_title_available">Pembaruan tersedia</string>
-    <string name="updates_title_status">Status pembaruan</string>
     <string name="addon_already_installed">Addon tersebut sudah terpasang.</string>
     <string name="addon_invalid_url">Masukkan URL addon yang valid</string>
     <string name="addon_load_manifest_failed">Tidak dapat memuat manifes</string>
@@ -1258,10 +1194,6 @@
     <string name="downloads_live_downloading_with_total">Mengunduh %1$s • %2$s / %3$s</string>
     <string name="downloads_live_failed">Unduhan gagal</string>
     <string name="downloads_live_paused">Dijeda %1$s</string>
-    <string name="library_remove_confirm">Hapus</string>
-    <string name="library_remove_from_list_message">Hapus %1$s dari %2$s?</string>
-    <string name="library_remove_message">Hapus %1$s dari pustaka Anda?</string>
-    <string name="library_remove_title">Hapus dari Pustaka?</string>
     <string name="media_movie">Film</string>
     <string name="notifications_channel_episode_releases_description">Peringatan saat episode baru dari serial yang disimpan dirilis.</string>
     <string name="notifications_test_preview_body">Pratinjau peringatan rilis episode.</string>
@@ -1283,7 +1215,6 @@
     <string name="profile_pin_set_requires_internet">Hubungkan ke internet untuk mengatur PIN.</string>
     <string name="profile_primary_addons_required">Profil ini menggunakan addon utama.</string>
     <string name="streams_failed_to_load_scraper">Gagal memuat %1$s</string>
-    <string name="stream_default_name">Stream</string>
     <string name="source_embedded">Tertanam</string>
     <string name="trakt_authorization_denied">Otorisasi ditolak</string>
     <string name="trakt_complete_sign_in_browser">Selesaikan masuk Trakt di browser Anda</string>
@@ -1301,7 +1232,6 @@
     <string name="generic_trailer">Trailer</string>
     <string name="generic_unknown">Tidak Diketahui</string>
     <string name="generic_addon">Addon</string>
-    <string name="action_saved">Disimpan</string>
     <string name="action_play_episode">Putar %1$s</string>
     <string name="action_resume_episode">Lanjutkan %1$s</string>
     <string name="collections_import_error_empty_json">JSON kosong.</string>
@@ -1313,18 +1243,6 @@
     <string name="collections_import_error_trakt_list_id">Sumber %1$d di folder '%2$s' tidak memiliki ID daftar Trakt.</string>
     <string name="collections_import_error_invalid_json">JSON tidak valid: %1$s</string>
     <string name="collections_folder_addon_not_found">Addon tidak ditemukan: %1$s</string>
-    <string name="date_month_january">Januari</string>
-    <string name="date_month_february">Februari</string>
-    <string name="date_month_march">Maret</string>
-    <string name="date_month_april">April</string>
-    <string name="date_month_may">Mei</string>
-    <string name="date_month_june">Juni</string>
-    <string name="date_month_july">Juli</string>
-    <string name="date_month_august">Agustus</string>
-    <string name="date_month_september">September</string>
-    <string name="date_month_october">Oktober</string>
-    <string name="date_month_november">November</string>
-    <string name="date_month_december">Desember</string>
     <string name="date_month_short_jan">Jan</string>
     <string name="date_month_short_feb">Feb</string>
     <string name="date_month_short_mar">Mar</string>
@@ -1360,10 +1278,6 @@
     <string name="downloads_enqueue_replaced">Menggantikan unduhan sebelumnya</string>
     <string name="downloads_enqueue_started">Unduhan dimulai</string>
     <string name="downloads_enqueue_unsupported_format">Format stream tidak didukung untuk unduhan</string>
-    <string name="downloads_error_empty_body">Badan respons kosong</string>
-    <string name="downloads_error_http_failed">Permintaan gagal dengan HTTP %1$d</string>
-    <string name="downloads_error_not_initialized">Sistem unduhan belum diinisialisasi</string>
-    <string name="downloads_error_request_failed">Permintaan unduhan gagal</string>
     <string name="home_catalog_default_title">%1$s - %2$s</string>
     <string name="library_empty_message">Judul yang disimpan akan muncul di sini setelah Anda mengetuk Simpan di layar detail.</string>
     <string name="library_empty_title">Pustaka Anda kosong</string>
@@ -1440,12 +1354,6 @@
     <string name="cw_airs_tomorrow">Tayang besok</string>
     <plurals name="cw_airs_in_days">
         <item quantity="other">Tayang dalam %1$d hari</item>
-    </plurals>
-    <string name="cw_airs_date_short">%1$s</string>
-    <string name="cw_airs_today_short">Hari ini</string>
-    <string name="cw_airs_tomorrow_short">Besok</string>
-    <plurals name="cw_airs_in_days_short">
-        <item quantity="other">%1$d hari lagi</item>
     </plurals>
     <string name="series_status_ended">Tamat</string>
     <string name="series_status_continuing">Berlangsung</string>

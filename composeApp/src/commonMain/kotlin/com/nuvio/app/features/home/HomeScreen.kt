@@ -1310,9 +1310,6 @@ private val NEXT_UP_PUBLISH_INTERVAL = 400.milliseconds
 private const val MAX_NEXT_UP_RESOLUTION_RETRIES = 3
 private const val NEXT_UP_RESOLUTION_RETRY_BASE_DELAY_MS = 1_500L
 
-private fun String.isHomeSeriesLikeType(): Boolean =
-    trim().lowercase() in setOf("series", "show", "tv", "tvshow")
-
 internal data class HomeNextUpResolutionPlan(
     val initialCandidates: List<CompletedSeriesCandidate>,
     val deferredCandidates: List<CompletedSeriesCandidate>,

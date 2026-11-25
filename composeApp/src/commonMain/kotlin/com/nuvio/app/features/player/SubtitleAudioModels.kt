@@ -134,15 +134,6 @@ val SubtitleColorSwatches = listOf(
     Color.Black,
 )
 
-val SubtitleBackgroundColorSwatches = listOf(
-    Color.Transparent,
-    Color.Black.copy(alpha = 0.55f),
-    Color(0xFF111827).copy(alpha = 0.72f),
-    Color(0xFF7F1D1D).copy(alpha = 0.68f),
-    Color(0xFF064E3B).copy(alpha = 0.68f),
-    Color(0xFF1E3A8A).copy(alpha = 0.68f),
-)
-
 fun Color.toStorageHexString(): String {
     fun component(value: Float): String =
         (value * 255f).roundToInt().coerceIn(0, 255).toString(16).padStart(2, '0').uppercase()
@@ -177,21 +168,6 @@ fun subtitleColorFromStorage(value: String?): Color? {
         alpha = ((parsed shr 24) and 0xFF).toFloat() / 255f,
     )
 }
-
-data class SubtitleAudioUiState(
-    val audioTracks: List<AudioTrack> = emptyList(),
-    val subtitleTracks: List<SubtitleTrack> = emptyList(),
-    val addonSubtitles: List<AddonSubtitle> = emptyList(),
-    val isLoadingAddonSubtitles: Boolean = false,
-    val addonSubtitleError: String? = null,
-    val selectedAudioIndex: Int = -1,
-    val selectedSubtitleIndex: Int = -1,
-    val selectedAddonSubtitleId: String? = null,
-    val useCustomSubtitles: Boolean = false,
-    val subtitleStyle: SubtitleStyleState = SubtitleStyleState.DEFAULT,
-    val showAudioModal: Boolean = false,
-    val showSubtitleModal: Boolean = false,
-)
 
 @Composable
 fun localizedTrackDisplayName(label: String?, language: String?, index: Int): String {

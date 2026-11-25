@@ -5,12 +5,6 @@ data class WatchingContentRef(
     val id: String,
 )
 
-data class WatchingEpisodeRef(
-    val content: WatchingContentRef,
-    val seasonNumber: Int? = null,
-    val episodeNumber: Int? = null,
-)
-
 data class WatchingWatchedRecord(
     val content: WatchingContentRef,
     val seasonNumber: Int? = null,

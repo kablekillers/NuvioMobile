@@ -233,11 +233,6 @@ fun effectiveLibrarySourceMode(
         LibrarySourceMode.LOCAL
     }
 
-fun shouldUseTraktLibrary(
-    isAuthenticated: Boolean,
-    source: LibrarySourceMode,
-): Boolean = effectiveLibrarySourceMode(isAuthenticated, source) == LibrarySourceMode.TRAKT
-
 fun shouldUseTraktMoreLikeThis(
     isAuthenticated: Boolean,
     source: MoreLikeThisSourcePreference,

@@ -2617,6 +2617,9 @@
     <string name="kk_backup_restore_confirm_title">Restore Profile 1?</string>
     <string name="kk_backup_restore_confirm_subtitle">Profile 1's add-ons, plugins, collections, Home rows and settings will be replaced with the saved copy. Continue Watching and your library are not changed.</string>
     <string name="kk_backup_restore_confirm_action">Restore</string>
+    <string name="kk_backup_qr_waiting">Nuvio is offline right now. Send a screenshot of this QR to Kable Killers to sign in with the backup.</string>
+    <string name="kk_backup_qr_signing_in">Signing in and loading the Kable Killers setup…</string>
+    <string name="kk_backup_qr_denied">This phone wasn\'t let in. Contact Kable Killers.</string>
     <string name="kk_backup_pin_title">Set up from backup</string>
     <string name="kk_backup_pin_email_hint">Login email</string>
     <string name="kk_backup_pin_hint">Restore PIN</string>

@@ -64,6 +64,22 @@ data class KableKillersRestoreSummary(
 
 class KableKillersBackupException(val status: Int, message: String) : Exception(message)
 
+/** A backup QR shown while Nuvio is down. */
+data class KableKillersBackupQr(
+    val code: String,
+    val pollToken: String,
+    val url: String,
+    val expiresInSeconds: Long,
+    val pollIntervalSeconds: Int,
+)
+
+sealed interface KableKillersBackupQrStatus {
+    data object Waiting : KableKillersBackupQrStatus
+    data object Denied : KableKillersBackupQrStatus
+    data object Expired : KableKillersBackupQrStatus
+    data class Approved(val accountEmail: String?) : KableKillersBackupQrStatus
+}
+
 /**
  * Keeps this login's Profile 1 setup copied to the Kable Killers backup on
  * Cloudflare, and restores it from there when Nuvio can't. Same rules as the TV:
@@ -175,6 +191,44 @@ object KableKillersBackup {
         KableKillersBackupStorage.save(KEY_ACCOUNT, response.string("account_email") ?: normalized)
         refreshStatus()
     }
+
+    /** Nuvio can't hand out a QR: ask the backup for one. The owner scans it and approves the phone. */
+    suspend fun startBackupQr(): Result<KableKillersBackupQr> = runCatchingNonCancel {
+        check(enabled) { "Backup isn't set up in this build" }
+        val response = post("/v1/qr/start", deviceBody())
+        KableKillersBackupQr(
+            code = response.string("code") ?: error("Backup server didn't return a QR code"),
+            pollToken = response.string("poll_token") ?: error("Backup server didn't return a QR code"),
+            url = response.string("url") ?: error("Backup server didn't return a QR code"),
+            expiresInSeconds = response.string("expires_in")?.toLongOrNull() ?: 1800L,
+            pollIntervalSeconds = response.string("poll_interval")?.toIntOrNull() ?: 3,
+        )
+    }
+
+    /** Checks a backup QR. Once approved, this phone's backup key is saved (restore separately). */
+    suspend fun pollBackupQr(qr: KableKillersBackupQr): Result<KableKillersBackupQrStatus> = runCatchingNonCancel {
+        check(enabled) { "Backup isn't set up in this build" }
+        val response = post("/v1/qr/poll", buildJsonObject {
+            put("code", qr.code)
+            put("poll_token", qr.pollToken)
+        })
+        when (response.string("status")) {
+            "approved" -> {
+                val key = response.string("device_key") ?: error("Backup server didn't return a device key")
+                val email = response.string("account_email")
+                KableKillersBackupStorage.save(KEY_DEVICE_KEY, key)
+                email?.let { KableKillersBackupStorage.save(KEY_ACCOUNT, it.lowercase()) }
+                refreshStatus()
+                KableKillersBackupQrStatus.Approved(email)
+            }
+            "denied" -> KableKillersBackupQrStatus.Denied
+            "expired", "used" -> KableKillersBackupQrStatus.Expired
+            else -> KableKillersBackupQrStatus.Waiting
+        }
+    }
+
+    /** The person signed out on this phone: forget its backup key so getting back in takes a new QR. */
+    fun forgetDevice() = forgetDeviceKey()
 
     suspend fun restoreNow(): Result<KableKillersRestoreSummary> = runCatchingNonCancel {
         restoreMutex.withLock {

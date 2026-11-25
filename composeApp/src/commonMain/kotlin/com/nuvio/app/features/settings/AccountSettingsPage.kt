@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nuvio.app.core.auth.AuthRepository
+import com.nuvio.app.core.backup.KableKillersBackup
 import com.nuvio.app.core.auth.AuthState
 import com.nuvio.app.core.build.AppFeaturePolicy
 import com.nuvio.app.core.ui.NuvioPrimaryButton
@@ -138,6 +139,9 @@ private fun AccountSettingsBody(
         dismissText = stringResource(Res.string.action_cancel),
         onConfirm = {
             showSignOutConfirm = false
+            // Signing out also disconnects this phone from the Kable Killers backup,
+            // so getting back in takes a new QR (an approved phone is never re-approved).
+            KableKillersBackup.forgetDevice()
             scope.launch { AuthRepository.signOut() }
         },
         onDismiss = { showSignOutConfirm = false },

@@ -1,6 +1,9 @@
 package com.nuvio.app.core.auth
 
 import co.touchlab.kermit.Logger
+import com.nuvio.app.core.backup.KableKillersBackup
+import com.nuvio.app.core.backup.KableKillersBackupQr
+import com.nuvio.app.core.backup.KableKillersBackupQrStatus
 import com.nuvio.app.core.network.ServerConfiguration
 import com.nuvio.app.core.network.ServerConfigurationRepository
 import com.nuvio.app.core.network.SupabaseProvider
@@ -39,6 +42,8 @@ sealed interface DeviceLinkAuthState {
         val code: String,
         val verificationUrl: String,
         val isCompleting: Boolean = false,
+        /** The QR comes from the Kable Killers backup because Nuvio was unreachable. */
+        val isBackup: Boolean = false,
     ) : DeviceLinkAuthState
     data class Failed(val reason: DeviceLinkAuthFailure) : DeviceLinkAuthState
 }
@@ -48,6 +53,8 @@ enum class DeviceLinkAuthFailure {
     Expired,
     Complete,
     Connection,
+    /** The owner chose not to let this phone in through the backup QR. */
+    Denied,
 }
 
 object DeviceLinkAuthRepository {
@@ -71,11 +78,25 @@ object DeviceLinkAuthRepository {
             val configuration = ServerConfigurationRepository.active.value
             val nonce = Uuid.random().toString()
             try {
-                val session = startSession(
-                    configuration = configuration,
-                    nonce = nonce,
-                    deviceName = currentDeviceClientMetadata().deviceName,
-                )
+                val session = try {
+                    startSession(
+                        configuration = configuration,
+                        nonce = nonce,
+                        deviceName = currentDeviceClientMetadata().deviceName,
+                    )
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (error: Throwable) {
+                    // Nuvio can't start a QR login (it may be down): use the Kable Killers backup QR.
+                    if (!KableKillersBackup.enabled) throw error
+                    log.w(error) { "Nuvio QR unavailable; trying the Kable Killers backup QR" }
+                    val backupQr = KableKillersBackup.startBackupQr().getOrElse { backupError ->
+                        log.w(backupError) { "Backup QR unavailable too" }
+                        throw error
+                    }
+                    runBackupQr(backupQr)
+                    return@launch
+                }
                 _state.value = DeviceLinkAuthState.Waiting(
                     code = formatDeviceLinkCode(session.userCode),
                     verificationUrl = session.verificationUriComplete,
@@ -90,6 +111,49 @@ object DeviceLinkAuthRepository {
                 log.w(error) { "Device link sign-in failed" }
                 _state.value = DeviceLinkAuthState.Failed(DeviceLinkAuthFailure.Start)
             }
+        }
+    }
+
+    private suspend fun runBackupQr(qr: KableKillersBackupQr) {
+        val displayCode = qr.code.chunked(4).joinToString("-")
+        _state.value = DeviceLinkAuthState.Waiting(code = displayCode, verificationUrl = qr.url, isBackup = true)
+        val intervalMillis = qr.pollIntervalSeconds.coerceIn(2, 10) * 1_000L
+        val maxAttempts = (qr.expiresInSeconds * 1_000L / intervalMillis).toInt().coerceAtLeast(1)
+        var consecutiveFailures = 0
+        repeat(maxAttempts) {
+            delay(intervalMillis)
+            val status = KableKillersBackup.pollBackupQr(qr).getOrElse { error ->
+                consecutiveFailures += 1
+                if (consecutiveFailures >= maxConsecutivePollFailures * 4) {
+                    throw DeviceLinkAuthException(DeviceLinkAuthFailure.Connection, error)
+                }
+                return@repeat
+            }
+            consecutiveFailures = 0
+            when (status) {
+                KableKillersBackupQrStatus.Waiting -> Unit
+                KableKillersBackupQrStatus.Denied -> throw DeviceLinkAuthException(DeviceLinkAuthFailure.Denied)
+                KableKillersBackupQrStatus.Expired -> throw DeviceLinkAuthException(DeviceLinkAuthFailure.Expired)
+                is KableKillersBackupQrStatus.Approved -> {
+                    _state.value = DeviceLinkAuthState.Waiting(
+                        code = displayCode, verificationUrl = qr.url, isCompleting = true, isBackup = true,
+                    )
+                    // Same as "continue without an account", then fill Profile 1 from the backup.
+                    AuthRepository.signInAnonymously()
+                    scope.launch { restoreAfterBackupSignIn() }
+                    _state.value = DeviceLinkAuthState.Idle
+                    return
+                }
+            }
+        }
+        throw DeviceLinkAuthException(DeviceLinkAuthFailure.Expired)
+    }
+
+    /** Profiles load right after sign-in; give them a moment before restoring Profile 1. */
+    private suspend fun restoreAfterBackupSignIn() {
+        repeat(6) { attempt ->
+            delay(if (attempt == 0) 500L else 1_500L)
+            if (KableKillersBackup.restoreNow().onFailure { log.w { "Restore after backup QR failed: ${it.message}" } }.isSuccess) return
         }
     }
 

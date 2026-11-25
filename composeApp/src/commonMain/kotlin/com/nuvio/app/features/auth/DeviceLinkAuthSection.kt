@@ -38,6 +38,9 @@ import nuvio.composeapp.generated.resources.compose_auth_link_open_failed
 import nuvio.composeapp.generated.resources.compose_auth_link_sign_in
 import nuvio.composeapp.generated.resources.compose_auth_link_signing_in
 import nuvio.composeapp.generated.resources.compose_auth_link_try_again
+import nuvio.composeapp.generated.resources.kk_backup_qr_denied
+import nuvio.composeapp.generated.resources.kk_backup_qr_signing_in
+import nuvio.composeapp.generated.resources.kk_backup_qr_waiting
 import nuvio.composeapp.generated.resources.compose_auth_link_waiting
 import org.jetbrains.compose.resources.stringResource
 
@@ -103,7 +106,8 @@ internal fun DeviceLinkAuthSection(
 
                 Spacer(modifier = Modifier.height(12.dp * scale))
 
-                AuthPrimaryButton(
+                // A backup QR is for the owner to scan, so there's nothing to open on this phone.
+                if (!state.isBackup) AuthPrimaryButton(
                     text = stringResource(Res.string.compose_auth_link_open),
                     isLoading = state.isCompleting,
                     enabled = enabled && !state.isCompleting,
@@ -119,10 +123,11 @@ internal fun DeviceLinkAuthSection(
                 Spacer(modifier = Modifier.height(10.dp * scale))
 
                 Text(
-                    text = if (state.isCompleting) {
-                        stringResource(Res.string.compose_auth_link_signing_in)
-                    } else {
-                        stringResource(Res.string.compose_auth_link_waiting)
+                    text = when {
+                        state.isBackup && state.isCompleting -> stringResource(Res.string.kk_backup_qr_signing_in)
+                        state.isBackup -> stringResource(Res.string.kk_backup_qr_waiting)
+                        state.isCompleting -> stringResource(Res.string.compose_auth_link_signing_in)
+                        else -> stringResource(Res.string.compose_auth_link_waiting)
                     },
                     modifier = Modifier.fillMaxWidth(),
                     style = MaterialTheme.typography.bodyMedium.copy(
@@ -172,6 +177,7 @@ internal fun DeviceLinkAuthSection(
                         DeviceLinkAuthFailure.Expired -> {
                             stringResource(Res.string.compose_auth_link_code_expired)
                         }
+                        DeviceLinkAuthFailure.Denied -> stringResource(Res.string.kk_backup_qr_denied)
                         DeviceLinkAuthFailure.Start,
                         DeviceLinkAuthFailure.Connection,
                         DeviceLinkAuthFailure.Complete,

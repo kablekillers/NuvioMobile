@@ -72,7 +72,7 @@ object KkLiveChannels {
 
     private val json = Json { ignoreUnknownKeys = true }
     private val lock = Mutex()
-    private var cache: Pair<Long, List<KkLiveChannel>>? = null
+    private var cache: Triple<String, Long, List<KkLiveChannel>>? = null
     private const val TTL_MILLIS = 20 * 60_000L
     private val requests = Semaphore(8)
     private fun now() = kotlin.time.Clock.System.now().toEpochMilliseconds()
@@ -220,23 +220,31 @@ object KkLiveChannels {
         }.awaitAll().flatten()
     }
 
+    /**
+     * The profile's add-ons once they're read. The app reads them after a profile is picked (and its
+     * PIN entered), so this waits for that rather than reading them itself.
+     */
     private suspend fun readyAddons(): List<ManagedAddon> {
-        AddonRepository.initialize()
-        // At start-up the add-ons are still being read: wait for them (briefly).
-        withTimeoutOrNull(25_000) {
-            while (true) {
-                val list = AddonRepository.uiState.value.addons
-                if (list.isNotEmpty() && list.none { it.isRefreshing } && list.any { it.manifest != null }) break
-                delay(250)
-            }
+        withTimeoutOrNull(60_000) {
+            while (AddonRepository.uiState.value.addons.none { it.isActive }) delay(300)
+        }
+        // Give the rest a moment to finish loading.
+        withTimeoutOrNull(15_000) {
+            while (AddonRepository.uiState.value.addons.any { it.enabled && it.isRefreshing }) delay(300)
         }
         return AddonRepository.uiState.value.addons.filter { it.isActive }
     }
 
+    /** Changes whenever the active add-ons change (to download the channels again). */
+    fun addonsKey(addons: List<ManagedAddon>): String =
+        addons.filter { it.isActive }.map { it.manifestUrl }.sorted().joinToString(",")
+
     /** The channel list (cached for a while). */
     suspend fun channels(force: Boolean = false): List<KkLiveChannel> = withContext(Dispatchers.Default) {
-        if (!force) lock.withLock { cache?.takeIf { now() - it.first < TTL_MILLIS }?.second }?.let { return@withContext it }
-        val found = sweep(readyAddons())
+        val addons = readyAddons()
+        val key = addonsKey(addons)
+        if (!force) lock.withLock { cache?.takeIf { it.first == key && now() - it.second < TTL_MILLIS }?.third }?.let { return@withContext it }
+        val found = sweep(addons)
         val channels = found.groupBy { mergeKey(it.name) }
             .filterKeys { it.length >= 2 }
             .map { (_, list) ->
@@ -261,24 +269,26 @@ object KkLiveChannels {
             channel.copy(slug = slug)
         }
         if (withSlugs.isNotEmpty()) {
-            lock.withLock { cache = now() to withSlugs }
+            lock.withLock { cache = Triple(key, now(), withSlugs) }
             runCatching { save?.invoke(json.encodeToString(withSlugs)) }
         }
+        // A sweep that came back empty (network hiccup): the last good list.
         withSlugs.ifEmpty { cachedOrSaved().orEmpty() }
     }
 
     private val groupOrder = listOf("Local", "Sports", "News", "Entertainment", "Movies", "Kids", "Music")
 
     private suspend fun cachedOrSaved(): List<KkLiveChannel>? {
-        lock.withLock { cache?.second }?.let { return it }
+        lock.withLock { cache?.third }?.let { return it }
         val saved = runCatching { load?.invoke()?.let { json.decodeFromString<List<KkLiveChannel>>(it) } }.getOrNull()
-        if (!saved.isNullOrEmpty()) lock.withLock { if (cache == null) cache = 0L to saved }
+        if (!saved.isNullOrEmpty()) lock.withLock { if (cache == null) cache = Triple("", 0L, saved) }
         return saved
     }
 
-    /** The playlist the Live TV page reads. */
+    /** The playlist the Live TV page reads. Fails when nothing was found, so Live TV tries again later. */
     suspend fun playlist(force: Boolean = false): String {
         val list = channels(force)
+        if (list.isEmpty()) error("No US channels found in your add-ons yet")
         return buildString {
             append("#EXTM3U\n")
             list.forEach { c ->

@@ -153,6 +153,11 @@ class LiveTvRepository(
         }
     }
 
+    /** Downloads one playlist again now (Kable Killers' add-on channels, when the add-ons change). */
+    fun refreshPlaylist(id: String) {
+        scope.launch { refreshInternal(forcePlaylists = false, forceEpg = false, forceIds = setOf(id)) }
+    }
+
     fun refreshEpgOnly() {
         scope.launch { refreshInternal(forcePlaylists = false, forceEpg = true) }
     }

@@ -74,6 +74,10 @@ internal object PlayerPlaybackNetworking {
             .build()
     }
 
+    /** The playback OkHttp client (browser User-Agent, lenient TLS), for Music's player and downloads. */
+    fun createHttpClient(useLongReadTimeout: Boolean = false): OkHttpClient =
+        if (useLongReadTimeout) loopbackPlaybackHttpClient else playbackHttpClient
+
     fun createHttpDataSourceFactory(
         defaultHeaders: Map<String, String> = emptyMap(),
         useLongReadTimeout: Boolean = false,

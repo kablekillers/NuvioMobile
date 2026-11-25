@@ -110,7 +110,7 @@ private val HubCardBorder = Color.White.copy(alpha = 0.07f)
 private val HubLiveText = Color(0xFFFF7B86)
 
 private enum class SportsSection(val label: String) {
-    AllSports("All Sports"), Live("Live Now"), MyTeams("My Teams"), Upcoming("Upcoming"), Final("Final"),
+    AllSports("All Sports"), LiveEvents("Live Events"), UsChannels("US Channels"), Live("Live Now"), MyTeams("My Teams"), Upcoming("Upcoming"), Final("Final"),
     Standings("Standings"), Replays("Replays"), Highlights("Highlights"), Events("Events"),
     Channels("NFL Channels"),
 }
@@ -267,6 +267,22 @@ internal fun SportsHubScreen(
             nflChannels = SportsAddonDiscovery.findNflChannels(activeAddons)
         }
     }
+    // Every add-on's live events and US sports channels (same for any league tab).
+    var liveEvents by remember { mutableStateOf<List<SportsLiveEvent>?>(null) }
+    var usChannels by remember { mutableStateOf<List<SportsTvChannel>?>(null) }
+    LaunchedEffect(section, activeAddons, refresh) {
+        when (section) {
+            SportsSection.LiveEvents -> {
+                liveEvents = SportsLiveTv.peekEvents(activeAddons)
+                liveEvents = SportsLiveTv.liveEvents(activeAddons)
+            }
+            SportsSection.UsChannels -> {
+                usChannels = SportsLiveTv.peekChannels(activeAddons)
+                usChannels = SportsLiveTv.usChannels(activeAddons)
+            }
+            else -> Unit
+        }
+    }
     val vod = section == SportsSection.Replays || section == SportsSection.Highlights
     val catalogOnly = league.scoreboardPath == null
     val catalogSection = vod || section == SportsSection.Events
@@ -333,7 +349,10 @@ internal fun SportsHubScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     val sections = if (catalogOnly) {
-                        listOf(SportsSection.AllSports, SportsSection.Events, SportsSection.Replays, SportsSection.Highlights)
+                        listOf(
+                            SportsSection.AllSports, SportsSection.LiveEvents, SportsSection.UsChannels,
+                            SportsSection.Events, SportsSection.Replays, SportsSection.Highlights,
+                        )
                     } else {
                         val visible = SportsSection.entries.filter { tab ->
                             tab != SportsSection.Events && (tab != SportsSection.Channels || league == SportsLeague.NFL) &&
@@ -394,6 +413,31 @@ internal fun SportsHubScreen(
                                 if (combinedFeed.upcoming.isEmpty()) item { HubMessage("No games starting in the next hour.") }
                                 itemsIndexed(combinedFeed.upcoming, key = { _, event -> "soon_${event.league.name}_${event.id}" }) { index, event ->
                                     EnterAnimated(index) { GameRow(event) { selectedEvent = event } }
+                                }
+                            }
+                        }
+                        section == SportsSection.LiveEvents -> {
+                            item { HubMessage("Live events from all your add-ons · the same event from several add-ons is grouped") }
+                            val list = liveEvents
+                            when {
+                                list == null -> item { CircularProgressIndicator(color = HubAccent) }
+                                list.isEmpty() -> item { HubMessage("No live events found right now in your enabled add-ons.") }
+                                else -> list.groupBy { it.sport }.forEach { (sport, inSport) ->
+                                    item(key = "le_h_$sport") { HubHeading("$sport · ${inSport.size}") }
+                                    itemsIndexed(inSport, key = { i, _ -> "le_${sport}_$i" }) { i, event ->
+                                        EnterAnimated(i) { GroupedSources(event.title, event.sources, onOpenStream, addToMultiview) }
+                                    }
+                                }
+                            }
+                        }
+                        section == SportsSection.UsChannels -> {
+                            item { HubMessage("US sports channels (ESPN, ESPN2, FS1, NFL Network…) from all your add-ons · foreign feeds left out") }
+                            val list = usChannels
+                            when {
+                                list == null -> item { CircularProgressIndicator(color = HubAccent) }
+                                list.isEmpty() -> item { HubMessage("No US sports channels found in your enabled add-ons.") }
+                                else -> itemsIndexed(list, key = { _, channel -> "us_${channel.name}" }) { i, channel ->
+                                    EnterAnimated(i) { GroupedSources(channel.name, channel.sources, onOpenStream, addToMultiview) }
                                 }
                             }
                         }
@@ -1153,6 +1197,50 @@ private fun SourceCard(source: SportsCatalogMatch, onOpenStream: (MetaPreview) -
         Column(Modifier.weight(1f)) {
             Text(source.item.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(source.addonName, color = HubMuted, fontSize = 12.sp, maxLines = 1)
+        }
+    }
+}
+
+/** A channel or event with one or more add-on links; more than one folds open on tap. */
+@Composable
+private fun GroupedSources(
+    title: String,
+    sources: List<SportsCatalogMatch>,
+    onOpenStream: (MetaPreview) -> Unit,
+    onAddToMultiview: (SportsCatalogMatch) -> Unit,
+) {
+    if (sources.size == 1) {
+        Column {
+            SourceCard(sources.first(), onOpenStream)
+            AddToMultiviewButton { onAddToMultiview(sources.first()) }
+        }
+        return
+    }
+    var expanded by rememberSaveable(title) { mutableStateOf(false) }
+    val shape = RoundedCornerShape(16.dp)
+    Column(
+        Modifier.fillMaxWidth().clip(shape).background(HubCard).border(1.dp, HubCardBorder, shape),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(title, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(
+                    "${sources.size} links · " + sources.map { it.addonName }.distinct().joinToString(),
+                    color = HubMuted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Text(if (expanded) "Hide" else "Show", color = HubAccent, fontSize = 13.sp)
+        }
+        if (expanded) {
+            Column(Modifier.padding(horizontal = 8.dp).padding(bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                sources.forEach { source ->
+                    SourceCard(source, onOpenStream)
+                    AddToMultiviewButton { onAddToMultiview(source) }
+                }
+            }
         }
     }
 }

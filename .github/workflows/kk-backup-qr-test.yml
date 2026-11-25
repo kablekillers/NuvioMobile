@@ -39,6 +39,7 @@ jobs:
           --tests 'com.nuvio.app.features.sports.SportsAddonCatalogsTest'
           --tests 'com.nuvio.app.features.sports.AndroidSportsExpansionTest'
           --tests 'com.nuvio.app.features.sports.SportsRecordingClassifierTest'
+          --tests 'com.nuvio.app.features.sports.SportsLiveTvTest'
           --stacktrace --no-daemon
       - name: Build integrated full debug APK
         run: ./gradlew :androidApp:assembleFullDebug --stacktrace --no-daemon

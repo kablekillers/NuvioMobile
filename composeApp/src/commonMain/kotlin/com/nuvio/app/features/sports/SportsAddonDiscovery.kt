@@ -120,13 +120,41 @@ internal object SportsAddonDiscovery {
                             }
                         }
                         if (pages.isEmpty()) return@async emptyList()
+                        // Long live lists (hundreds of events) page with "skip": read a few more
+                        // pages so games further down the list aren't missed.
+                        val morePages = if (!searchRequired && catalog.extra.any { it.name == "skip" } &&
+                            pages.size == 1 && pages.first().rawItemCount >= 20
+                        ) {
+                            var next = pages.first().nextSkip
+                            buildList {
+                                repeat(3) {
+                                    val skipValue = next ?: return@repeat
+                                    val page = catalogRequests.withPermit {
+                                        withTimeoutOrNull(15_000) {
+                                            runCatching {
+                                                fetchCatalogPage(
+                                                    manifestUrl = manifest.transportUrl,
+                                                    type = catalog.type,
+                                                    catalogId = catalog.id,
+                                                    genre = genres.first(),
+                                                    skip = skipValue,
+                                                )
+                                            }.getOrElse { if (it is CancellationException) throw it; null }
+                                        }
+                                    } ?: return@repeat
+                                    add(page)
+                                    next = if (page.rawItemCount >= 20) page.nextSkip else null
+                                }
+                            }
+                        } else emptyList()
+                        val allPages = pages + morePages
                         val unscoredAllowed = if (league.scoreboardPath == null) {
                             SportsAddonCatalogs.isScopedCatalog(catalog, league)
                         } else {
                             (replays && isLeagueCatalog(catalog.id, league)) ||
                                 (!replays && SportsAddonCatalogs.isCncBridgeScopedCatalog(manifest, catalog, league))
                         }
-                        pages.flatMap { it.items }.distinctBy { it.type to it.id }.mapNotNull { item ->
+                        allPages.flatMap { it.items }.distinctBy { it.type to it.id }.mapNotNull { item ->
                             ensureActive()
                             if (!manifest.supportsResource("stream", item.type, item.id)) return@mapNotNull null
                             // Replays: drop recordings labelled for another sport (MLB "Kansas City" in NFL).

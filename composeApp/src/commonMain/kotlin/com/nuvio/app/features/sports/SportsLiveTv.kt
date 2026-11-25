@@ -3,6 +3,7 @@ package com.nuvio.app.features.sports
 import com.nuvio.app.features.addons.AddonCatalog
 import com.nuvio.app.features.addons.AddonManifest
 import com.nuvio.app.features.addons.ManagedAddon
+import com.nuvio.app.features.addons.supportsResource
 import com.nuvio.app.features.catalog.fetchCatalogPage
 import com.nuvio.app.features.home.MetaPreview
 import kotlinx.coroutines.CancellationException

@@ -61,7 +61,7 @@ internal fun SportsMultiviewPlayers(
     val visible = tiles.take(SportsMultiviewSession.MAX_TILES)
     if (visible.isEmpty()) return
     // Each tile is a fraction of the screen, so decoding more than that is wasted work.
-    val maxHeight = when {
+    val maxVideoHeight = when {
         visible.size > 2 -> 540
         visible.size == 2 -> 720
         else -> 1080
@@ -81,7 +81,7 @@ internal fun SportsMultiviewPlayers(
                     key(tile.id) {
                         MultiviewTilePlayer(
                             tile = tile,
-                            maxHeight = maxHeight,
+                            maxHeight = maxVideoHeight,
                             audible = tile.id == focusedId,
                             onFocus = { onFocus(tile.id) },
                         )

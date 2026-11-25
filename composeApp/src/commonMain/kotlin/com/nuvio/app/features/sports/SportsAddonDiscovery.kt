@@ -84,6 +84,9 @@ internal object SportsAddonDiscovery {
     ): List<SportsCatalogMatch> = withContext(Dispatchers.Default) {
         val matcher = SportsEventMatcher.Prepared(events)
         val useRecordingMetadata = replays && !isIos && SportsRecordingClassifier.appliesTo(league)
+        // Live channels (CNCBridge etc.) carrying these games: their items are channel names, not game titles.
+        val channelTerms = if (replays) emptySet() else SportsChannelMatcher.terms(league, events)
+        val channelQueries = if (replays) emptyList() else SportsChannelMatcher.searchQueries(league, events)
         val requests: List<Deferred<List<SportsCatalogMatch>>> = addons.filter { it.isActive }.flatMap { addon ->
             val manifest = addon.manifest ?: return@flatMap emptyList<Deferred<List<SportsCatalogMatch>>>()
             SportsAddonCatalogs.routes(manifest, league, replays, expanded = !isIos).map { catalog ->
@@ -95,7 +98,9 @@ internal object SportsAddonDiscovery {
                         val genreValue = genre?.options?.firstOrNull { it.equals("all", ignoreCase = true) }
                         if (genre != null && genreValue == null) return@async emptyList()
                         val searchRequired = required.any { it.name == "search" }
-                        val searchTerms: List<String?> = if (searchRequired) deepSearchQueries(league, events) else listOf(null)
+                        val searchTerms: List<String?> = if (searchRequired) {
+                            (deepSearchQueries(league, events) + channelQueries).distinct()
+                        } else listOf(null)
                         if (searchTerms.isEmpty()) return@async emptyList()
                         val skipRequired = required.any { it.name == "skip" }
                         val pages = searchTerms.mapNotNull { term ->
@@ -123,7 +128,9 @@ internal object SportsAddonDiscovery {
                         pages.flatMap { it.items }.distinctBy { it.type to it.id }.mapNotNull { item ->
                             ensureActive()
                             if (!manifest.supportsResource("stream", item.type, item.id)) return@mapNotNull null
-                            val score = matcher.score(item.name)
+                            val gameScore = matcher.score(item.name)
+                            // A channel showing the game ranks after real game matches.
+                            val score = if (gameScore == 0 && SportsChannelMatcher.matches(item.name, channelTerms)) 1 else gameScore
                             if (useRecordingMetadata) {
                                 if (!SportsRecordingClassifier.accepts(manifest.id, catalog, item, league, score)) return@mapNotNull null
                             } else if (score == 0 && !unscoredAllowed) return@mapNotNull null

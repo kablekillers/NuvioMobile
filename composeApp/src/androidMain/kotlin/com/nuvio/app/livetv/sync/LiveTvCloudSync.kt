@@ -521,6 +521,8 @@ class LiveTvCloudSync(
     }
 
     private suspend fun callOnce(method: String, path: String, body: JSONObject?): Reply = withContext(Dispatchers.IO) {
+        // No sync service set: never send the account's token anywhere.
+        if (CLOUD_URL.isBlank()) return@withContext Reply(503, null)
         val token = SupabaseProvider.client.auth.currentSessionOrNull()?.accessToken
             ?.takeIf { it.isNotBlank() }
             ?: return@withContext Reply(401, null)

@@ -48,6 +48,14 @@ import kotlinx.serialization.json.jsonPrimitive
  */
 internal object WhatsNewNotes {
     val byVersion: Map<String, List<String>> = mapOf(
+        "0.9.3" to listOf(
+            "New Live TV tab: US channels from all your add-ons in one guide, sorted into Local, Sports, News, Movies, Kids and more.",
+            "All-new Music player: YouTube Music with your own library and playlists, lyrics, downloads, Party mode and a home screen widget.",
+            "Sports Hub is now US sports only, with College Volleyball (men's and women's), MLS, World Cup, WWE, IndyCar and more.",
+            "Game pages only show US channels: Spanish, Latin and other-country feeds are left out.",
+            "Sports Streams links show up more reliably, and the Netflix loop channels are gone from game pages.",
+            "The whole app was cleaned up to run faster.",
+        ),
         "0.9.2" to listOf(
             "Sports Hub: new Live Events tab with live games from all your add-ons, grouped by sport.",
             "Sports Hub: new US Channels tab for ESPN, ESPN2, FS1, NFL Network, TNT and more, all links in one place.",

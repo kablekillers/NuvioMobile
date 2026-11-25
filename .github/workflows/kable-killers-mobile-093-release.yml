@@ -1,9 +1,9 @@
-name: Kable Killers Mobile 0.9.2 Stable Release
+name: Kable Killers Mobile 0.9.3 Stable Release
 
 on:
   push:
     branches:
-      - release-0.9.2
+      - release-0.9.3
 
 permissions:
   contents: write
@@ -150,7 +150,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          tag=v0.9.2
+          tag=v0.9.3
           if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo "::error::Release $tag already exists; refusing overwrite"
             exit 1
@@ -161,8 +161,8 @@ jobs:
           test "${#artifacts[@]}" -eq 4
           (cd dist && sha256sum -c SHA256SUMS.txt)
           mkdir -p "$RUNNER_TEMP/previous-release"
-          gh release download "v0.9.1" --repo "$GITHUB_REPOSITORY" \
-            --pattern 'Kable-Killers-Mobile-v0.9.1-arm64-v8a.apk' --dir "$RUNNER_TEMP/previous-release"
+          gh release download "v0.9.2" --repo "$GITHUB_REPOSITORY" \
+            --pattern 'Kable-Killers-Mobile-v0.9.2-arm64-v8a.apk' --dir "$RUNNER_TEMP/previous-release"
           reference=$("$build_tools/apksigner" verify --print-certs "$RUNNER_TEMP/previous-release/"*.apk |
             awk '/certificate SHA-256 digest:/ {print tolower($NF)}' | sort -u | head -1)
           test -n "$reference"
@@ -175,26 +175,22 @@ jobs:
             test "$cert" = "$reference"
             "$build_tools/aapt2" dump badging "$apk" > "$RUNNER_TEMP/final-badging.txt"
             grep -Fq "name='com.kablekillers.mobile'" "$RUNNER_TEMP/final-badging.txt"
-            grep -Fq "versionCode='167'" "$RUNNER_TEMP/final-badging.txt"
-            grep -Fq "versionName='0.9.2'" "$RUNNER_TEMP/final-badging.txt"
+            grep -Fq "versionCode='168'" "$RUNNER_TEMP/final-badging.txt"
+            grep -Fq "versionName='0.9.3'" "$RUNNER_TEMP/final-badging.txt"
             if grep -q '^application-debuggable' "$RUNNER_TEMP/final-badging.txt"; then exit 1; fi
           done
           cat > dist/RELEASE_NOTES.md <<'NOTES'
-          - Sports Hub: Live Events tab (live games from every add-on, grouped by sport)
-          - Sports Hub: US Channels tab (ESPN, ESPN2, FS1, NFL Network, TNT and more; foreign feeds left out)
-          - Sports Hub: search teams, channels and events
-          - Multi-View fixed: Add to Multi-View on any stream, up to four screens, tap to switch audio
-          - Sports links tested in the background; dead links hidden
-          - Premium add-ons listed first (Sports Streams, Flix-Streams, StremVerse, Nebula Sports)
-          - Replays show full games, Highlights show short clips; other sports kept out of each league
-          - More add-ons searched (Flix-Streams, StremVerse IPTV, CNCBridge, Plavio Live, US TV Now)
-          - Back from a stream keeps found links (no reload)
-          - Backup sign-in and profiles keep working when Nuvio is down
-          - Includes previous 0.9.1 features
+          - New Live TV tab: US channels from all your add-ons in one guide (Local, Sports, News, Movies, Kids and more)
+          - All-new Music player (YouTube Music): your library and playlists, lyrics, downloads, Party mode, home screen widget
+          - Sports Hub is US sports only, now with College Volleyball (men's and women's), MLS, World Cup, WWE and IndyCar
+          - Game pages show US channels only: Spanish, Latin and other-country feeds left out
+          - Sports Streams links more reliable; Netflix loop channels removed from game pages
+          - App cleaned up and faster
+          - Includes previous 0.9.2 features
           NOTES
           gh release create "$tag" "${artifacts[@]}" dist/SHA256SUMS.txt \
             --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft \
-            --title "Kable Killers Mobile 0.9.2" \
+            --title "Kable Killers Mobile 0.9.3" \
             --notes-file dist/RELEASE_NOTES.md
           gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json assets,isDraft,isPrerelease |
             jq -e --argjson count 5 '.isDraft and (.isPrerelease | not) and ((.assets | length) == $count) and all(.assets[]; .size > 0)'

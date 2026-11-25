@@ -35,15 +35,15 @@ fun SportsLeague.glyph(): SportGlyph = when (this) {
     SportsLeague.NFL -> SportGlyph.FOOTBALL
     SportsLeague.COLLEGE_FOOTBALL -> SportGlyph.COLLEGE_FOOTBALL
     SportsLeague.NBA, SportsLeague.NCAA_MEN, SportsLeague.NCAA_WOMEN, SportsLeague.WNBA -> SportGlyph.BASKETBALL
-    SportsLeague.MLB -> SportGlyph.BASEBALL
-    SportsLeague.NHL -> SportGlyph.HOCKEY
-    SportsLeague.UFC, SportsLeague.COMBAT -> SportGlyph.MMA
+    SportsLeague.MLB, SportsLeague.COLLEGE_BASEBALL -> SportGlyph.BASEBALL
+    SportsLeague.NHL, SportsLeague.NCAA_HOCKEY_MEN, SportsLeague.NCAA_HOCKEY_WOMEN -> SportGlyph.HOCKEY
+    SportsLeague.UFC, SportsLeague.COMBAT, SportsLeague.WRESTLING -> SportGlyph.MMA
     SportsLeague.ATP, SportsLeague.WTA -> SportGlyph.TENNIS
     SportsLeague.PGA, SportsLeague.LPGA -> SportGlyph.GOLF
     SportsLeague.FORMULA_1, SportsLeague.NASCAR, SportsLeague.INDYCAR, SportsLeague.MOTORSPORT -> SportGlyph.RACING
     SportsLeague.RUGBY, SportsLeague.AFL -> SportGlyph.FOOTBALL
     SportsLeague.CRICKET, SportsLeague.BILLIARDS -> SportGlyph.BASEBALL
-    SportsLeague.SOCCER -> SportGlyph.SOCCER
+    SportsLeague.SOCCER, SportsLeague.MLS, SportsLeague.WORLD_CUP -> SportGlyph.SOCCER
     SportsLeague.DARTS -> SportGlyph.TARGET
     SportsLeague.OTHER -> SportGlyph.OTHER
 }

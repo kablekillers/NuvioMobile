@@ -135,8 +135,11 @@ internal fun SportsHubScreen(
     repository: SportsEventRepository = SportsEventRepository.shared,
     showBack: Boolean = true,
 ) {
-    val leagues = remember { SportsLeague.entries.filter { it.supportsPlatform(android = !isIos) } }
-    var league by rememberSaveable { mutableStateOf(SportsLeague.NFL) }
+    // US sports only; "All" holds All Sports, Live Events, US Channels and My Teams.
+    val leagues = HubSports.scoreboardLeagues
+    var hubKey by rememberSaveable { mutableStateOf(HubSports.All.key) }
+    val hub = HubSports.byKey(hubKey)
+    val league = hub.primary
     var section by rememberSaveable { mutableStateOf(SportsSection.AllSports) }
     var showIntro by rememberSaveable { mutableStateOf(true) }
     // Multi-View: "Add to Multi-View" on a stream opens a link picker; picking a
@@ -152,26 +155,39 @@ internal fun SportsHubScreen(
     LaunchedEffect(selectedEvent) {
         selectedEventKey = SportsHubLastGame.save(selectedEvent)
     }
-    var board by remember(league) { mutableStateOf<SportsScoreboard?>(null) }
-    var error by remember(league) { mutableStateOf(false) }
+    var board by remember(hubKey) { mutableStateOf<SportsScoreboard?>(null) }
+    var error by remember(hubKey) { mutableStateOf(false) }
     var refresh by remember { mutableStateOf(0) }
     val owner = LocalLifecycleOwner.current
     val addons by AddonRepository.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { AddonRepository.initialize() }
-    LaunchedEffect(league, refresh, owner) {
-        if (league.scoreboardPath == null) return@LaunchedEffect
+    LaunchedEffect(hubKey, refresh, owner) {
+        val members = hub.scoreboardMembers
+        if (members.isEmpty()) return@LaunchedEffect
+        // One board for the whole choice: College BB = men's + women's, Golf = PGA + LPGA…
+        fun merged(boards: List<SportsScoreboard>) = if (boards.isEmpty()) null else SportsScoreboard(
+            league = hub.primary,
+            events = boards.flatMap { it.events },
+            fetchedAtEpochMillis = boards.maxOf { it.fetchedAtEpochMillis },
+        )
         owner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            board = repository.cached(league)
+            board = merged(members.mapNotNull { repository.cached(it) })
             var force = refresh > 0
             while (true) {
-                try {
-                    board = repository.scoreboard(league, forceRefresh = force)
-                    error = false
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (_: Exception) {
-                    error = true
+                val boards = mutableListOf<SportsScoreboard>()
+                var failed = false
+                for (member in members) {
+                    try {
+                        boards += repository.scoreboard(member, forceRefresh = force)
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (_: Exception) {
+                        failed = true
+                        repository.cached(member)?.let { boards += it }
+                    }
                 }
+                merged(boards)?.let { board = it }
+                error = failed && boards.isEmpty()
                 force = true
                 delay(SportsEventRepository.refreshIntervalMillis(board))
             }
@@ -208,7 +224,7 @@ internal fun SportsHubScreen(
     val prefs by SportsPreferences.state.collectAsStateWithLifecycle()
     // Score delay: keep recent scoreboards and show the one from [delay] ago, so scores on
     // screen don't run ahead of a stream that lags behind live TV.
-    val history = remember(league) { mutableStateListOf<SportsScoreboard>() }
+    val history = remember(hubKey) { mutableStateListOf<SportsScoreboard>() }
     LaunchedEffect(board) {
         val b = board ?: return@LaunchedEffect
         if (history.lastOrNull()?.fetchedAtEpochMillis != b.fetchedAtEpochMillis) {
@@ -259,8 +275,8 @@ internal fun SportsHubScreen(
         myTeamGames = SportsEventSections.live(found) + SportsEventSections.upcoming(found) + SportsEventSections.final(found)
     }
     // Standings for the selected league.
-    var standings by remember(league) { mutableStateOf<SportsStandings?>(null) }
-    var standingsLoaded by remember(league) { mutableStateOf(false) }
+    var standings by remember(hubKey) { mutableStateOf<SportsStandings?>(null) }
+    var standingsLoaded by remember(hubKey) { mutableStateOf(false) }
     LaunchedEffect(section, league) {
         if (section != SportsSection.Standings || standingsLoaded) return@LaunchedEffect
         standings = runCatching { repository.standings(league) }.getOrNull()
@@ -329,12 +345,19 @@ internal fun SportsHubScreen(
     val catalogOnly = league.scoreboardPath == null
     val catalogSection = vod || section == SportsSection.Events
     var recordings by remember(league, catalogSection, vod, activeAddons) { mutableStateOf<List<SportsCatalogMatch>?>(null) }
-    LaunchedEffect(league, catalogSection, vod, activeAddons, events) {
-        if (catalogSection) {
-            val replaySchedule = if (vod && !isIos && activeAddons.isNotEmpty() && SportsRecordingClassifier.appliesTo(league)) {
-                (events + repository.recentResults(league)).distinctBy { it.id }
-            } else events
-            recordings = SportsAddonDiscovery.find(league, replaySchedule, activeAddons, replays = vod)
+    LaunchedEffect(hubKey, catalogSection, vod, activeAddons, events) {
+        if (catalogSection && !hub.isAll) {
+            // Replays/Highlights: every league in the choice. Events: the ones with no
+            // ESPN scoreboard (boxing, wrestling, world soccer) from add-on event lists.
+            val targets = if (vod) hub.members else hub.catalogMembers
+            val found = targets.flatMap { member ->
+                val memberEvents = events.filter { it.league == member }
+                val replaySchedule = if (vod && !isIos && activeAddons.isNotEmpty() && SportsRecordingClassifier.appliesTo(member)) {
+                    (memberEvents + repository.recentResults(member)).distinctBy { it.id }
+                } else memberEvents
+                SportsAddonDiscovery.find(member, replaySchedule, activeAddons, replays = vod)
+            }
+            recordings = SportsAddonPriority.sorted(found.distinctBy { Triple(it.addonName, it.item.type, it.item.id) }) { it.addonName }
         }
     }
 
@@ -379,23 +402,16 @@ internal fun SportsHubScreen(
                         modifier = Modifier.weight(1f),
                     )
                 } else {
-                ScoreTicker(events, animate = !SportsMultiviewSession.open)
+                ScoreTicker(if (hub.isAll) combinedBoards.flatMap { it.events } else events, animate = !SportsMultiviewSession.open)
                 LazyRow(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
-                    itemsIndexed(leagues, key = { _, sport -> sport.name }) { index, sport ->
-                        LeagueBadge(sport, selected = league == sport, index = index) {
-                            if (league != sport) {
-                                section = when {
-                                    sport.scoreboardPath == null -> SportsSection.Events
-                                    sport != SportsLeague.NFL && section == SportsSection.Channels -> SportsSection.Live
-                                    section == SportsSection.Events || section == SportsSection.Standings &&
-                                        !sport.usesTeamStats && sport != SportsLeague.UFC ->
-                                        SportsSection.Live
-                                    else -> section
-                                }
-                                league = sport
+                    itemsIndexed(HubSports.list, key = { _, sport -> sport.key }) { index, sport ->
+                        LeagueBadge(sport.logo, sport.label, selected = hub.key == sport.key, index = index) {
+                            if (hub.key != sport.key) {
+                                section = defaultSection(sport)
+                                hubKey = sport.key
                             }
                         }
                     }
@@ -404,23 +420,13 @@ internal fun SportsHubScreen(
                     contentPadding = PaddingValues(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    val sections = if (catalogOnly) {
-                        listOf(
-                            SportsSection.AllSports, SportsSection.LiveEvents, SportsSection.UsChannels,
-                            SportsSection.Events, SportsSection.Replays, SportsSection.Highlights,
-                        )
-                    } else {
-                        val visible = SportsSection.entries.filter { tab ->
-                            tab != SportsSection.Events && (tab != SportsSection.Channels || league == SportsLeague.NFL) &&
-                                (tab != SportsSection.Standings || isIos ||
-                                league == SportsLeague.UFC || league.usesTeamStats)
-                        }
-                        if (league == SportsLeague.NFL) {
-                            listOf(SportsSection.Channels) + visible.filterNot { it == SportsSection.Channels }
-                        } else visible
-                    }
+                    val sections = hubSections(hub)
                     items(sections) { tab ->
                         SectionPill(tab.label, selected = section == tab) { section = tab }
+                    }
+                    // A saved tab that this sport doesn't have falls back to its first one.
+                    if (section !in sections) item {
+                        LaunchedEffect(hub.key) { section = defaultSection(hub) }
                     }
                 }
                 if (error) {
@@ -463,12 +469,12 @@ internal fun SportsHubScreen(
                                 item { HubSectionTitle("LIVE NOW") }
                                 if (combinedFeed.live.isEmpty()) item { HubMessage("No live games right now.") }
                                 itemsIndexed(combinedFeed.live, key = { _, event -> "live_${event.league.name}_${event.id}" }) { index, event ->
-                                    EnterAnimated(index) { GameRow(event) { selectedEvent = event } }
+                                    EnterAnimated(index) { GameRow(event, showLeague = hub.isAll || hub.mixesLeagues) { selectedEvent = event } }
                                 }
                                 item { HubSectionTitle("UPCOMING · NEXT 60 MIN") }
                                 if (combinedFeed.upcoming.isEmpty()) item { HubMessage("No games starting in the next hour.") }
                                 itemsIndexed(combinedFeed.upcoming, key = { _, event -> "soon_${event.league.name}_${event.id}" }) { index, event ->
-                                    EnterAnimated(index) { GameRow(event) { selectedEvent = event } }
+                                    EnterAnimated(index) { GameRow(event, showLeague = hub.isAll || hub.mixesLeagues) { selectedEvent = event } }
                                 }
                             }
                         }
@@ -518,7 +524,7 @@ internal fun SportsHubScreen(
                         }
                         section == SportsSection.Standings -> when {
                             !standingsLoaded -> item { CircularProgressIndicator(color = HubAccent) }
-                            standings == null -> item { HubMessage("Standings aren't available for ${league.label}.") }
+                            standings == null -> item { HubMessage("Standings aren't available for ${hub.label}.") }
                             else -> standings!!.groups.forEachIndexed { gi, group ->
                                 item(key = "standings_$gi") {
                                     EnterAnimated(gi) { StandingsTable(league, group, prefs) }
@@ -556,10 +562,10 @@ internal fun SportsHubScreen(
                             }
                             val rest = if (featured != null) games.drop(1) else games
                             itemsIndexed(rest, key = { _, event -> event.id }) { index, event ->
-                                EnterAnimated(index + 1) { GameRow(event) { selectedEvent = event } }
+                                EnterAnimated(index + 1) { GameRow(event, showLeague = hub.isAll || hub.mixesLeagues) { selectedEvent = event } }
                             }
                         }
-                        !error || board != null -> item { HubMessage("No ${section.label.lowercase()} games for ${league.label}.") }
+                        !error || board != null -> item { HubMessage("No ${section.label.lowercase()} games for ${hub.label}.") }
                     }
                 }
             }
@@ -793,8 +799,27 @@ private fun ScoreTicker(events: List<SportsEvent>, animate: Boolean = true) {
     }
 }
 
+/** Tabs for a choice in the top row. All: the cross-sport views; a sport: its own games. */
+private fun hubSections(hub: HubSport): List<SportsSection> = if (hub.isAll) {
+    listOf(SportsSection.AllSports, SportsSection.LiveEvents, SportsSection.UsChannels, SportsSection.MyTeams)
+} else buildList {
+    if (hub.primary == SportsLeague.NFL) add(SportsSection.Channels)
+    if (hub.scoreboardMembers.isNotEmpty()) {
+        addAll(listOf(SportsSection.Live, SportsSection.Upcoming, SportsSection.Final))
+    }
+    if (hub.catalogMembers.isNotEmpty()) add(SportsSection.Events)
+    if (hub.scoreboardMembers.isNotEmpty() && (isIos || hub.primary.usesTeamStats || hub.primary == SportsLeague.UFC)) {
+        add(SportsSection.Standings)
+    }
+    addAll(listOf(SportsSection.Replays, SportsSection.Highlights))
+}
+
+private fun defaultSection(hub: HubSport): SportsSection = hubSections(hub).let { tabs ->
+    if (SportsSection.Live in tabs) SportsSection.Live else tabs.first()
+}
+
 @Composable
-private fun LeagueBadge(league: SportsLeague, selected: Boolean, index: Int, onClick: () -> Unit) {
+private fun LeagueBadge(league: SportsLeague?, text: String, selected: Boolean, index: Int, onClick: () -> Unit) {
     val interaction = remember { MutableInteractionSource() }
     val label by animateColorAsState(if (selected) CinemaGold.Soft else HubMuted, label = "league_label")
     EnterAnimated(index) {
@@ -814,9 +839,10 @@ private fun LeagueBadge(league: SportsLeague, selected: Boolean, index: Int, onC
                     .background(if (selected) Color(0xFF1F1A10) else Color(0xFF141317)),
                 contentAlignment = Alignment.Center,
             ) {
-                LeagueLogo(league, Modifier.size(30.dp))
+                if (league != null) LeagueLogo(league, Modifier.size(30.dp))
+                else Text("ALL", color = HubAccent, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
             }
-            Text(league.shortLabel(), color = label, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            Text(text, color = label, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1)
         }
     }
 }
@@ -967,7 +993,7 @@ private fun PopScore(score: String, color: Color) {
 }
 
 @Composable
-private fun GameRow(event: SportsEvent, onClick: () -> Unit) {
+private fun GameRow(event: SportsEvent, showLeague: Boolean = false, onClick: () -> Unit) {
     val interaction = remember { MutableInteractionSource() }
     val shape = RoundedCornerShape(16.dp)
     val statusColor = when (event.status) {
@@ -990,6 +1016,8 @@ private fun GameRow(event: SportsEvent, onClick: () -> Unit) {
         val away = event.away
         val home = event.home
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            // Mixed lists (All, College BB men's + women's…): say which league.
+            if (showLeague) Text(event.league.shortLabel, color = HubAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             if (away != null && home != null) {
                 TeamLine(away, event.status == SportsEventStatus.FINAL && away.isWinner, SportsPreferences.isFavorite(event.league, away))
                 TeamLine(home, event.status == SportsEventStatus.FINAL && home.isWinner, SportsPreferences.isFavorite(event.league, home))
@@ -1309,7 +1337,7 @@ private fun SportsSearchResults(
         if (games.isNotEmpty()) {
             item(key = "s_games") { HubSectionTitle("GAMES · ${games.size}") }
             itemsIndexed(games.take(30), key = { _, e -> "s_g_${e.league.name}_${e.id}" }) { _, event ->
-                GameRow(event) { onOpenGame(event) }
+                GameRow(event, showLeague = true) { onOpenGame(event) }
             }
         }
         if (!channels.isNullOrEmpty()) {

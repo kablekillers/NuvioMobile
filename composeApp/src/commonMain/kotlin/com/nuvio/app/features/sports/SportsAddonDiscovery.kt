@@ -300,6 +300,11 @@ internal object SportsAddonDiscovery {
             SportsLeague.MLB -> listOf("MLB")
             SportsLeague.NHL -> listOf("NHL")
             SportsLeague.UFC -> listOf("UFC")
+            SportsLeague.NCAA_HOCKEY_MEN -> listOf("College Hockey", "NCAA Hockey")
+            SportsLeague.NCAA_HOCKEY_WOMEN -> listOf("Women's College Hockey")
+            SportsLeague.COLLEGE_BASEBALL -> listOf("College Baseball", "NCAA Baseball")
+            SportsLeague.MLS -> listOf("MLS")
+            SportsLeague.WORLD_CUP -> listOf("World Cup")
             else -> listOf(league.label)
         }
         val liveFirst = events.sortedBy { when (it.status) {

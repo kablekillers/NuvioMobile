@@ -142,13 +142,19 @@ object SportsAddonCatalogs {
             SportsLeague.WNBA -> listOf("wnba", "basketball")
             else -> listOf("ncaa basketball", "college basketball", "ncaab", "basketball")
         }
-        "baseball" -> listOf("mlb", "baseball")
-        "hockey" -> listOf("nhl", "hockey", "ice hockey")
+        "baseball" -> if (league == SportsLeague.COLLEGE_BASEBALL) {
+            listOf("college baseball", "ncaa baseball", "college world series")
+        } else listOf("mlb", "baseball")
+        "hockey" -> if (league == SportsLeague.NCAA_HOCKEY_MEN || league == SportsLeague.NCAA_HOCKEY_WOMEN) {
+            listOf("college hockey", "ncaa hockey", "frozen four")
+        } else listOf("nhl", "hockey", "ice hockey")
         "fight" -> listOf("ufc", "mma", "boxing", "fight", "fights", "combat", "wrestling", "ppv")
         "tennis" -> listOf("tennis", "atp", "wta")
         "golf" -> listOf("golf", "pga", "lpga")
         "motor_sports" -> listOf("motorsport", "motorsports", "motor sport", "motor sports", "racing", "f1", "formula 1", "formula one", "nascar", "indycar", "motogp")
-        "football" -> listOf("soccer", "football", "premier league", "epl", "la liga", "laliga", "champions league", "serie a", "bundesliga", "ligue 1", "mls")
+        "football" -> if (league == SportsLeague.MLS) listOf("mls", "major league soccer") else
+            if (league == SportsLeague.WORLD_CUP) listOf("world cup", "fifa") else listOf("soccer", "football", "premier league", "epl", "la liga", "laliga", "champions league", "serie a", "bundesliga", "ligue 1", "mls")
+        "wrestling" -> listOf("wwe", "aew", "wrestling", "raw", "smackdown", "nxt")
         "rugby" -> listOf("rugby")
         "afl" -> listOf("afl", "aussie rules")
         "cricket" -> listOf("cricket", "ipl")

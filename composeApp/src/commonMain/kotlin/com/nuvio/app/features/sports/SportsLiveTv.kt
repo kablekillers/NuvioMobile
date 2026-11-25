@@ -243,6 +243,9 @@ internal object SportsLiveTv {
         "Rugby" to Regex("""\b(rugby)\b""", RegexOption.IGNORE_CASE),
     )
 
+    /** The hub covers US sports only; cricket, rugby and the like are left out. */
+    private val usSports = setOf("Football", "Basketball", "Baseball", "Hockey", "Soccer", "Fighting", "Motorsports", "Tennis", "Golf")
+
     internal fun sportOf(item: MetaPreview): String {
         val text = (item.genres + item.name).joinToString(" ")
         // "American football" must not read as soccer.
@@ -268,6 +271,7 @@ internal object SportsLiveTv {
         val sportOrder = sportWords.mapIndexed { i, (name, _) -> name to i }.toMap()
         val events = found.groupBy { eventKey(it.item.name) }
             .filterKeys { it.length >= 4 }
+            .filterValues { sources -> sportOf(sources.first().item) in usSports }
             .map { (_, sources) ->
                 val first = sources.first()
                 val ordered = SportsAddonPriority.sorted(sources) { it.addonName }

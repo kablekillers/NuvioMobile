@@ -31,6 +31,13 @@ enum class SportsLeague(
         "NASCAR", "redesign/assets/img/icons/ESPN-icon-NASCAR.png", false),
     INDYCAR("IndyCar", "racing/irl", "motor_sports", true,
         logoPath = "i/espn/teamlogos/500/indycar_series.png", usesTeamStats = false),
+    NCAA_HOCKEY_MEN("NCAA Men's Hockey", "hockey/mens-college-hockey", "hockey", true, "NCAA Men's Hockey"),
+    NCAA_HOCKEY_WOMEN("NCAA Women's Hockey", "hockey/womens-college-hockey", "hockey", true, "NCAA Women's Hockey"),
+    COLLEGE_BASEBALL("College Baseball", "baseball/college-baseball", "baseball", true, "College Baseball"),
+    MLS("MLS", "soccer/usa.1", "football", true, logoPath = "i/leaguelogos/soccer/500/19.png", usesTeamStats = false),
+    WORLD_CUP("FIFA World Cup", "soccer/fifa.world", "football", true, "World Cup",
+        "i/leaguelogos/soccer/500/4.png", false),
+    WRESTLING("Wrestling", null, "wrestling", true, "WWE / Wrestling", usesTeamStats = false),
     MOTORSPORT("Motorsports", null, "motor_sports", true, "Motorsports", usesTeamStats = false),
     COMBAT("Boxing & MMA", null, "fight", true, "Boxing & MMA", usesTeamStats = false),
     SOCCER("Soccer", null, "football", true, usesTeamStats = false),
@@ -44,6 +51,8 @@ enum class SportsLeague(
 
     internal fun supportsPlatform(android: Boolean): Boolean = android || !androidOnly
     internal val isCollegeBasketball: Boolean get() = this == NCAA_MEN || this == NCAA_WOMEN
+    internal val isCollege: Boolean get() = this == COLLEGE_FOOTBALL || isCollegeBasketball ||
+        this == NCAA_HOCKEY_MEN || this == NCAA_HOCKEY_WOMEN || this == COLLEGE_BASEBALL
 }
 
 enum class SportsEventStatus { SCHEDULED, LIVE, FINAL, POSTPONED, UNKNOWN }

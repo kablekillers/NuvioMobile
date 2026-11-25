@@ -187,7 +187,7 @@ internal object SportsAddonDiscovery {
                             .containsMatchIn("${catalog.id} ${catalog.name}") &&
                         (Regex("nfl|sport|live|channel|tv", RegexOption.IGNORE_CASE)
                             .containsMatchIn("${catalog.id} ${catalog.name}") ||
-                            Regex("sport|nfl|live|cncbridge|cncverse|ustv|usatv|plavio", RegexOption.IGNORE_CASE)
+                            Regex("sport|nfl|live|cncbridge|cncverse|ustv|usatv|plavio|flix", RegexOption.IGNORE_CASE)
                                 .containsMatchIn(manifest.id + " " + manifest.name))
                 }.take(10).map { catalog ->
                     async {

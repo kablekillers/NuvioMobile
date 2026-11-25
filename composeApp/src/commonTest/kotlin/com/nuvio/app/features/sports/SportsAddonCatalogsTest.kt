@@ -163,6 +163,17 @@ class SportsAddonCatalogsTest {
         assertTrue(cricket in SportsAddonCatalogs.routes(manifest, SportsLeague.CRICKET, replays = true))
     }
 
+    @Test
+    fun flixStreamsSportsAndLiveListsAreSearched() {
+        val events = AddonCatalog("tv", "flix_live_events", "Live Events")
+        val sports = AddonCatalog("tv", "flix_sports_tv", "Sports TV")
+        val regional = AddonCatalog("tv", "flix_uk_tv", "UK TV")
+        val movies = AddonCatalog("movie", "flix_popular", "Popular Movies")
+        val manifest = addon("community.flix-streams", "Flix-Streams", events, sports, regional, movies)
+        assertEquals(listOf(events, sports), SportsAddonCatalogs.routes(manifest, SportsLeague.NFL))
+        assertTrue(SportsAddonCatalogs.isListedProvider(manifest))
+    }
+
     private fun addon(id: String, name: String, vararg catalogs: AddonCatalog): AddonManifest {
         val types = catalogs.map { it.type }
         return AddonManifest(

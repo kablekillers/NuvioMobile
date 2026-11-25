@@ -227,6 +227,8 @@ object SportsAddonCatalogs {
     private val additionalProviders = listOf(
         "nebula", "pencari", "penguplay", "tennis", "cncbridge", "cncverse", "plaviolive", "plavio",
         "ustv", "usatv", "ustvnow",
+        // Flix-Streams: a movies/series add-on with Live TV and Live Events (sports) catalogs.
+        "flixstreams", "flixstream",
     )
     // Any other add-on that looks like live TV / sports gets its live catalogs searched too.
     private val liveLabel = Regex(
@@ -247,6 +249,9 @@ object SportsAddonCatalogs {
         val identity = (addon.id + " " + addon.name).lowercase().filter(Char::isLetterOrDigit)
         val known = additionalProviders.any { it in identity }
         val cnc = "cncbridge" in identity || "cncverse" in identity
+        // Mixed add-ons (Flix-Streams) also carry regional / entertainment TV lists;
+        // only their live sports, events and channel lists are relevant here.
+        val mixed = "flixstream" in identity
         val liveAddon = liveLabel.containsMatchIn(addon.id + " " + addon.name)
         val catalogs = addon.catalogs.filter { catalog ->
             val label = "${catalog.id} ${catalog.name}"
@@ -255,7 +260,7 @@ object SportsAddonCatalogs {
                 (cnc && catalog.type in setOf("movie", "series") && sportsLabel.containsMatchIn(label))
             typeOk &&
                 replayCatalog.containsMatchIn(label) == replays &&
-                (known || liveAddon || liveLabel.containsMatchIn(label)) &&
+                (if (mixed) sportsLabel.containsMatchIn(label) else known || liveAddon || liveLabel.containsMatchIn(label)) &&
                 addon.resources.any { it.name == "stream" && (it.types.isEmpty() || catalog.type in it.types) }
         }
         if (known) return catalogs

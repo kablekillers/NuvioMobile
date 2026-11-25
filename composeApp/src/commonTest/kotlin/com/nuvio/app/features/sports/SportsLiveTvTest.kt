@@ -30,4 +30,13 @@ class SportsLiveTvTest {
         assertEquals("Football", SportsLiveTv.sportOf(item("Chiefs vs Bills", "American Football")))
         assertEquals("Soccer", SportsLiveTv.sportOf(item("SPFL: Rangers vs Aberdeen", "Soccer")))
     }
+
+    @Test
+    fun searchMatchesTeamsAndChannels() {
+        kotlin.test.assertTrue(SportsHubSearch.matches("packers", "Green Bay Packers at Chicago Bears"))
+        kotlin.test.assertTrue(SportsHubSearch.matches("green bay", "Green Bay Packers"))
+        kotlin.test.assertTrue(SportsHubSearch.matches("espn 2", "ESPN2"))
+        kotlin.test.assertTrue(SportsHubSearch.matches("brew", "Milwaukee Brewers vs Chicago Cubs"))
+        kotlin.test.assertTrue(!SportsHubSearch.matches("packers", "Milwaukee Brewers vs Chicago Cubs"))
+    }
 }

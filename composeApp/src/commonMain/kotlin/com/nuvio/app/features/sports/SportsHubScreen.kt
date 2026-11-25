@@ -42,6 +42,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.CircularProgressIndicator
@@ -267,6 +272,42 @@ internal fun SportsHubScreen(
             nflChannels = SportsAddonDiscovery.findNflChannels(activeAddons)
         }
     }
+    // Search: teams ("packers", "brewers"), channels ("espn2"), events ("ufc").
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    val searchActive = searchQuery.trim().length >= 2
+    var searchBoards by remember { mutableStateOf<List<SportsScoreboard>>(emptyList()) }
+    var searchAddonResults by remember { mutableStateOf<List<SportsCatalogMatch>?>(null) }
+    var searchChannels by remember { mutableStateOf<List<SportsTvChannel>?>(null) }
+    var searchEvents by remember { mutableStateOf<List<SportsLiveEvent>?>(null) }
+    LaunchedEffect(searchActive, activeAddons) {
+        if (!searchActive) return@LaunchedEffect
+        // Today's games for every league (cached ones first, then fresh).
+        val boards = mutableListOf<SportsScoreboard>()
+        for (sport in leagues.filter { it.scoreboardPath != null }) {
+            repository.cached(sport)?.let { boards += it }
+        }
+        searchBoards = boards.toList()
+        for (sport in leagues.filter { it.scoreboardPath != null }) {
+            if (boards.any { it.league == sport }) continue
+            runCatching { repository.scoreboard(sport) }.getOrNull()?.let { boards += it; searchBoards = boards.toList() }
+        }
+    }
+    LaunchedEffect(searchActive, activeAddons) {
+        if (!searchActive) return@LaunchedEffect
+        searchChannels = SportsLiveTv.peekChannels(activeAddons) ?: SportsLiveTv.usChannels(activeAddons)
+    }
+    LaunchedEffect(searchActive, activeAddons) {
+        if (!searchActive) return@LaunchedEffect
+        searchEvents = SportsLiveTv.peekEvents(activeAddons) ?: SportsLiveTv.liveEvents(activeAddons)
+    }
+    LaunchedEffect(searchQuery, activeAddons) {
+        searchAddonResults = null
+        val query = searchQuery.trim()
+        if (query.length < 2) return@LaunchedEffect
+        delay(450) // wait for typing to pause
+        searchAddonResults = SportsHubSearch.addons(query, activeAddons)
+    }
+
     // Every add-on's live events and US sports channels (same for any league tab).
     var liveEvents by remember { mutableStateOf<List<SportsLiveEvent>?>(null) }
     var usChannels by remember { mutableStateOf<List<SportsTvChannel>?>(null) }
@@ -323,6 +364,20 @@ internal fun SportsHubScreen(
                         Text("▦  Multi-View ($screens/${SportsMultiviewSession.MAX_TILES})", color = HubAccent)
                     }
                 }
+                SportsSearchField(searchQuery, onChange = { searchQuery = it })
+                if (searchActive) {
+                    SportsSearchResults(
+                        query = searchQuery.trim(),
+                        games = SportsHubSearch.games(searchQuery.trim(), searchBoards.flatMap { it.events } + combinedBoards.flatMap { it.events } + events),
+                        channels = searchChannels?.let { SportsHubSearch.channels(searchQuery.trim(), it) },
+                        liveEvents = searchEvents?.let { SportsHubSearch.events(searchQuery.trim(), it) },
+                        addonResults = searchAddonResults,
+                        onOpenGame = { selectedEvent = it },
+                        onOpenStream = onOpenStream,
+                        onAddToMultiview = addToMultiview,
+                        modifier = Modifier.weight(1f),
+                    )
+                } else {
                 ScoreTicker(events, animate = !SportsMultiviewSession.open)
                 LazyRow(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
@@ -507,6 +562,7 @@ internal fun SportsHubScreen(
                     }
                 }
             }
+                }
         }
     }
     if (multiviewHelp) {
@@ -1197,6 +1253,95 @@ private fun SourceCard(source: SportsCatalogMatch, onOpenStream: (MetaPreview) -
         Column(Modifier.weight(1f)) {
             Text(source.item.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(source.addonName, color = HubMuted, fontSize = 12.sp, maxLines = 1)
+        }
+    }
+}
+
+@Composable
+private fun SportsSearchField(query: String, onChange: (String) -> Unit) {
+    val shape = RoundedCornerShape(14.dp)
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
+            .clip(shape).background(HubCard).border(1.dp, HubCardBorder, shape)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Icon(Icons.Rounded.Search, contentDescription = null, tint = HubMuted, modifier = Modifier.size(20.dp))
+        Box(Modifier.weight(1f)) {
+            if (query.isEmpty()) Text("Search teams, channels, events…", color = HubMuted, fontSize = 15.sp)
+            BasicTextField(
+                value = query,
+                onValueChange = onChange,
+                singleLine = true,
+                textStyle = TextStyle(color = Color.White, fontSize = 15.sp),
+                cursorBrush = SolidColor(HubAccent),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        if (query.isNotEmpty()) {
+            Icon(
+                Icons.Rounded.Close, contentDescription = "Clear search", tint = HubMuted,
+                modifier = Modifier.size(20.dp).clickable { onChange("") },
+            )
+        }
+    }
+}
+
+@Composable
+private fun SportsSearchResults(
+    query: String,
+    games: List<SportsEvent>,
+    channels: List<SportsTvChannel>?,
+    liveEvents: List<SportsLiveEvent>?,
+    addonResults: List<SportsCatalogMatch>?,
+    onOpenGame: (SportsEvent) -> Unit,
+    onOpenStream: (MetaPreview) -> Unit,
+    onAddToMultiview: (SportsCatalogMatch) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    LazyColumn(
+        modifier = modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 120.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        if (games.isNotEmpty()) {
+            item(key = "s_games") { HubSectionTitle("GAMES · ${games.size}") }
+            itemsIndexed(games.take(30), key = { _, e -> "s_g_${e.league.name}_${e.id}" }) { _, event ->
+                GameRow(event) { onOpenGame(event) }
+            }
+        }
+        if (!channels.isNullOrEmpty()) {
+            item(key = "s_channels") { HubSectionTitle("CHANNELS · ${channels.size}") }
+            itemsIndexed(channels, key = { _, c -> "s_c_${c.name}" }) { _, channel ->
+                GroupedSources(channel.name, channel.sources, onOpenStream, onAddToMultiview)
+            }
+        }
+        if (!liveEvents.isNullOrEmpty()) {
+            item(key = "s_events") { HubSectionTitle("LIVE EVENTS · ${liveEvents.size}") }
+            itemsIndexed(liveEvents, key = { i, _ -> "s_e_$i" }) { _, event ->
+                GroupedSources(event.title, event.sources, onOpenStream, onAddToMultiview)
+            }
+        }
+        item(key = "s_addons") { HubSectionTitle("FROM YOUR ADD-ONS" + (addonResults?.let { " · ${it.size}" } ?: "")) }
+        when {
+            addonResults == null -> item(key = "s_addons_loading") {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(color = HubAccent, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    Spacer(Modifier.width(10.dp))
+                    Text("Searching your add-ons for \"$query\"…", color = HubMuted)
+                }
+            }
+            addonResults.isEmpty() -> item(key = "s_addons_none") { HubMessage("No add-on results for \"$query\".") }
+            else -> itemsIndexed(addonResults, key = { i, _ -> "s_a_$i" }) { _, source ->
+                Column {
+                    SourceCard(source, onOpenStream)
+                    AddToMultiviewButton { onAddToMultiview(source) }
+                }
+            }
+        }
+        if (games.isEmpty() && channels?.isEmpty() == true && liveEvents?.isEmpty() == true && addonResults?.isEmpty() == true) {
+            item(key = "s_none") { HubMessage("Nothing found for \"$query\". Try a team name (Packers), a channel (ESPN2) or an event (UFC).") }
         }
     }
 }

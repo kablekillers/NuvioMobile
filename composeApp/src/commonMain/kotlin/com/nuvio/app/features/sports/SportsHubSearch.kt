@@ -93,8 +93,8 @@ internal object SportsHubSearch {
         }
         jobs.awaitAll().flatten()
             .distinctBy { Triple(it.addonName, it.item.type, it.item.id) }
-            // Titles that actually contain what was typed first.
-            .sortedByDescending { it.score }
+            // Premium add-ons first; within each, titles that contain what was typed first.
+            .sortedWith(compareBy({ SportsAddonPriority.rank(it.addonName) }, { -it.score }))
             .take(80)
     }
 }

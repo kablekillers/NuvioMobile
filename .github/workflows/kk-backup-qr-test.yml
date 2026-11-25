@@ -46,7 +46,7 @@ jobs:
       - name: Upload test APK
         uses: actions/upload-artifact@v4
         with:
-          name: kk-mobile-backup-qr-test
+          name: kk-mobile-test-build-${{ github.run_number }}
           path: androidApp/build/outputs/apk/full/debug/*.apk
           if-no-files-found: error
           retention-days: 14

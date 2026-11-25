@@ -187,7 +187,9 @@ internal object SportsAddonDiscovery {
                 }
             }
         }
-        val matches = requests.awaitAll().flatten().sortedByDescending { it.score }
+        // Premium add-ons first (Sports Streams, Flix-Streams, StremVerse, Nebula), best match first within each.
+        val matches = requests.awaitAll().flatten()
+            .sortedWith(compareBy({ SportsAddonPriority.rank(it.addonName) }, { -it.score }))
             .distinctBy { Triple(it.addonName, it.item.type, it.item.id) }
         if (useRecordingMetadata) matches.groupBy { it.kind }.values.flatMap { it.take(40) }
         else matches.take(40)
@@ -257,7 +259,7 @@ internal object SportsAddonDiscovery {
                     }
                 }
             }
-            requests.awaitAll().flatten()
+            SportsAddonPriority.sorted(requests.awaitAll().flatten()) { it.addonName }
                 .distinctBy { Triple(it.addonName, it.item.type, it.item.id) }
                 .sortedWith(compareBy({ if (nflChannelLabel(it.item.name) == "NFL RedZone") 0 else 1 }, { it.addonName }))
                 .take(20)

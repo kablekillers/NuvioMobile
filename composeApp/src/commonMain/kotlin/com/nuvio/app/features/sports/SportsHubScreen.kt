@@ -240,6 +240,7 @@ internal fun SportsHubScreen(
             multiviewChoices = runCatching {
                 SportsMultiviewStreamResolver.directStreams(source, activeAddons)
             }.getOrElse { if (it is CancellationException) throw it; emptyList() }
+                .sortedBy { SportsAddonPriority.rank(it.addonName, it.addonId) }
             LiveLinkChecker.check(multiviewChoices)
         } finally {
             multiviewSearching = false

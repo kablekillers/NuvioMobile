@@ -1,5 +1,7 @@
 package com.nuvio.app.features.streams
 
+import com.nuvio.app.features.sports.SportsAddonPriority
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -708,10 +710,14 @@ internal fun StreamList(
     val hideDead = liveCheck && deadCount > 0 && deadCount < checkable.size
     val deadLinks = if (hideDead) deadCount else 0
     @Suppress("NAME_SHADOWING")
-    val uiState = if (!hideDead) rawUiState else rawUiState.copy(
-        groups = rawUiState.groups.map { group ->
-            group.copy(streams = group.streams.filter { LiveLinkChecker.health(it) != LinkHealth.Dead })
-        },
+    val uiState = if (!liveCheck) rawUiState else rawUiState.copy(
+        groups = rawUiState.groups
+            .map { group ->
+                if (!hideDead) group
+                else group.copy(streams = group.streams.filter { LiveLinkChecker.health(it) != LinkHealth.Dead })
+            }
+            // Sports: Sports Streams first, then Flix-Streams, StremVerse, Nebula Sports, then the rest.
+            .sortedBy { SportsAddonPriority.rank(it.addonName, it.addonId) },
     )
     val filteredGroups = uiState.filteredGroups
     val hasGroups = filteredGroups.isNotEmpty()

@@ -223,7 +223,7 @@ internal object SportsLiveTv {
             maxPages = 6,
         ) { _, item -> usChannelName(item.name) != null }
         val channels = found.groupBy { usChannelName(it.item.name)!! }
-            .map { (name, sources) -> SportsTvChannel(name, sources.sortedBy { it.addonName }) }
+            .map { (name, sources) -> SportsTvChannel(name, sources.sortedWith(compareBy({ SportsAddonPriority.rank(it.addonName) }, { it.addonName }))) }
             .sortedBy { channelOrder[it.name] ?: Int.MAX_VALUE }
         if (channels.isNotEmpty()) lock.withLock { channelCache = (key to now()) to channels }
         return channels
@@ -270,9 +270,18 @@ internal object SportsLiveTv {
             .filterKeys { it.length >= 4 }
             .map { (_, sources) ->
                 val first = sources.first()
-                SportsLiveEvent(first.item.name.trim(), sportOf(first.item), sources)
+                val ordered = SportsAddonPriority.sorted(sources) { it.addonName }
+                SportsLiveEvent(ordered.first().item.name.trim(), sportOf(first.item), ordered)
             }
-            .sortedWith(compareBy({ sportOrder[it.sport] ?: Int.MAX_VALUE }, { -it.sources.size }, { it.title }))
+            // Within a sport: events carried by a premium add-on first, then the most links.
+            .sortedWith(
+                compareBy(
+                    { sportOrder[it.sport] ?: Int.MAX_VALUE },
+                    { SportsAddonPriority.rank(it.sources.first().addonName) },
+                    { -it.sources.size },
+                    { it.title },
+                ),
+            )
         if (events.isNotEmpty()) lock.withLock { eventCache = (key to now()) to events }
         return events
     }

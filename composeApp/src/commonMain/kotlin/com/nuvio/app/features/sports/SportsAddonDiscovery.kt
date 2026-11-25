@@ -94,16 +94,15 @@ internal object SportsAddonDiscovery {
                     try {
                         val required = catalog.extra.filter { it.isRequired }
                         if (required.any { it.name !in setOf("search", "genre", "skip") }) return@async emptyList()
-                        val genre = required.firstOrNull { it.name == "genre" }
-                        val genreValue = genre?.options?.firstOrNull { it.equals("all", ignoreCase = true) }
-                        if (genre != null && genreValue == null) return@async emptyList()
+                        val genres = SportsAddonCatalogs.genreValues(catalog, league)
+                        if (genres.isEmpty()) return@async emptyList()
                         val searchRequired = required.any { it.name == "search" }
                         val searchTerms: List<String?> = if (searchRequired) {
                             (deepSearchQueries(league, events) + channelQueries).distinct()
                         } else listOf(null)
                         if (searchTerms.isEmpty()) return@async emptyList()
                         val skipRequired = required.any { it.name == "skip" }
-                        val pages = searchTerms.mapNotNull { term ->
+                        val pages = genres.flatMap { genreValue -> searchTerms.map { genreValue to it } }.mapNotNull { (genreValue, term) ->
                             catalogRequests.withPermit {
                                 withTimeoutOrNull(10_000) {
                                     fetchCatalogPage(
@@ -179,20 +178,19 @@ internal object SportsAddonDiscovery {
                             .containsMatchIn("${catalog.id} ${catalog.name}") &&
                         (Regex("nfl|sport|live|channel|tv", RegexOption.IGNORE_CASE)
                             .containsMatchIn("${catalog.id} ${catalog.name}") ||
-                            Regex("sport|nfl|live|cncbridge", RegexOption.IGNORE_CASE)
+                            Regex("sport|nfl|live|cncbridge|cncverse|ustv|usatv|plavio", RegexOption.IGNORE_CASE)
                                 .containsMatchIn(manifest.id + " " + manifest.name))
                 }.take(10).map { catalog ->
                     async {
                         try {
                             val required = catalog.extra.filter { it.isRequired }
                             if (required.any { it.name !in setOf("search", "genre", "skip") }) return@async emptyList()
-                            val genre = required.firstOrNull { it.name == "genre" }
-                            val genreValue = genre?.options?.firstOrNull { it.equals("all", true) }
-                            if (genre != null && genreValue == null) return@async emptyList()
+                            val genres = SportsAddonCatalogs.genreValues(catalog, SportsLeague.NFL)
+                            if (genres.isEmpty()) return@async emptyList()
                             val queries: List<String?> = if (required.any { it.name == "search" }) {
                                 listOf("NFL", "NFL Network", "NFL RedZone", "RedZone", "Football")
                             } else listOf(null)
-                            val pages = queries.mapNotNull { query ->
+                            val pages = genres.flatMap { genreValue -> queries.map { genreValue to it } }.mapNotNull { (genreValue, query) ->
                                 catalogRequests.withPermit {
                                     withTimeoutOrNull(10_000) {
                                         fetchCatalogPage(

@@ -1,6 +1,7 @@
 package com.nuvio.app.features.sports
 
 import com.nuvio.app.features.addons.AddonCatalog
+import com.nuvio.app.features.addons.AddonExtraProperty
 import com.nuvio.app.features.addons.AddonManifest
 import com.nuvio.app.features.addons.AddonResource
 import com.nuvio.app.features.catalog.buildCatalogUrl
@@ -105,6 +106,47 @@ class SportsAddonCatalogsTest {
         assertTrue("WIS" in queries)
         assertTrue(queries.size <= 18)
         assertEquals(queries.size, queries.distinct().size)
+    }
+
+    @Test
+    fun liveTvAddonsOutsideTheListAreSearchedToo() {
+        val usTv = addon("community.ustvnow", "US TV Now", AddonCatalog("tv", "channels", "All Channels"))
+        val other = addon("org.example.live", "Some Live TV", AddonCatalog("tv", "us", "USA"), AddonCatalog("movie", "films", "Films"))
+        val movies = addon("org.example.movies", "Movie Finder", AddonCatalog("movie", "top", "Top"))
+        assertEquals(usTv.catalogs, SportsAddonCatalogs.routes(usTv, SportsLeague.NFL))
+        assertEquals(listOf(other.catalogs.first()), SportsAddonCatalogs.routes(other, SportsLeague.NFL))
+        assertTrue(SportsAddonCatalogs.routes(movies, SportsLeague.NFL).isEmpty())
+    }
+
+    @Test
+    fun cncBridgeSportsCatalogsTypedAsMoviesAreIncluded() {
+        val nfl = AddonCatalog("movie", "cnc-nfl", "NFL Live")
+        val film = AddonCatalog("movie", "cnc-films", "Films")
+        val manifest = addon("com.cncverse.bridge", "CNCVerse Bridge", nfl, film)
+        assertEquals(listOf(nfl), SportsAddonCatalogs.routes(manifest, SportsLeague.NFL))
+    }
+
+    @Test
+    fun perSportCatalogsAndGenresAreRecognised() {
+        assertTrue(SportsAddonCatalogs.isScopedCatalog(AddonCatalog("tv", "plavioCricket", "Cricket"), SportsLeague.CRICKET))
+        assertTrue(SportsAddonCatalogs.isScopedCatalog(AddonCatalog("tv", "pl-soccer", "Soccer TV"), SportsLeague.SOCCER))
+        assertTrue(!SportsAddonCatalogs.isScopedCatalog(AddonCatalog("tv", "pl-nfl", "American Football"), SportsLeague.SOCCER))
+        val genre = AddonCatalog(
+            "tv", "live", "Live",
+            extra = listOf(AddonExtraProperty(name = "genre", isRequired = true, options = listOf("Cricket", "Basketball", "News"))),
+        )
+        assertEquals(listOf<String?>("Basketball"), SportsAddonCatalogs.genreValues(genre, SportsLeague.NBA))
+        assertTrue(SportsAddonCatalogs.genreValues(genre, SportsLeague.NHL).isEmpty())
+    }
+
+    @Test
+    fun channelsCarryingTheGameMatch() {
+        val terms = SportsChannelMatcher.terms(SportsLeague.NFL, emptyList()) + setOf("fox", "espn")
+        assertTrue(SportsChannelMatcher.matches("FOX 5 New York", terms))
+        assertTrue(SportsChannelMatcher.matches("NFL RedZone HD", terms))
+        assertTrue(SportsChannelMatcher.matches("ESPN", terms))
+        assertTrue(!SportsChannelMatcher.matches("FOX News", terms))
+        assertTrue(!SportsChannelMatcher.matches("Foxtel One", terms))
     }
 
     private fun addon(id: String, name: String, vararg catalogs: AddonCatalog): AddonManifest {

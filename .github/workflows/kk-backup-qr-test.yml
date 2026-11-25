@@ -36,6 +36,8 @@ jobs:
           --tests 'com.nuvio.app.features.watchprogress.*'
           --tests 'com.nuvio.app.features.watched.*'
           --tests 'com.nuvio.app.features.library.*'
+          --tests 'com.nuvio.app.features.sports.SportsAddonCatalogsTest'
+          --tests 'com.nuvio.app.features.sports.AndroidSportsExpansionTest'
           --stacktrace --no-daemon
       - name: Build integrated full debug APK
         run: ./gradlew :androidApp:assembleFullDebug --stacktrace --no-daemon

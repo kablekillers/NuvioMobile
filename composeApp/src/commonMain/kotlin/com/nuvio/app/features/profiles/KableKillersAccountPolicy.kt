@@ -14,7 +14,8 @@ import com.nuvio.app.core.auth.AuthState
  *   Profile 1: add-ons, plugins, rows (order and hidden), collections, settings,
  *   provider logins and media servers are read from Profile 1 and never uploaded
  *   under the profile's own index.
- * - Guest (anonymous) sessions keep their existing local-only behaviour.
+ * - Guest (anonymous) sessions keep their existing local-only behaviour, except a phone
+ *   signed in through the Kable Killers backup, which follows its login's rules.
  *
  * A signed-in account whose email is unknown is treated as the customer
  * account, so a customer phone can never upload its local profiles.
@@ -25,7 +26,9 @@ object KableKillersAccountPolicy {
 
     fun isHouseholdAccount(state: AuthState = AuthRepository.state.value): Boolean {
         val account = state as? AuthState.Authenticated ?: return false
-        if (account.isAnonymous) return false
+        // A phone signed in to the customer login only through the Kable Killers backup
+        // (Nuvio was down) follows the customer rules too.
+        if (account.isAnonymous) return com.nuvio.app.core.backup.KableKillersBackup.isBackupOnlyCustomer()
         val email = account.email?.trim().orEmpty()
         return email.isEmpty() || email.equals(SHARED_CUSTOMER_EMAIL, ignoreCase = true)
     }
@@ -43,7 +46,7 @@ object KableKillersAccountPolicy {
     ): Boolean {
         if (profileIndex == PRIMARY_PROFILE_INDEX) return false
         val account = state as? AuthState.Authenticated ?: return false
-        return !account.isAnonymous
+        return !account.isAnonymous || com.nuvio.app.core.backup.KableKillersBackup.isBackupOnly()
     }
 
     /** Cloud profile id to read configuration from. Created profiles read Profile 1. */

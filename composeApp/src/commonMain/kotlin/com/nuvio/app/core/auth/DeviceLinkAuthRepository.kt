@@ -153,7 +153,9 @@ object DeviceLinkAuthRepository {
     private suspend fun restoreAfterBackupSignIn() {
         repeat(6) { attempt ->
             delay(if (attempt == 0) 500L else 1_500L)
-            if (KableKillersBackup.restoreNow().onFailure { log.w { "Restore after backup QR failed: ${it.message}" } }.isSuccess) return
+            val applied = runCatching { KableKillersBackup.applyLatest() }
+                .onFailure { if (it is kotlinx.coroutines.CancellationException) throw it; log.w { "Restore after backup QR failed: ${it.message}" } }
+            if (applied.isSuccess) return
         }
     }
 

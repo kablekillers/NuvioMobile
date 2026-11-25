@@ -265,6 +265,10 @@ object ProfileSettingsSync {
         log.d { "pushToRemoteLocked(profileId=$profileId) — success" }
     }
 
+    /** The active profile's settings in the shape Nuvio stores them (for the Kable Killers backup). */
+    internal fun exportActiveProfileForBackup(): kotlinx.serialization.json.JsonObject =
+        json.encodeToJsonElement(MobileProfileSettingsBlob.serializer(), exportSettingsBlob()) as kotlinx.serialization.json.JsonObject
+
     private fun exportSettingsBlob(): MobileProfileSettingsBlob {
         ensureRepositoriesLoaded()
         return MobileProfileSettingsBlob(

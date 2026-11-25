@@ -177,7 +177,10 @@ object ProfileRepository {
             val localOnly = _state.value.profiles.filter { it.profileIndex !in restoredIds }
             (remoteProfiles + localOnly).take(MAX_PROFILES)
         } else {
-            householdProfiles(remoteProfiles)
+            // Customer login: Profile 1 is the owner's and stays locked on customer phones.
+            householdProfiles(remoteProfiles).map {
+                if (it.profileIndex == KableKillersAccountPolicy.PRIMARY_PROFILE_INDEX) it.copy(pinEnabled = true) else it
+            }
         }
         _state.value = _state.value.copy(
             profiles = profiles.sortedBy { it.profileIndex },
@@ -394,6 +397,13 @@ object ProfileRepository {
         if (KableKillersAccountPolicy.isHouseholdProfile(profileIndex)) {
             return verifyHouseholdPinOrOwner(profileIndex, pin)
         }
+        // Nuvio checks Profile 1's PIN on its own servers. On a phone signed in only through the
+        // Kable Killers backup, the owner's restore PIN opens Profile 1 (and allows sending changes).
+        if (profileIndex == KableKillersAccountPolicy.PRIMARY_PROFILE_INDEX &&
+            com.nuvio.app.core.backup.KableKillersBackup.isBackupOnly()
+        ) {
+            return verifyRestorePin(pin)
+        }
         if (AuthRepository.state.value !is AuthState.Authenticated) {
             return verifyPinLocally(profileIndex, pin)
         }
@@ -412,9 +422,26 @@ object ProfileRepository {
             }
         }.getOrElse { e ->
             log.e(e) { "Failed to verify pin" }
-            verifyPinLocally(profileIndex, pin)
+            val local = verifyPinLocally(profileIndex, pin)
+            // Nuvio unreachable: the owner's restore PIN also opens Profile 1 through the backup.
+            if (!local.unlocked && profileIndex == KableKillersAccountPolicy.PRIMARY_PROFILE_INDEX &&
+                com.nuvio.app.core.backup.KableKillersBackup.status.value.hasDeviceKey
+            ) {
+                val backup = verifyRestorePin(pin)
+                if (backup.unlocked) return backup
+            }
+            local
         }
     }
+
+    private suspend fun verifyRestorePin(pin: String): PinVerifyResult =
+        com.nuvio.app.core.backup.KableKillersBackup.unlockWithRestorePin(pin).fold(
+            onSuccess = { PinVerifyResult(unlocked = true) },
+            onFailure = { error ->
+                val tooMany = (error as? com.nuvio.app.core.backup.KableKillersBackupException)?.status == 429
+                PinVerifyResult(unlocked = false, retryAfterSeconds = if (tooMany) 900 else 0)
+            },
+        )
 
     suspend fun setPin(profileIndex: Int, pin: String, currentPin: String? = null): PinVerifyResult {
         if (KableKillersAccountPolicy.isHouseholdProfile(profileIndex)) {

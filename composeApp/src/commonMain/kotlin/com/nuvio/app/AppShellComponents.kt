@@ -174,8 +174,14 @@ internal fun AppTabHost(
             }
 
             AppScreenTab.Music -> {
-                BottomTabPane {
-                    MusicTabScreen()
+                // Kable Killers Music (Nuvio One M's player) on Android; the old Music hub elsewhere.
+                val musicScreen = com.nuvio.app.features.music.MusicHost.screen
+                if (musicScreen != null) {
+                    musicScreen(Modifier.fillMaxSize())
+                } else {
+                    BottomTabPane {
+                        MusicTabScreen()
+                    }
                 }
             }
 

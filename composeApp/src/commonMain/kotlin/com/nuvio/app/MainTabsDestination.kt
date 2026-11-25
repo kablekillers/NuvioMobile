@@ -252,13 +252,28 @@ internal fun MainTabsDestination(
 
                 // Mini player above the bottom bar on every tab, and the full Now Playing screen.
                 val systemBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-                MusicPlayerHost(
-                    bottomPadding = when {
-                        isTabletLayout || useNativeBottomTabs -> systemBottom
-                        navBarStyleSetting == NavBarStyle.CLASSIC -> innerPadding.calculateBottomPadding()
-                        else -> systemBottom + 72.dp
-                    },
-                )
+                val musicBottom = when {
+                    isTabletLayout || useNativeBottomTabs -> systemBottom
+                    navBarStyleSetting == NavBarStyle.CLASSIC -> innerPadding.calculateBottomPadding()
+                    else -> systemBottom + 72.dp
+                }
+                val musicPill = com.nuvio.app.features.music.MusicHost.nowPlayingPill
+                if (musicPill != null) {
+                    // Kable Killers Music's now-playing pill; tapping it opens Now Playing.
+                    musicPill(
+                        Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(start = 16.dp, end = 16.dp, bottom = musicBottom + 8.dp)
+                            .widthIn(max = 520.dp)
+                            .fillMaxWidth(),
+                        {
+                            onTabSelected(AppScreenTab.Music)
+                            com.nuvio.app.features.music.MusicHost.openNowPlayingRequest++
+                        },
+                    )
+                } else {
+                    MusicPlayerHost(bottomPadding = musicBottom)
+                }
 
                 // One-time "What's new" box after an update.
                 com.nuvio.app.features.updater.WhatsNewHost()

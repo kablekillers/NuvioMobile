@@ -30,6 +30,19 @@ import okio.Path.Companion.toOkioPath
  */
 class NuvioApplication : Application(), SingletonImageLoader.Factory {
 
+    override fun onCreate() {
+        super.onCreate()
+        // Kable Killers Music (ported from Nuvio One M, GPL-3.0) lives in Android-only code
+        // and is plugged into the shared Music tab here.
+        com.nuvio.app.features.music.MusicHost.screen = { modifier ->
+            androidx.compose.foundation.layout.Box(modifier) { com.nuvio.app.music.MusicScreen() }
+        }
+        com.nuvio.app.features.music.MusicHost.nowPlayingPill = { modifier, onOpen ->
+            com.nuvio.app.music.MusicNowPlayingPill(modifier, onOpen)
+        }
+        com.nuvio.app.music.MusicWidgetUpdater.startIfPlaced(this)
+    }
+
     override fun newImageLoader(context: android.content.Context): ImageLoader {
         return ImageLoader.Builder(context)
             .crossfade(true)

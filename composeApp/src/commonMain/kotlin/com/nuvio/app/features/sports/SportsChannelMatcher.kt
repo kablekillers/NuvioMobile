@@ -45,10 +45,10 @@ internal object SportsChannelMatcher {
     private val countryCodes = setOf(
         "ca", "uk", "gb", "au", "nz", "ie", "mx", "es", "fr", "de", "it", "pt", "br", "ar", "co", "cl", "pe",
         "za", "in", "nl", "be", "tr", "pl", "se", "no", "dk", "fi", "gr", "ro", "sa", "ae", "latam", "lat",
-        "latin", "arg", "bra", "mex", "ven", "uy", "ec", "esp", "ger", "ita", "fra", "por",
+        "latin", "arg", "bra", "mex", "ven", "dstv", "af", "uy", "ec", "esp", "ger", "ita", "fra", "por",
     )
     private val foreignWords = Regex(
-        """\b(deportes|latin|latino|latina|latam|español|espanol|en espanol|mexico|méxico|brasil|brazil|argentina|colombia|caribe|caribbean|africa|españa|espana|portugal|arabia|mena)\b""",
+        """\b(deportes|latin|latino|latina|latam|español|espanol|en espanol|mexico|méxico|brasil|brazil|argentina|colombia|caribe|caribbean|africa|dstv|supersport|españa|espana|portugal|arabia|mena)\b""",
         RegexOption.IGNORE_CASE,
     )
     private val loopChannel = Regex("""\b24\s*/\s*7\b|\b247\b""", RegexOption.IGNORE_CASE)
@@ -62,7 +62,7 @@ internal object SportsChannelMatcher {
         // Spanish / Latin American / other-country feeds of US channels ("ESPN Deportes", "ESPN Latino").
         if (foreignWords.containsMatchIn(name)) return true
         // "LATIN-BR| ESPN 2", "SA| ESPN 1", "UK: ..."
-        Regex("""^\s*[\[(]?([A-Za-z0-9 _-]{1,14})[\])]?\s*[|:]\s*\S""").find(name)?.let { match ->
+        Regex("""^\s*[\[(|]?\s*([A-Za-z0-9 _-]{1,14})[\])]?\s*[|:]\s*\S""").find(name)?.let { match ->
             val tag = match.groupValues[1].trim().lowercase()
             val tokens = tag.split(Regex("[ _-]+")).filter { it.isNotBlank() }
             if (tokens.any { it in countryCodes }) return true

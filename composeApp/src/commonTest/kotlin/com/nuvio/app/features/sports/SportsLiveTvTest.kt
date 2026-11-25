@@ -59,9 +59,9 @@ class SportsLiveTvTest {
     fun gamePagesDropSpanishAndLatinFeeds() {
         listOf(
             "ESPN Deportes", "ESPN Deportes US", "(NL) ESPN PLAY ESPN (D)", "(NL) ESPN PLAY ESPN2 (D)",
-            "LATIN-BR| ESPN 2", "LATIN-MX| ESPN HD", "LATIN-ARG| ESPN", "ESPN Latino",
+            "LATIN-BR| ESPN 2", "LATIN-MX| ESPN HD", "LATIN-ARG| ESPN", "ESPN Latino", "|DSTV| ESPN Africa UHD", "|DSTV| ESPN 2 Africa UHD",
         ).forEach { kotlin.test.assertTrue(SportsChannelMatcher.isForeignOrLoop(it), it) }
-        listOf("ESPN 2 FHD US", "ESPN HD US", "ESPN U FHD US", "ACC Network US", "US| ESPN", "NFL RedZone", "FOX 5 New York")
+        listOf("US : ESPN HD", "ESPN 2 FHD US", "ESPN HD US", "ESPN U FHD US", "ACC Network US", "US| ESPN", "NFL RedZone", "FOX 5 New York")
             .forEach { kotlin.test.assertTrue(!SportsChannelMatcher.isForeignOrLoop(it), it) }
     }
 }

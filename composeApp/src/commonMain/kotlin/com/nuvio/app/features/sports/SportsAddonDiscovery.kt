@@ -10,7 +10,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
@@ -18,7 +20,63 @@ import kotlinx.coroutines.withTimeoutOrNull
 internal object SportsAddonDiscovery {
     private val catalogRequests = Semaphore(3)
 
+    /** Results stay fresh long enough to cover open a stream → Back → pick another. */
+    private const val CACHE_TTL_MILLIS = 5 * 60_000L
+    private const val MAX_CACHED_RESULTS = 40
+    private val cacheLock = Mutex()
+    private val resultCache = LinkedHashMap<String, Pair<Long, List<SportsCatalogMatch>>>()
+
+    private fun now(): Long = kotlin.time.Clock.System.now().toEpochMilliseconds()
+
+    private fun addonKey(addons: List<ManagedAddon>): String =
+        addons.filter { it.isActive }.map { it.manifestUrl }.sorted().joinToString(",")
+
+    private suspend fun cached(key: String): List<SportsCatalogMatch>? = cacheLock.withLock {
+        val entry = resultCache[key] ?: return@withLock null
+        if (now() - entry.first > CACHE_TTL_MILLIS) {
+            resultCache.remove(key)
+            null
+        } else entry.second
+    }
+
+    /** Non-suspending peek so a screen can show the last results on its first frame. */
+    fun peek(league: SportsLeague, events: List<SportsEvent>, addons: List<ManagedAddon>, replays: Boolean): List<SportsCatalogMatch>? {
+        val entry = runCatching { resultCache[findKey(league, events, addons, replays)] }.getOrNull() ?: return null
+        return entry.second.takeIf { now() - entry.first <= CACHE_TTL_MILLIS }
+    }
+
+    fun peekNflChannels(addons: List<ManagedAddon>): List<SportsCatalogMatch>? {
+        val entry = runCatching { resultCache["nfl-channels|" + addonKey(addons)] }.getOrNull() ?: return null
+        return entry.second.takeIf { now() - entry.first <= CACHE_TTL_MILLIS }
+    }
+
+    private suspend fun store(key: String, value: List<SportsCatalogMatch>) = cacheLock.withLock {
+        resultCache.remove(key)
+        resultCache[key] = now() to value
+        while (resultCache.size > MAX_CACHED_RESULTS) resultCache.remove(resultCache.keys.first())
+    }
+
+    // Keyed by game IDs (not scores), so live score refreshes and re-opening the
+    // same game reuse the last search instead of asking every add-on again.
+    private fun findKey(league: SportsLeague, events: List<SportsEvent>, addons: List<ManagedAddon>, replays: Boolean) =
+        listOf(league.name, replays.toString(), events.map { it.id }.sorted().joinToString(","), addonKey(addons))
+            .joinToString("|")
+
     suspend fun find(
+        league: SportsLeague,
+        events: List<SportsEvent>,
+        addons: List<ManagedAddon>,
+        replays: Boolean,
+    ): List<SportsCatalogMatch> {
+        val key = findKey(league, events, addons, replays)
+        cached(key)?.let { return it }
+        val found = findUncached(league, events, addons, replays)
+        // Don't hold on to an empty result (e.g. a network blip); try again next time.
+        if (found.isNotEmpty()) store(key, found)
+        return found
+    }
+
+    private suspend fun findUncached(
         league: SportsLeague,
         events: List<SportsEvent>,
         addons: List<ManagedAddon>,
@@ -96,7 +154,15 @@ internal object SportsAddonDiscovery {
      * NFL RedZone and NFL Network are continuous channels, not ESPN game fixtures.
      * Discover only catalog-provided, stream-capable IDs; never invent a URL or ID.
      */
-    suspend fun findNflChannels(addons: List<ManagedAddon>): List<SportsCatalogMatch> =
+    suspend fun findNflChannels(addons: List<ManagedAddon>): List<SportsCatalogMatch> {
+        val key = "nfl-channels|" + addonKey(addons)
+        cached(key)?.let { return it }
+        val found = findNflChannelsUncached(addons)
+        if (found.isNotEmpty()) store(key, found)
+        return found
+    }
+
+    private suspend fun findNflChannelsUncached(addons: List<ManagedAddon>): List<SportsCatalogMatch> =
         withContext(Dispatchers.Default) {
             val requests: List<Deferred<List<SportsCatalogMatch>>> = addons.filter { it.isActive }.flatMap { addon ->
                 val manifest = addon.manifest ?: return@flatMap emptyList()

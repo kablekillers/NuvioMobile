@@ -3,10 +3,10 @@ package com.nuvio.app.features.sports
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
-/** Platform video surface; URLs are independently resolved before entering here. */
+/** Platform video grid; every tile is an already resolved direct link. Only [focusedId] has audio. */
 @Composable
 internal expect fun SportsMultiviewSurface(
-    urls: List<Pair<String, String>>,
+    tiles: List<SportsMultiviewTile>,
     focusedId: String?,
     onFocus: (String) -> Unit,
     modifier: Modifier = Modifier,

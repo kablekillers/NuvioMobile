@@ -553,6 +553,19 @@ object StreamsRepository {
         return hasNext
     }
 
+    /**
+     * Opening the player from the stream list. The list stays on the back stack, so
+     * add-ons that are still searching keep going and are ready on Back (nothing
+     * reloads). Auto-play flows still stop here so a late result can't launch a
+     * second player.
+     */
+    fun leaveForPlayer() {
+        val current = _uiState.value
+        if (current.isDirectAutoPlayFlow || current.autoPlayStream != null) {
+            cancelLoading()
+        }
+    }
+
     fun cancelLoading() {
         PluginRepository.setLocalPluginSearchPaused(true)
         activeJob?.cancel()

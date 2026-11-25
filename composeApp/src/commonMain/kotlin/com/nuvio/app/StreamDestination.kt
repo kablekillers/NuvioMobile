@@ -775,7 +775,9 @@ internal fun StreamDestination(
         }
 
         val launchId = PlayerLaunchStore.put(playerLaunch)
-        StreamsRepository.cancelLoading()
+        // A stream picked by hand keeps this list (Back returns to it), so let the
+        // add-ons that are still searching finish instead of cutting them off.
+        StreamsRepository.leaveForPlayer()
         navController.navigate(
             PlayerRoute(launchId = launchId, title = playerLaunch.title)
         )

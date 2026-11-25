@@ -95,6 +95,8 @@ import com.nuvio.app.core.time.EpisodeReleaseDatePlatform
 import com.nuvio.app.features.addons.AddonRepository
 import com.nuvio.app.features.addons.ManagedAddon
 import com.nuvio.app.features.home.MetaPreview
+import com.nuvio.app.features.player.FullscreenPlayerDialog
+import com.nuvio.app.features.player.LockPlayerToLandscape
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 
@@ -130,17 +132,19 @@ internal fun SportsHubScreen(
     var league by rememberSaveable { mutableStateOf(SportsLeague.NFL) }
     var section by rememberSaveable { mutableStateOf(SportsSection.AllSports) }
     var showIntro by rememberSaveable { mutableStateOf(true) }
-    var multiviewOpen by rememberSaveable { mutableStateOf(false) }
-    var multiviewLayout by rememberSaveable { mutableStateOf(2) }
-    var multiviewPickerOpen by rememberSaveable { mutableStateOf(false) }
-    var multiviewFullscreen by rememberSaveable { mutableStateOf(false) }
-    var multiviewState by remember { mutableStateOf(SportsMultiviewState()) }
-    val multiviewSources = remember { mutableStateListOf<SportsCatalogMatch>() }
-    val multiviewUrls = remember { mutableStateListOf<Pair<String, String>>() }
-    val multiviewChoices = remember { mutableStateListOf<Pair<String, List<com.nuvio.app.features.streams.StreamItem>>>() }
-    var multiviewLoading by remember { mutableStateOf(false) }
-    var multiviewError by remember { mutableStateOf<String?>(null) }
-    var selectedEvent by remember { mutableStateOf<SportsEvent?>(null) }
+    // Multi-View: "Add to Multi-View" on a stream opens a link picker; picking a
+    // link adds a screen and shows the full-screen grid.
+    var multiviewHelp by remember { mutableStateOf(false) }
+    var multiviewPending by remember { mutableStateOf<SportsCatalogMatch?>(null) }
+    var multiviewChoices by remember { mutableStateOf<List<com.nuvio.app.features.streams.StreamItem>>(emptyList()) }
+    var multiviewSearching by remember { mutableStateOf(false) }
+    // Saveable, so Back from a stream re-opens the same game with the streams
+    // that were already found (no add-on re-search).
+    var selectedEventKey by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedEvent by remember { mutableStateOf(SportsHubLastGame.restore(selectedEventKey)) }
+    LaunchedEffect(selectedEvent) {
+        selectedEventKey = SportsHubLastGame.save(selectedEvent)
+    }
     var board by remember(league) { mutableStateOf<SportsScoreboard?>(null) }
     var error by remember(league) { mutableStateOf(false) }
     var refresh by remember { mutableStateOf(0) }
@@ -221,25 +225,19 @@ internal fun SportsHubScreen(
         (shownBoard?.events.orEmpty() + combinedBoards.flatMap { it.events }).firstOrNull { it.id == selected.id && it.league == selected.league } ?: selected
     }
     val activeAddons = addons.addons.filter { it.isActive }.map { it.copy(isRefreshing = false, errorMessage = null) }
-    LaunchedEffect(multiviewOpen, multiviewSources.toList(), activeAddons) {
-        multiviewUrls.clear()
-        multiviewChoices.clear()
-        multiviewError = null
-        if (!multiviewOpen || multiviewSources.isEmpty() || isIos) return@LaunchedEffect
-        multiviewLoading = true
+    LaunchedEffect(multiviewPending) {
+        val source = multiviewPending ?: return@LaunchedEffect
+        multiviewChoices = emptyList()
+        multiviewSearching = true
         try {
-            for (source in multiviewSources.toList()) {
-                val id = source.addonName + ":" + source.item.id
-                val streams = runCatching {
-                    SportsMultiviewStreamResolver.directStreams(source, activeAddons)
-                }.getOrElse { emptyList() }
-                multiviewChoices.add(id to streams)
-                if (streams.isEmpty()) multiviewError = "No directly playable link for ${source.item.name}"
-            }
+            multiviewChoices = runCatching {
+                SportsMultiviewStreamResolver.directStreams(source, activeAddons)
+            }.getOrElse { if (it is CancellationException) throw it; emptyList() }
         } finally {
-            multiviewLoading = false
+            multiviewSearching = false
         }
     }
+    val addToMultiview: (SportsCatalogMatch) -> Unit = { source -> multiviewPending = source }
     val events = shownBoard?.events.orEmpty()
     // My Teams: games across every league that has a favorite team.
     var myTeamGames by remember { mutableStateOf<List<SportsEvent>?>(null) }
@@ -262,7 +260,7 @@ internal fun SportsHubScreen(
     var nflChannels by remember { mutableStateOf<List<SportsCatalogMatch>?>(null) }
     LaunchedEffect(section, league, activeAddons, refresh) {
         if (league == SportsLeague.NFL && section == SportsSection.Channels) {
-            nflChannels = null
+            nflChannels = SportsAddonDiscovery.peekNflChannels(activeAddons)
             nflChannels = SportsAddonDiscovery.findNflChannels(activeAddons)
         }
     }
@@ -282,21 +280,14 @@ internal fun SportsHubScreen(
     if (currentEvent != null) {
         SportsGameDetail(
             currentEvent, repository, activeAddons, { selectedEvent = null }, onOpenStream,
-            multiviewOpen = multiviewOpen,
-            onAddToMultiview = { source ->
-                val id = source.addonName + ":" + source.item.id
-                if (multiviewSources.none { it.addonName + ":" + it.item.id == id } &&
-                    multiviewSources.size < multiviewLayout) {
-                    multiviewSources.add(source)
-                    multiviewState = multiviewState.add(id)
-                }
-            },
+            onAddToMultiview = addToMultiview,
         )
     } else {
         val liveGames = SportsEventSections.live(events)
         val combinedFeed = SportsHubCombinedEvents.combine(combinedBoards, clockNow)
         Box(Modifier.fillMaxSize().background(HubBackground)) {
-            HubGlows()
+            // Nothing behind the Multi-View grid should animate; it takes GPU time from the video.
+            if (!SportsMultiviewSession.open) HubGlows()
             Column(Modifier.fillMaxSize().safeDrawingPadding()) {
                 HubHeader(title = "Sports Hub", liveCount = liveGames.size, onBack = onBack, showBack = showBack) {
                     ScoreDelayChip(prefs.scoreDelaySeconds)
@@ -306,89 +297,14 @@ internal fun SportsHubScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    TextButton(onClick = { multiviewOpen = !multiviewOpen }) {
-                        Text(if (multiviewOpen) "Close Multi-View" else "Open Multi-View", color = HubAccent)
-                    }
-                    if (multiviewOpen) {
-                        TextButton(onClick = { multiviewLayout = 2; multiviewState = multiviewState.withLayout(2); while (multiviewSources.size > 2) multiviewSources.removeAt(multiviewSources.lastIndex) }) {
-                            Text("2 Screens", color = if (multiviewLayout == 2) HubAccent else HubMuted)
-                        }
-                        TextButton(onClick = { multiviewLayout = 4; multiviewState = multiviewState.withLayout(4) }) {
-                            Text("4 Screens", color = if (multiviewLayout == 4) HubAccent else HubMuted)
-                        }
+                    val screens = SportsMultiviewSession.tiles.size
+                    TextButton(onClick = {
+                        if (screens > 0 && !isIos) SportsMultiviewSession.open = true else multiviewHelp = true
+                    }) {
+                        Text("▦  Multi-View ($screens/${SportsMultiviewSession.MAX_TILES})", color = HubAccent)
                     }
                 }
-                if (multiviewOpen) {
-                    Column(Modifier.padding(horizontal = 20.dp, vertical = 6.dp)) {
-                        Text("Multi-View · ${multiviewSources.size}/$multiviewLayout selected", color = HubAccent)
-                        multiviewSources.toList().forEach { source ->
-                            val id = source.addonName + ":" + source.item.id
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    (if (multiviewState.shouldPlayAudio(id)) "Selected for audio · " else "Not selected for audio · ") + source.item.name,
-                                    color = if (multiviewState.shouldPlayAudio(id)) HubAccent else HubMuted,
-                                    modifier = Modifier.weight(1f).clickable { multiviewState = multiviewState.focus(id) },
-                                    maxLines = 1,
-                                )
-                                TextButton(onClick = {
-                                    multiviewSources.remove(source)
-                                    multiviewState = multiviewState.remove(id)
-                                }) { Text("Remove", color = HubAccent) }
-                            }
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            TextButton(onClick = { multiviewPickerOpen = !multiviewPickerOpen }) {
-                                Text(if (multiviewPickerOpen) "Hide Stream Links" else "Choose / Change Streams", color = HubAccent)
-                            }
-                            Text("${multiviewChoices.sumOf { it.second.size }} links", color = HubMuted)
-                        }
-                        if (multiviewPickerOpen) {
-                            Column(
-                                Modifier.fillMaxWidth()
-                                    .heightIn(max = 310.dp)
-                                    .verticalScroll(rememberScrollState())
-                            ) {
-                        multiviewChoices.toList().forEach { (id, streams) ->
-                            Text("Available links · ${streams.size}", color = HubMuted)
-                            streams.forEach { stream ->
-                                val url = SportsMultiviewSourceSelection.directUrl(stream)
-                                if (url != null) {
-                                    val selected = multiviewUrls.any { it.first == id && it.second == url }
-                                    TextButton(onClick = {
-                                        multiviewUrls.removeAll { it.first == id }
-                                        multiviewUrls.add(id to url)
-                                    }) {
-                                        Text(
-                                            (if (selected) "Selected · " else "") + stream.addonName + " · " + stream.streamLabel,
-                                            color = if (selected) HubAccent else HubMuted,
-                                            maxLines = 2,
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                            }
-                        }
-                        if (multiviewLoading) {
-                            CircularProgressIndicator(color = HubAccent)
-                        }
-                        if (multiviewUrls.isNotEmpty() && !isIos) {
-                            TextButton(onClick = { multiviewFullscreen = true; multiviewPickerOpen = false }) {
-                                Text("Expand Multi-View", color = HubAccent)
-                            }
-                        }
-                        if (multiviewUrls.isNotEmpty() && !isIos && !multiviewFullscreen) {
-                            SportsMultiviewSurface(
-                                urls = multiviewUrls.toList(),
-                                focusedId = multiviewState.focusedId,
-                                onFocus = { multiviewState = multiviewState.focus(it) },
-                            )
-                        }
-                        multiviewError?.let { Text(it, color = HubMuted) }
-                        Text("Use Choose / Change Streams to open a scrollable link picker. Tap a video to switch audio.", color = HubMuted)
-                    }
-                }
-                ScoreTicker(events)
+                ScoreTicker(events, animate = !SportsMultiviewSession.open)
                 LazyRow(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -491,16 +407,7 @@ internal fun SportsHubScreen(
                                     EnterAnimated(index) {
                                         Column {
                                             SourceCard(channel, onOpenStream)
-                                            if (multiviewOpen) {
-                                                TextButton(onClick = {
-                                                    val id = channel.addonName + ":" + channel.item.id
-                                                    if (multiviewSources.none { it.addonName + ":" + it.item.id == id } &&
-                                                        multiviewSources.size < multiviewLayout) {
-                                                        multiviewSources.add(channel)
-                                                        multiviewState = multiviewState.add(id)
-                                                    }
-                                                }) { Text("Add to Multi-View", color = HubAccent) }
-                                            }
+                                            AddToMultiviewButton { addToMultiview(channel) }
                                         }
                                     }
                                 }
@@ -526,7 +433,13 @@ internal fun SportsHubScreen(
                         catalogSection && clips.isEmpty() ->
                             item { HubMessage("No ${section.label.lowercase()} found in enabled sports add-ons.") }
                         catalogSection -> itemsIndexed(clips) { index, clip ->
-                            EnterAnimated(index) { SourceCard(clip, onOpenStream) }
+                            EnterAnimated(index) {
+                                Column {
+                                    SourceCard(clip, onOpenStream)
+                                    // Live events (fights, races…) can go in Multi-View too.
+                                    if (section == SportsSection.Events) AddToMultiviewButton { addToMultiview(clip) }
+                                }
+                            }
                         }
                         games.isNotEmpty() -> {
                             val featured = games.first().takeIf { section == SportsSection.Live }
@@ -549,36 +462,116 @@ internal fun SportsHubScreen(
             }
         }
     }
-    if (multiviewFullscreen && multiviewUrls.isNotEmpty() && !isIos) {
-        Dialog(
-            onDismissRequest = { multiviewFullscreen = false },
-            properties = DialogProperties(usePlatformDefaultWidth = false),
-        ) {
+    if (multiviewHelp) {
+        Dialog(onDismissRequest = { multiviewHelp = false }) {
             Column(
-                Modifier.fillMaxSize().background(HubBackground).safeDrawingPadding(),
-                verticalArrangement = Arrangement.Center,
+                Modifier.clip(RoundedCornerShape(18.dp)).background(Color(0xFF15151A)).padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Text("Kable Killers · Multi-View", color = HubAccent)
-                    TextButton(onClick = { multiviewFullscreen = false }) {
-                        Text("Exit Full Screen", color = HubAccent)
+                Text("Multi-View", color = HubAccent, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp)
+                Text(
+                    if (isIos) "Multi-View is available on Android."
+                    else "Watch up to four streams at once.\n\n1. Open a game (or NFL Channels).\n" +
+                        "2. Tap \"Add to Multi-View\" under a stream and pick a link.\n" +
+                        "3. Repeat for up to four screens. Tap a screen to hear it.",
+                    color = Color.White,
+                )
+                TextButton(onClick = { multiviewHelp = false }, modifier = Modifier.align(Alignment.End)) {
+                    Text("Got it", color = HubAccent)
+                }
+            }
+        }
+    }
+    multiviewPending?.let { source ->
+        Dialog(onDismissRequest = { multiviewPending = null }) {
+            Column(
+                Modifier.fillMaxWidth().heightIn(max = 520.dp)
+                    .clip(RoundedCornerShape(18.dp)).background(Color(0xFF15151A)).padding(18.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text("Add to Multi-View", color = HubAccent, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
+                Text(source.item.name, color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                when {
+                    isIos -> Text("Multi-View is available on Android.", color = HubMuted)
+                    multiviewSearching -> Row(verticalAlignment = Alignment.CenterVertically) {
+                        CircularProgressIndicator(color = HubAccent, modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
+                        Spacer(Modifier.width(10.dp))
+                        Text("Finding playable links in your add-ons…", color = HubMuted)
+                    }
+                    multiviewChoices.isEmpty() -> Text(
+                        "No link here can play inside Multi-View (it needs the normal player). Try another stream.",
+                        color = HubMuted,
+                    )
+                    else -> {
+                        Text("Pick a link · ${multiviewChoices.size} found", color = HubMuted)
+                        Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
+                            multiviewChoices.forEach { stream ->
+                                val tile = SportsMultiviewSession.tileFor(source.item.name, stream) ?: return@forEach
+                                val added = SportsMultiviewSession.tiles.any { it.id == tile.id }
+                                Column(
+                                    Modifier.fillMaxWidth()
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .clickable {
+                                            SportsMultiviewSession.add(tile)
+                                            multiviewPending = null
+                                        }
+                                        .padding(vertical = 8.dp, horizontal = 6.dp),
+                                ) {
+                                    Text(
+                                        (if (added) "✓ " else "") + stream.streamLabel,
+                                        color = if (added) HubAccent else Color.White,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                    Text(stream.addonName, color = HubMuted, fontSize = 12.sp, maxLines = 1)
+                                }
+                            }
+                        }
+                        if (SportsMultiviewSession.tiles.size >= SportsMultiviewSession.MAX_TILES) {
+                            Text("All four screens are in use; the oldest one will be replaced.", color = HubMuted, fontSize = 12.sp)
+                        }
                     }
                 }
+                TextButton(onClick = { multiviewPending = null }, modifier = Modifier.align(Alignment.End)) {
+                    Text("Cancel", color = HubAccent)
+                }
+            }
+        }
+    }
+    if (SportsMultiviewSession.open && SportsMultiviewSession.tiles.isNotEmpty() && !isIos) {
+        LockPlayerToLandscape()
+        FullscreenPlayerDialog(onDismiss = { SportsMultiviewSession.open = false }) {
+            Box(Modifier.fillMaxSize().background(Color.Black).safeDrawingPadding()) {
                 SportsMultiviewSurface(
-                    urls = multiviewUrls.toList(),
-                    focusedId = multiviewState.focusedId,
-                    onFocus = { multiviewState = multiviewState.focus(it) },
-                    modifier = Modifier.fillMaxWidth(),
+                    tiles = SportsMultiviewSession.tiles.toList(),
+                    focusedId = SportsMultiviewSession.focusedId,
+                    onFocus = { SportsMultiviewSession.focusedId = it },
+                    modifier = Modifier.fillMaxSize().padding(top = 44.dp),
                 )
-                Text(
-                    "Tap a screen to switch audio. Exit to change streams.",
-                    color = HubMuted,
-                    modifier = Modifier.padding(12.dp),
-                )
+                Row(
+                    Modifier.fillMaxWidth().height(44.dp).padding(horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TextButton(onClick = { SportsMultiviewSession.open = false }) {
+                        Text("‹ Sports Hub", color = HubAccent)
+                    }
+                    Text(
+                        "Multi-View · ${SportsMultiviewSession.tiles.size}/${SportsMultiviewSession.MAX_TILES} · tap a screen to hear it",
+                        color = HubMuted,
+                        fontSize = 12.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (SportsMultiviewSession.tiles.size < SportsMultiviewSession.MAX_TILES) {
+                        TextButton(onClick = { SportsMultiviewSession.open = false }) {
+                            Text("+ Add", color = HubAccent)
+                        }
+                    }
+                    TextButton(onClick = { SportsMultiviewSession.remove(SportsMultiviewSession.focusedId) }) {
+                        Text("Remove", color = HubAccent)
+                    }
+                }
             }
         }
     }
@@ -650,7 +643,7 @@ private fun HubHeader(
 
 /** A broadcast-style strip of scores that scrolls on its own. */
 @Composable
-private fun ScoreTicker(events: List<SportsEvent>) {
+private fun ScoreTicker(events: List<SportsEvent>, animate: Boolean = true) {
     val scored = events.filter { it.hasScores }
         .sortedBy { if (it.status == SportsEventStatus.LIVE) 0 else 1 }
         .take(14)
@@ -665,7 +658,7 @@ private fun ScoreTicker(events: List<SportsEvent>) {
         contentAlignment = Alignment.CenterStart,
     ) {
         Row(
-            Modifier.basicMarquee(iterations = Int.MAX_VALUE, initialDelayMillis = 600, velocity = 38.dp),
+            if (animate) Modifier.basicMarquee(iterations = Int.MAX_VALUE, initialDelayMillis = 600, velocity = 38.dp) else Modifier,
             horizontalArrangement = Arrangement.spacedBy(28.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -961,6 +954,31 @@ private fun teamLogoUrl(league: SportsLeague, abbreviation: String?): String? {
     return "https://a.espncdn.com/i/teamlogos/$slug/500/$abbr.png"
 }
 
+private fun gameSources(event: SportsEvent, found: List<SportsCatalogMatch>): List<SportsCatalogMatch> =
+    found.filter { it.score > 0 }
+        // Finished games: full replays before highlights.
+        .sortedBy { if (event.status == SportsEventStatus.FINAL && it.kind != SportsContentKind.REPLAY) 1 else 0 }
+
+@Composable
+private fun AddToMultiviewButton(onClick: () -> Unit) {
+    if (isIos) return
+    TextButton(onClick = onClick) { Text("＋ Add to Multi-View", color = HubAccent) }
+}
+
+/** The last game opened in the hub, so it can be re-opened after Back from a stream. */
+internal object SportsHubLastGame {
+    private var last: SportsEvent? = null
+
+    private fun key(event: SportsEvent) = event.league.name + "|" + event.id
+
+    fun save(event: SportsEvent?): String? {
+        if (event != null) last = event
+        return event?.let(::key)
+    }
+
+    fun restore(key: String?): SportsEvent? = last?.takeIf { key != null && key(it) == key }
+}
+
 @Composable
 private fun SportsGameDetail(
     event: SportsEvent,
@@ -968,20 +986,19 @@ private fun SportsGameDetail(
     addons: List<ManagedAddon>,
     onBack: () -> Unit,
     onOpenStream: (MetaPreview) -> Unit,
-    multiviewOpen: Boolean,
     onAddToMultiview: (SportsCatalogMatch) -> Unit,
 ) {
-    var sources by remember(event.id, event.status, addons) { mutableStateOf<List<SportsCatalogMatch>?>(null) }
+    val replays = event.status == SportsEventStatus.FINAL
+    var sources by remember(event.id, event.status, addons) {
+        mutableStateOf(SportsAddonDiscovery.peek(event.league, listOf(event), addons, replays)?.let { gameSources(event, it) })
+    }
     var boxScore by remember(event.id) { mutableStateOf<SportsBoxScore?>(null) }
     var statsLoading by remember(event.id) { mutableStateOf(true) }
     var statsError by remember(event.id) { mutableStateOf(false) }
     var teamIndex by remember(event.id) { mutableStateOf(0) }
     val owner = LocalLifecycleOwner.current
     LaunchedEffect(event.id, event.status, addons) {
-        sources = SportsAddonDiscovery.find(event.league, listOf(event), addons, event.status == SportsEventStatus.FINAL)
-            .filter { it.score > 0 }
-            // Finished games: full replays before highlights.
-            .sortedBy { if (event.status == SportsEventStatus.FINAL && it.kind != SportsContentKind.REPLAY) 1 else 0 }
+        sources = gameSources(event, SportsAddonDiscovery.find(event.league, listOf(event), addons, replays))
     }
     LaunchedEffect(event.id, event.status, owner) {
         if (!event.league.usesTeamStats) return@LaunchedEffect
@@ -1034,11 +1051,7 @@ private fun SportsGameDetail(
                 else -> items(sources.orEmpty()) { source ->
                     Column {
                         SourceCard(source, onOpenStream)
-                        if (multiviewOpen) {
-                            TextButton(onClick = { onAddToMultiview(source) }) {
-                                Text("Add to Multi-View", color = HubAccent)
-                            }
-                        }
+                        AddToMultiviewButton { onAddToMultiview(source) }
                     }
                 }
             }

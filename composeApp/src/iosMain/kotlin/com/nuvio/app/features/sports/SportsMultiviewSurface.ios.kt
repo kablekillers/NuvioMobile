@@ -5,7 +5,7 @@ import androidx.compose.ui.Modifier
 
 @Composable
 internal actual fun SportsMultiviewSurface(
-    urls: List<Pair<String, String>>,
+    tiles: List<SportsMultiviewTile>,
     focusedId: String?,
     onFocus: (String) -> Unit,
     modifier: Modifier,

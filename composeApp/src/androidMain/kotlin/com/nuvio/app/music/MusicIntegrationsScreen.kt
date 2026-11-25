@@ -69,7 +69,9 @@ internal fun MusicIntegrationsScreen(
     onClose: () -> Unit,
     onOpenWebDav: () -> Unit,
     onOpenNavidrome: () -> Unit,
-    onOpenSources: () -> Unit
+    onOpenSources: () -> Unit,
+    youTubeAccount: com.nuvio.app.youtube.YouTubeAccountState? = null,
+    onOpenYouTubeAccount: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val lastFm by MusicScrobbler.config.collectAsState()
@@ -154,6 +156,27 @@ internal fun MusicIntegrationsScreen(
                     .padding(bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
+                // YouTube Music is where the music comes from, so it comes first.
+                if (onOpenYouTubeAccount != null) {
+                    IntegrationCard(
+                        icon = Icons.Default.MusicNote,
+                        tint = MusicPalette.accentCoral,
+                        title = "YouTube Music",
+                        subtitle = when {
+                            youTubeAccount?.signedIn == true ->
+                                "Signed in" + (youTubeAccount.accountName?.let { " as $it" } ?: "") + ". Your library, likes and playlists are shown."
+                            else -> "Playing from YouTube Music. Sign in to see your own library, likes and playlists."
+                        }
+                    ) {
+                        IntegrationPill(
+                            icon = Icons.Default.MusicNote,
+                            label = if (youTubeAccount?.signedIn == true) "Manage account" else "Sign in to YouTube Music",
+                            primary = youTubeAccount?.signedIn != true,
+                            onClick = onOpenYouTubeAccount
+                        )
+                    }
+                }
+
                 IntegrationCard(
                     icon = Icons.Default.Album,
                     tint = MusicPalette.accentTeal,
@@ -172,6 +195,8 @@ internal fun MusicIntegrationsScreen(
                     )
                 }
 
+                // Last.fm needs app keys this build doesn't have, so its card is left out until it's set up.
+                if (lastFm.available || lastFm.configured) {
                 IntegrationCard(
                     icon = Icons.Default.Favorite,
                     tint = MusicPalette.accentCoral,
@@ -285,6 +310,7 @@ internal fun MusicIntegrationsScreen(
                         Spacer(Modifier.height(8.dp))
                         Text(text = it, color = MusicPalette.error, fontSize = 11.sp)
                     }
+                }
                 }
 
                 IntegrationCard(

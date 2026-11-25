@@ -45,6 +45,11 @@ internal object SportsChannelMatcher {
     private val countryCodes = setOf(
         "ca", "uk", "gb", "au", "nz", "ie", "mx", "es", "fr", "de", "it", "pt", "br", "ar", "co", "cl", "pe",
         "za", "in", "nl", "be", "tr", "pl", "se", "no", "dk", "fi", "gr", "ro", "sa", "ae", "latam", "lat",
+        "latin", "arg", "bra", "mex", "ven", "uy", "ec", "esp", "ger", "ita", "fra", "por",
+    )
+    private val foreignWords = Regex(
+        """\b(deportes|latin|latino|latina|latam|español|espanol|en espanol|mexico|méxico|brasil|brazil|argentina|colombia|caribe|caribbean|africa|españa|espana|portugal|arabia|mena)\b""",
+        RegexOption.IGNORE_CASE,
     )
     private val loopChannel = Regex("""\b24\s*/\s*7\b|\b247\b""", RegexOption.IGNORE_CASE)
 
@@ -54,8 +59,18 @@ internal object SportsChannelMatcher {
      */
     internal fun isForeignOrLoop(name: String): Boolean {
         if (loopChannel.containsMatchIn(name)) return true
-        Regex("""^\s*[\[(]?([A-Za-z0-9 ]{1,8})[\])]?\s*[|:]\s*\S""").find(name)?.let { match ->
-            if (match.groupValues[1].trim().lowercase() !in usTags) return true
+        // Spanish / Latin American / other-country feeds of US channels ("ESPN Deportes", "ESPN Latino").
+        if (foreignWords.containsMatchIn(name)) return true
+        // "LATIN-BR| ESPN 2", "SA| ESPN 1", "UK: ..."
+        Regex("""^\s*[\[(]?([A-Za-z0-9 _-]{1,14})[\])]?\s*[|:]\s*\S""").find(name)?.let { match ->
+            val tag = match.groupValues[1].trim().lowercase()
+            val tokens = tag.split(Regex("[ _-]+")).filter { it.isNotBlank() }
+            if (tokens.any { it in countryCodes }) return true
+            if (tag.length <= 8 && tag !in usTags) return true
+        }
+        // "(NL) ESPN PLAY ESPN", "[BR] ESPN"
+        Regex("""^\s*[\[(]([A-Za-z]{2,5})[\])]\s*\S""").find(name)?.let { match ->
+            if (match.groupValues[1].lowercase() in countryCodes) return true
         }
         Regex("""^\s*[\[(]?([A-Za-z]{2,5})[\])]?\s+-\s+\S""").find(name)?.let { match ->
             if (match.groupValues[1].lowercase() in countryCodes) return true

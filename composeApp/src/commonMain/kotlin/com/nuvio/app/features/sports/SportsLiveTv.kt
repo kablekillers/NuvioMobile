@@ -240,11 +240,12 @@ internal object SportsLiveTv {
         "Tennis" to Regex("""\b(tennis|atp|wta)\b""", RegexOption.IGNORE_CASE),
         "Golf" to Regex("""\b(golf|pga|lpga)\b""", RegexOption.IGNORE_CASE),
         "Cricket" to Regex("""\b(cricket|ipl|t20)\b""", RegexOption.IGNORE_CASE),
+        "Volleyball" to Regex("""\b(volleyball)\b""", RegexOption.IGNORE_CASE),
         "Rugby" to Regex("""\b(rugby)\b""", RegexOption.IGNORE_CASE),
     )
 
     /** The hub covers US sports only; cricket, rugby and the like are left out. */
-    private val usSports = setOf("Football", "Basketball", "Baseball", "Hockey", "Soccer", "Fighting", "Motorsports", "Tennis", "Golf")
+    private val usSports = setOf("Football", "Basketball", "Baseball", "Hockey", "Soccer", "Fighting", "Motorsports", "Tennis", "Golf", "Volleyball")
 
     internal fun sportOf(item: MetaPreview): String {
         val text = (item.genres + item.name).joinToString(" ")

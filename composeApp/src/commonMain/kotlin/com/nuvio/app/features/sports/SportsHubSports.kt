@@ -35,6 +35,10 @@ internal object HubSports {
         HubSport("cbb", "College BB", SportsLeague.NCAA_MEN, listOf(SportsLeague.NCAA_MEN, SportsLeague.NCAA_WOMEN)),
         HubSport("chockey", "College Hockey", SportsLeague.NCAA_HOCKEY_MEN, listOf(SportsLeague.NCAA_HOCKEY_MEN, SportsLeague.NCAA_HOCKEY_WOMEN)),
         HubSport("cbase", "College Baseball", SportsLeague.COLLEGE_BASEBALL, listOf(SportsLeague.COLLEGE_BASEBALL)),
+        HubSport(
+            "cvolley", "College Volleyball", SportsLeague.NCAA_VOLLEYBALL_WOMEN,
+            listOf(SportsLeague.NCAA_VOLLEYBALL_WOMEN, SportsLeague.NCAA_VOLLEYBALL_MEN),
+        ),
         HubSport("soccer", "Soccer", SportsLeague.MLS, listOf(SportsLeague.MLS, SportsLeague.WORLD_CUP, SportsLeague.SOCCER)),
         HubSport("fight", "Fighting", SportsLeague.UFC, listOf(SportsLeague.UFC, SportsLeague.COMBAT, SportsLeague.WRESTLING)),
         HubSport("tennis", "Tennis", SportsLeague.ATP, listOf(SportsLeague.ATP, SportsLeague.WTA)),

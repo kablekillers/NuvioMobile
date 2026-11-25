@@ -16,7 +16,8 @@ class SportsHubSportsTest {
 
     @Test
     fun scoreboardsCoverTheNewLeagues() {
-        listOf(SportsLeague.NCAA_HOCKEY_MEN, SportsLeague.NCAA_HOCKEY_WOMEN, SportsLeague.COLLEGE_BASEBALL, SportsLeague.MLS, SportsLeague.WORLD_CUP)
+        listOf(SportsLeague.NCAA_HOCKEY_MEN, SportsLeague.NCAA_HOCKEY_WOMEN, SportsLeague.COLLEGE_BASEBALL, SportsLeague.MLS, SportsLeague.WORLD_CUP,
+            SportsLeague.NCAA_VOLLEYBALL_WOMEN, SportsLeague.NCAA_VOLLEYBALL_MEN)
             .forEach { assertTrue(it in HubSports.scoreboardLeagues) }
         assertTrue(HubSports.byKey("fight").catalogMembers.containsAll(listOf(SportsLeague.COMBAT, SportsLeague.WRESTLING)))
     }

@@ -45,7 +45,7 @@ fun SportsLeague.glyph(): SportGlyph = when (this) {
     SportsLeague.CRICKET, SportsLeague.BILLIARDS -> SportGlyph.BASEBALL
     SportsLeague.SOCCER, SportsLeague.MLS, SportsLeague.WORLD_CUP -> SportGlyph.SOCCER
     SportsLeague.DARTS -> SportGlyph.TARGET
-    SportsLeague.OTHER -> SportGlyph.OTHER
+    SportsLeague.OTHER, SportsLeague.NCAA_VOLLEYBALL_WOMEN, SportsLeague.NCAA_VOLLEYBALL_MEN -> SportGlyph.OTHER
 }
 
 @Composable

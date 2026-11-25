@@ -154,6 +154,7 @@ object SportsAddonCatalogs {
         "motor_sports" -> listOf("motorsport", "motorsports", "motor sport", "motor sports", "racing", "f1", "formula 1", "formula one", "nascar", "indycar", "motogp")
         "football" -> if (league == SportsLeague.MLS) listOf("mls", "major league soccer") else
             if (league == SportsLeague.WORLD_CUP) listOf("world cup", "fifa") else listOf("soccer", "football", "premier league", "epl", "la liga", "laliga", "champions league", "serie a", "bundesliga", "ligue 1", "mls")
+        "volleyball" -> listOf("volleyball", "college volleyball", "ncaa volleyball")
         "wrestling" -> listOf("wwe", "aew", "wrestling", "raw", "smackdown", "nxt")
         "rugby" -> listOf("rugby")
         "afl" -> listOf("afl", "aussie rules")

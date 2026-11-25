@@ -3,11 +3,13 @@ package com.nuvio.app.features.sports
 import com.nuvio.app.isIos
 import com.nuvio.app.features.addons.ManagedAddon
 import com.nuvio.app.features.addons.supportsResource
+import com.nuvio.app.features.catalog.CatalogPage
 import com.nuvio.app.features.catalog.fetchCatalogPage
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
@@ -18,7 +20,25 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
 internal object SportsAddonDiscovery {
-    private val catalogRequests = Semaphore(3)
+    private val catalogRequests = Semaphore(4)
+    // Premium add-ons (Sports Streams, Flix-Streams, StremVerse, Nebula) get their own lane,
+    // so a pile of slow live TV lists can never crowd them out.
+    private val premiumRequests = Semaphore(4)
+
+    /** One page with the right lane, a timeout, and (premium) one retry after a failure. */
+    private suspend fun fetchPage(premium: Boolean, block: suspend () -> CatalogPage): CatalogPage? {
+        val attempts = if (premium) 2 else 1
+        repeat(attempts) { attempt ->
+            val page = (if (premium) premiumRequests else catalogRequests).withPermit {
+                withTimeoutOrNull(if (premium) 20_000L else 15_000L) {
+                    runCatching { block() }.getOrElse { if (it is CancellationException) throw it; null }
+                }
+            }
+            if (page != null) return page
+            if (attempt < attempts - 1) delay(1_000)
+        }
+        return null
+    }
 
     /** Results stay fresh long enough to cover open a stream → Back → pick another. */
     private const val CACHE_TTL_MILLIS = 5 * 60_000L
@@ -70,9 +90,10 @@ internal object SportsAddonDiscovery {
     ): List<SportsCatalogMatch> {
         val key = findKey(league, events, addons, replays)
         cached(key)?.let { return it }
-        val found = findUncached(league, events, addons, replays)
-        // Don't hold on to an empty result (e.g. a network blip); try again next time.
-        if (found.isNotEmpty()) store(key, found)
+        val (found, premiumMissed) = findUncached(league, events, addons, replays)
+        // Don't hold on to an empty result, or one where a premium add-on didn't answer
+        // (a network blip would otherwise hide its links for minutes); try again next time.
+        if (found.isNotEmpty() && !premiumMissed) store(key, found)
         return found
     }
 
@@ -81,7 +102,8 @@ internal object SportsAddonDiscovery {
         events: List<SportsEvent>,
         addons: List<ManagedAddon>,
         replays: Boolean,
-    ): List<SportsCatalogMatch> = withContext(Dispatchers.Default) {
+    ): Pair<List<SportsCatalogMatch>, Boolean> = withContext(Dispatchers.Default) {
+        var premiumMissed = false
         val matcher = SportsEventMatcher.Prepared(events)
         val useRecordingMetadata = replays && !isIos && SportsRecordingClassifier.appliesTo(league)
         // Live channels (CNCBridge etc.) carrying these games: their items are channel names, not game titles.
@@ -90,6 +112,7 @@ internal object SportsAddonDiscovery {
         val requests: List<Deferred<List<SportsCatalogMatch>>> = addons.filter { it.isActive }.flatMap { addon ->
             val manifest = addon.manifest ?: return@flatMap emptyList<Deferred<List<SportsCatalogMatch>>>()
             val listed = SportsAddonCatalogs.isListedProvider(manifest)
+            val premium = SportsAddonPriority.rank(addon.displayTitle, manifest.id, manifest.name) < 4
             SportsAddonCatalogs.routes(manifest, league, replays, expanded = !isIos).map { catalog ->
                 async {
                     try {
@@ -104,21 +127,21 @@ internal object SportsAddonDiscovery {
                         } else listOf(null)
                         if (searchTerms.isEmpty()) return@async emptyList()
                         val skipRequired = required.any { it.name == "skip" }
-                        val pages = genres.flatMap { genreValue -> searchTerms.map { genreValue to it } }.mapNotNull { (genreValue, term) ->
-                            catalogRequests.withPermit {
-                                withTimeoutOrNull(15_000) {
-                                    fetchCatalogPage(
-                                        manifestUrl = manifest.transportUrl,
-                                        type = catalog.type,
-                                        catalogId = catalog.id,
-                                        search = term,
-                                        genre = genreValue,
-                                        skip = if (skipRequired) 0 else null,
-                                        includeInitialSkip = skipRequired,
-                                    )
-                                }
+                        val requested = genres.flatMap { genreValue -> searchTerms.map { genreValue to it } }
+                        val pages = requested.mapNotNull { (genreValue, term) ->
+                            fetchPage(premium) {
+                                fetchCatalogPage(
+                                    manifestUrl = manifest.transportUrl,
+                                    type = catalog.type,
+                                    catalogId = catalog.id,
+                                    search = term,
+                                    genre = genreValue,
+                                    skip = if (skipRequired) 0 else null,
+                                    includeInitialSkip = skipRequired,
+                                )
                             }
                         }
+                        if (premium && pages.size < requested.size) premiumMissed = true
                         if (pages.isEmpty()) return@async emptyList()
                         // Long live lists (hundreds of events) page with "skip": read a few more
                         // pages so games further down the list aren't missed.
@@ -129,18 +152,14 @@ internal object SportsAddonDiscovery {
                             buildList {
                                 repeat(3) {
                                     val skipValue = next ?: return@repeat
-                                    val page = catalogRequests.withPermit {
-                                        withTimeoutOrNull(15_000) {
-                                            runCatching {
-                                                fetchCatalogPage(
-                                                    manifestUrl = manifest.transportUrl,
-                                                    type = catalog.type,
-                                                    catalogId = catalog.id,
-                                                    genre = genres.first(),
-                                                    skip = skipValue,
-                                                )
-                                            }.getOrElse { if (it is CancellationException) throw it; null }
-                                        }
+                                    val page = fetchPage(premium) {
+                                        fetchCatalogPage(
+                                            manifestUrl = manifest.transportUrl,
+                                            type = catalog.type,
+                                            catalogId = catalog.id,
+                                            genre = genres.first(),
+                                            skip = skipValue,
+                                        )
                                     } ?: return@repeat
                                     add(page)
                                     next = if (page.rawItemCount >= 20) page.nextSkip else null
@@ -182,6 +201,7 @@ internal object SportsAddonDiscovery {
                     } catch (cancelled: CancellationException) {
                         throw cancelled
                     } catch (_: Exception) {
+                        if (premium) premiumMissed = true
                         emptyList()
                     }
                 }
@@ -191,8 +211,9 @@ internal object SportsAddonDiscovery {
         val matches = requests.awaitAll().flatten()
             .sortedWith(compareBy({ SportsAddonPriority.rank(it.addonName) }, { -it.score }))
             .distinctBy { Triple(it.addonName, it.item.type, it.item.id) }
-        if (useRecordingMetadata) matches.groupBy { it.kind }.values.flatMap { it.take(40) }
+        val kept = if (useRecordingMetadata) matches.groupBy { it.kind }.values.flatMap { it.take(40) }
         else matches.take(40)
+        kept to premiumMissed
     }
 
     /**

@@ -23,8 +23,40 @@ object SportsAddonCatalogs {
         replays: Boolean = false,
         expanded: Boolean = league.androidOnly,
     ): List<AddonCatalog> {
-        if (expanded) return expandedRoutes(addon, league, replays)
-        val candidates = when (addon.id) {
+        val routed = if (expanded) expandedRoutes(addon, league, replays) else curatedRoutes(addon, league, replays)
+        return (routed + channelAndHighlightCatalogs(addon, league, replays)).distinct()
+    }
+
+    /** Custom StremVerse manifests (MediaFlow / subscriber token) may not keep the stock ID. */
+    private fun providerId(addon: AddonManifest): String {
+        val identity = (addon.id + " " + addon.name).lowercase().filter(Char::isLetterOrDigit)
+        return if ("stremverse" in identity) STREMVERSE else addon.id
+    }
+
+    private val highlightCatalog = Regex("""highlights?""", RegexOption.IGNORE_CASE)
+    private val curatedChannelLabel = Regex("""iptv|channels?|24\s*/?\s*7|live.?tv""", RegexOption.IGNORE_CASE)
+
+    /**
+     * The fixed per-sport lists above miss a known provider's 24/7 channel list
+     * (StremVerse IPTV) and its highlights list (StremVerse Match Highlights).
+     * Channels are matched to games by network; highlights feed Replays.
+     */
+    private fun channelAndHighlightCatalogs(addon: AddonManifest, league: SportsLeague, replays: Boolean): List<AddonCatalog> {
+        if (providerId(addon) !in expandedProviders) return emptyList()
+        return addon.catalogs.filter { catalog ->
+            val label = "${catalog.id} ${catalog.name}"
+            catalog.type in eventTypes && if (replays) {
+                // A general highlights list, or one for this sport, never another sport's.
+                highlightCatalog.containsMatchIn(label) &&
+                    (namesSport(label, league) || SportsLeague.entries.none { it.catalogSport != league.catalogSport && namesSport(label, it) })
+            } else {
+                !replayCatalog.containsMatchIn(label) && curatedChannelLabel.containsMatchIn(label)
+            }
+        }
+    }
+
+    private fun curatedRoutes(addon: AddonManifest, league: SportsLeague, replays: Boolean): List<AddonCatalog> {
+        val candidates = when (providerId(addon)) {
             SPORTS_STREAMS -> if (replays) listOf("sports_recaps") else listOfNotNull(
                 when (league) {
                     SportsLeague.NFL, SportsLeague.COLLEGE_FOOTBALL -> "sports_american_football"
@@ -71,7 +103,7 @@ object SportsAddonCatalogs {
     )
 
     private fun expandedRoutes(addon: AddonManifest, league: SportsLeague, replays: Boolean): List<AddonCatalog> {
-        if (addon.id !in expandedProviders) {
+        if (providerId(addon) !in expandedProviders) {
             return additionalCatalogs(addon, replays).filter {
                 league.scoreboardPath != null || isScopedCatalog(it, league)
             }

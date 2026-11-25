@@ -149,6 +149,20 @@ class SportsAddonCatalogsTest {
         assertTrue(!SportsChannelMatcher.matches("Foxtel One", terms))
     }
 
+    @Test
+    fun stremVerseChannelsAndHighlightsAreRouted() {
+        val live = AddonCatalog("tv", "stremverse_live_events", "Live Events")
+        val iptv = AddonCatalog("tv", "stremverse_iptv", "StremVerse IPTV")
+        val replays = AddonCatalog("tv", "stremverse_replays", "Match Replays")
+        val highlights = AddonCatalog("tv", "stremverse_highlights", "Match Highlights")
+        val cricket = AddonCatalog("tv", "stremverse_cricket_highlights", "Cricket Highlights")
+        // Custom manifest ID (MediaFlow / token) still counts as StremVerse.
+        val manifest = addon("org.stremverse.custom.abc123", "StremVerse", live, iptv, replays, highlights, cricket)
+        assertEquals(listOf(live, iptv), SportsAddonCatalogs.routes(manifest, SportsLeague.NFL))
+        assertEquals(listOf(replays, highlights), SportsAddonCatalogs.routes(manifest, SportsLeague.NFL, replays = true))
+        assertTrue(cricket in SportsAddonCatalogs.routes(manifest, SportsLeague.CRICKET, replays = true))
+    }
+
     private fun addon(id: String, name: String, vararg catalogs: AddonCatalog): AddonManifest {
         val types = catalogs.map { it.type }
         return AddonManifest(

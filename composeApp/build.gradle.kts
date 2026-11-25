@@ -360,6 +360,10 @@ kotlin {
                 implementation("com.google.zxing:core:3.5.3")
                 // Music (ported from Nuvio One M): party server, secure prefs, sign-in tabs, YouTube engine
                 implementation("org.nanohttpd:nanohttpd:2.3.1")
+                // Live TV (ported from Nuvio One M): settings store, SMB recordings
+                implementation("androidx.datastore:datastore-preferences:1.1.1")
+                implementation("eu.agno3.jcifs:jcifs-ng:2.1.10")
+                implementation("org.slf4j:slf4j-android:1.7.30")
                 implementation("androidx.security:security-crypto:1.1.0-alpha06")
                 implementation("androidx.browser:browser:1.8.0")
                 implementation(project(":mediaservicecore:youtubeapi"))

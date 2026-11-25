@@ -1319,6 +1319,8 @@ object WatchProgressRepository {
         persist: Boolean,
         syncRemote: Boolean,
     ) {
+        // Live TV channels have no place in Continue Watching.
+        if (com.nuvio.app.features.livetv.isUntrackedContent(session.parentMetaType)) return
         val targetProfileId = session.profileId
         val positionMs = snapshot.positionMs.coerceAtLeast(0L)
         val durationMs = snapshot.durationMs.coerceAtLeast(0L)

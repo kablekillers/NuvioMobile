@@ -118,6 +118,8 @@ internal data class AppTabActions(
     val onMusicHubClick: (() -> Unit)? = null,
     /** Plays a Sports Hub or Music Hub item from the bottom-bar tabs. */
     val onOpenHubItem: ((MetaPreview) -> Unit)? = null,
+    /** Plays a channel picked on the Live TV tab. */
+    val onLiveTvPlay: ((com.nuvio.app.features.livetv.LiveTvPlayRequest) -> Unit)? = null,
     val onCalendarClick: (() -> Unit)? = null,
     val onCalendarEpisodeClick: ((com.nuvio.app.features.calendar.CalendarEpisode) -> Unit)? = null,
     val onFolderClick: ((collectionId: String, folderId: String) -> Unit)? = null,
@@ -171,6 +173,13 @@ internal fun AppTabHost(
                         showBack = false,
                     )
                 }
+            }
+
+            AppScreenTab.LiveTv -> {
+                com.nuvio.app.features.livetv.LiveTvHost.screen?.invoke(
+                    Modifier.fillMaxSize(),
+                    actions.onLiveTvPlay ?: {},
+                )
             }
 
             AppScreenTab.Music -> {

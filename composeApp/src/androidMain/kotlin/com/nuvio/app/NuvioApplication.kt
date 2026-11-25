@@ -41,6 +41,25 @@ class NuvioApplication : Application(), SingletonImageLoader.Factory {
             com.nuvio.app.music.MusicNowPlayingPill(modifier, onOpen)
         }
         com.nuvio.app.music.MusicWidgetUpdater.startIfPlaced(this)
+
+        // Kable Killers Live TV (Nuvio One M's Live TV page), filled with the add-ons' US channels.
+        com.nuvio.app.livetv.KkLiveServer.start(this)
+        com.nuvio.app.features.livetv.LiveTvHost.settingsContent = { com.nuvio.app.livetv.ui.LiveTvSettingsContent() }
+        com.nuvio.app.features.livetv.LiveTvHost.channelPanel = { key, onDismiss -> com.nuvio.app.livetv.ui.LiveTvPlayerChannelsPanel(key, onDismiss) }
+        com.nuvio.app.livetv.player.LiveTvPauseBuffer.install(this)
+        com.nuvio.app.features.livetv.LiveTvHost.askSleep = { com.nuvio.app.livetv.ui.LiveTvSleep.ask() }
+        com.nuvio.app.features.livetv.LiveTvHost.playerExtras = { key -> com.nuvio.app.livetv.ui.LiveTvPlayerExtras(key) }
+        com.nuvio.app.features.livetv.LiveTvHost.searchSection = { q, play -> com.nuvio.app.livetv.ui.LiveTvSearchSection(q, play) }
+        com.nuvio.app.features.livetv.LiveTvHost.homeRow = { play -> com.nuvio.app.livetv.ui.LiveTvHomeRow(play) }
+        com.nuvio.app.features.livetv.LiveTvHost.homeEpisodes = { open -> com.nuvio.app.livetv.ui.LiveTvHomeEpisodes(open) }
+        com.nuvio.app.features.livetv.LiveTvHost.appOverlay = { com.nuvio.app.livetv.ui.LiveTvSportsHost() }
+        com.nuvio.app.features.livetv.LiveTvHost.onDemandReady = { com.nuvio.app.livetv.LiveTv.get(this).onDemandReady.value }
+        com.nuvio.app.features.livetv.LiveTvHost.calendarBell = { imdb, name -> com.nuvio.app.livetv.ui.rememberLiveTvBell(imdb, name) }
+        com.nuvio.app.features.livetv.LiveTvHost.zap = { key, delta -> com.nuvio.app.livetv.ui.zapLiveTv(this, key, delta) }
+        com.nuvio.app.features.livetv.LiveTvHost.nowPlaying = { key -> com.nuvio.app.livetv.ui.liveTvNowPlaying(key) }
+        com.nuvio.app.features.livetv.LiveTvHost.screen = { modifier, onPlay ->
+            com.nuvio.app.livetv.ui.LiveTvScreen(modifier, onPlay)
+        }
     }
 
     override fun newImageLoader(context: android.content.Context): ImageLoader {

@@ -332,6 +332,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi(
         )
         RenderPlayerModals(displayedPositionMs = displayedPositionMs)
     }
+    RenderLiveTvLayer(modifier = panelModifier)
 }
 
 @Composable

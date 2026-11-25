@@ -10,8 +10,26 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 
     <application>
+        <!-- Live TV (from Nuvio One M): reminders, scheduled recordings -->
+        <receiver
+            android:name="com.nuvio.app.livetv.reminders.LiveTvReminderReceiver"
+            android:exported="false" />
+        <receiver
+            android:name="com.nuvio.app.livetv.record.RecordingAlarmReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.nuvio.app.livetv.RECORD" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+        <service
+            android:name="com.nuvio.app.livetv.record.LiveTvRecordingService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
         <!-- Kable Killers Music (from Nuvio One M) -->
         <service
             android:name="com.nuvio.app.music.MusicPlaybackService"

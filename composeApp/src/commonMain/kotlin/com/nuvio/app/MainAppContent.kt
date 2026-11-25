@@ -424,7 +424,7 @@ internal fun MainAppContent(
 
         when (tab) {
             AppScreenTab.Home -> homeScrollToTopRequests.tryEmit(Unit)
-            AppScreenTab.Sports, AppScreenTab.Music, AppScreenTab.YouTube -> Unit
+            AppScreenTab.Sports, AppScreenTab.LiveTv, AppScreenTab.Music, AppScreenTab.YouTube -> Unit
             AppScreenTab.Search -> {
                 searchFocusRequestCount++
                 searchScrollToTopRequests.tryEmit(Unit)
@@ -845,6 +845,73 @@ internal fun MainAppContent(
                 ExternalPlayerIntentResult.Failed -> {
                     NuvioToastController.show(externalPlayerFailedText)
                     false
+                }
+            }
+        }
+
+        // Kable Killers Live TV (Nuvio One M's Live TV page): a channel opens in the normal player.
+        fun openLiveTvChannel(request: com.nuvio.app.features.livetv.LiveTvPlayRequest, replaceCurrent: Boolean = false) {
+            // A Kable Killers add-on channel: find a working link (with the add-on's headers) first.
+            val kkSlug = com.nuvio.app.features.livetv.KkLiveChannels.slugOf(request.url)
+            if (kkSlug != null) {
+                NuvioToastController.show("Finding a working link for ${request.title}…")
+                coroutineScope.launch {
+                    val stream = com.nuvio.app.features.livetv.KkLiveChannels.resolve(kkSlug)
+                    if (stream == null) {
+                        NuvioToastController.show("No working link for ${request.title} right now")
+                    } else {
+                        val resolved = request.copy(url = stream.url, headers = stream.headers + request.headers)
+                        val launch = PlayerLaunch(
+                            profileId = activePlaybackProfileId,
+                            title = resolved.title,
+                            sourceUrl = resolved.url,
+                            sourceHeaders = resolved.headers,
+                            poster = resolved.poster,
+                            streamTitle = resolved.title,
+                            streamSubtitle = resolved.subtitle ?: stream.addonName,
+                            providerName = stream.addonName,
+                            contentType = "livetv",
+                            videoId = resolved.channelKey,
+                            parentMetaId = "livetv:" + resolved.channelKey,
+                            parentMetaType = "livetv",
+                        )
+                        val launchId = PlayerLaunchStore.put(launch)
+                        if (replaceCurrent) navController.popBackStack()
+                        navController.navigate(PlayerRoute(launchId = launchId, title = launch.title))
+                    }
+                }
+                return
+            }
+            val playerLaunch = PlayerLaunch(
+                profileId = activePlaybackProfileId,
+                title = request.title,
+                sourceUrl = request.url,
+                sourceHeaders = request.headers,
+                poster = request.poster,
+                streamTitle = request.title,
+                streamSubtitle = request.subtitle,
+                providerName = "Live TV",
+                contentType = if (request.catchup) "livetv-catchup" else "livetv",
+                videoId = request.channelKey,
+                parentMetaId = "livetv:" + request.channelKey,
+                parentMetaType = if (request.catchup) "livetv-catchup" else "livetv",
+                initialPositionMs = request.startPositionMs ?: 0L,
+            )
+            val launchId = PlayerLaunchStore.put(playerLaunch)
+            navController.navigate(PlayerRoute(launchId = launchId, title = playerLaunch.title))
+        }
+
+        com.nuvio.app.features.livetv.LiveTvHost.appOverlay?.invoke()
+
+        androidx.compose.runtime.SideEffect {
+            com.nuvio.app.features.livetv.LiveTvHost.closePlayer = { navController.popBackStack() }
+            com.nuvio.app.features.livetv.LiveTvHost.playFromBrowse = { request -> openLiveTvChannel(request) }
+            com.nuvio.app.features.livetv.LiveTvHost.openChannel = { request ->
+                if (com.nuvio.app.features.livetv.KkLiveChannels.slugOf(request.url) != null) {
+                    openLiveTvChannel(request, replaceCurrent = true)
+                } else {
+                    navController.popBackStack()
+                    openLiveTvChannel(request)
                 }
             }
         }
@@ -1530,6 +1597,7 @@ internal fun MainAppContent(
                                 onSportsHubClick = { navController.navigate(SportsHubRoute) },
                                 onMusicHubClick = { navController.navigate(MusicHubRoute) },
                                 onOpenHubItem = ::openHubItem,
+                                onLiveTvPlay = { request -> openLiveTvChannel(request) },
                                 onCalendarClick = { navController.navigate(CalendarRoute) },
                                 onCalendarEpisodeClick = { ep ->
                                     navController.navigate(DetailRoute(type = ep.showType, id = ep.showId, title = ep.showName))

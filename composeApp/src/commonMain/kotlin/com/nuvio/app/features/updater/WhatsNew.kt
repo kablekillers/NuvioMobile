@@ -48,6 +48,11 @@ import kotlinx.serialization.json.jsonPrimitive
  */
 internal object WhatsNewNotes {
     val byVersion: Map<String, List<String>> = mapOf(
+        "0.9.4" to listOf(
+            "New Music equalizer: tap the equalizer button on the Now Playing screen.",
+            "10 bands, 31 presets for every genre (Bass Boost, Hip-Hop, Rock, Country, EDM, Podcast and more) and your own Custom setting.",
+            "Extra bass slider, plus a Volume boost that plays up to about 5.6 times louder without crackling. Works with Bluetooth too.",
+        ),
         "0.9.3" to listOf(
             "New Live TV tab: US channels from all your add-ons in one guide, sorted into Local, Sports, News, Movies, Kids and more.",
             "All-new Music player: YouTube Music with your own library and playlists, lyrics, downloads, Party mode and a home screen widget.",

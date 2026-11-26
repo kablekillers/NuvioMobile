@@ -1,9 +1,9 @@
-name: Kable Killers Mobile 0.9.3 Stable Release
+name: Kable Killers Mobile 0.9.4 Stable Release
 
 on:
   push:
     branches:
-      - release-0.9.3
+      - release-0.9.4
 
 permissions:
   contents: write
@@ -150,7 +150,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          tag=v0.9.3
+          tag=v0.9.4
           if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo "::error::Release $tag already exists; refusing overwrite"
             exit 1
@@ -161,8 +161,8 @@ jobs:
           test "${#artifacts[@]}" -eq 4
           (cd dist && sha256sum -c SHA256SUMS.txt)
           mkdir -p "$RUNNER_TEMP/previous-release"
-          gh release download "v0.9.2" --repo "$GITHUB_REPOSITORY" \
-            --pattern 'Kable-Killers-Mobile-v0.9.2-arm64-v8a.apk' --dir "$RUNNER_TEMP/previous-release"
+          gh release download "v0.9.3" --repo "$GITHUB_REPOSITORY" \
+            --pattern 'Kable-Killers-Mobile-v0.9.3-arm64-v8a.apk' --dir "$RUNNER_TEMP/previous-release"
           reference=$("$build_tools/apksigner" verify --print-certs "$RUNNER_TEMP/previous-release/"*.apk |
             awk '/certificate SHA-256 digest:/ {print tolower($NF)}' | sort -u | head -1)
           test -n "$reference"
@@ -175,22 +175,20 @@ jobs:
             test "$cert" = "$reference"
             "$build_tools/aapt2" dump badging "$apk" > "$RUNNER_TEMP/final-badging.txt"
             grep -Fq "name='com.kablekillers.mobile'" "$RUNNER_TEMP/final-badging.txt"
-            grep -Fq "versionCode='168'" "$RUNNER_TEMP/final-badging.txt"
-            grep -Fq "versionName='0.9.3'" "$RUNNER_TEMP/final-badging.txt"
+            grep -Fq "versionCode='169'" "$RUNNER_TEMP/final-badging.txt"
+            grep -Fq "versionName='0.9.4'" "$RUNNER_TEMP/final-badging.txt"
             if grep -q '^application-debuggable' "$RUNNER_TEMP/final-badging.txt"; then exit 1; fi
           done
           cat > dist/RELEASE_NOTES.md <<'NOTES'
-          - New Live TV tab: US channels from all your add-ons in one guide (Local, Sports, News, Movies, Kids and more)
-          - All-new Music player (YouTube Music): your library and playlists, lyrics, downloads, Party mode, home screen widget
-          - Sports Hub is US sports only, now with College Volleyball (men's and women's), MLS, World Cup, WWE and IndyCar
-          - Game pages show US channels only: Spanish, Latin and other-country feeds left out
-          - Sports Streams links more reliable; Netflix loop channels removed from game pages
-          - App cleaned up and faster
-          - Includes previous 0.9.2 features
+          - New Music equalizer: 10 bands, open it from the Now Playing screen
+          - 31 presets for every genre (Bass Boost, Super Bass, Hip-Hop, Rock, Country, EDM, Podcast, Car and more) plus your own Custom setting
+          - Extra bass slider
+          - Volume boost up to +15 dB (about 5.6x louder) with a limiter so it doesn't crackle; works over Bluetooth
+          - Includes previous 0.9.3 features (Live TV, new Music player, US-only Sports Hub)
           NOTES
           gh release create "$tag" "${artifacts[@]}" dist/SHA256SUMS.txt \
             --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft \
-            --title "Kable Killers Mobile 0.9.3" \
+            --title "Kable Killers Mobile 0.9.4" \
             --notes-file dist/RELEASE_NOTES.md
           gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json assets,isDraft,isPrerelease |
             jq -e --argjson count 5 '.isDraft and (.isPrerelease | not) and ((.assets | length) == $count) and all(.assets[]; .size > 0)'

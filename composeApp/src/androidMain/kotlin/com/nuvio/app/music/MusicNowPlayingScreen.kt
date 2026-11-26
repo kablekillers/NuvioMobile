@@ -48,6 +48,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.FullscreenExit
+import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -142,6 +143,9 @@ internal fun MusicNowPlayingScreen(
     val scope = rememberCoroutineScope()
     val lyricsViewModel: MusicLyricsViewModel = viewModel { MusicLyricsViewModel() }
     val lyricsState by lyricsViewModel.state.collectAsState()
+    val eqState by MusicEq.state.collectAsState()
+    var showEqualizer by remember { mutableStateOf(false) }
+    if (showEqualizer) MusicEqualizerScreen(onClose = { showEqualizer = false })
     val song = state.song
     val albumId = song?.albumId?.takeIf { it.isNotBlank() }
     val artistId = song?.artistId?.takeIf { it.isNotBlank() }
@@ -322,6 +326,13 @@ internal fun MusicNowPlayingScreen(
                         lyricsExpanded = !lyricsExpanded
                         if (lyricsExpanded) nowTab = NowPlayingTab.LYRICS
                     }
+                )
+                Spacer(Modifier.width(8.dp))
+                NowHeaderButton(
+                    icon = Icons.Default.GraphicEq,
+                    label = "Equalizer",
+                    active = eqState.enabled,
+                    onClick = { showEqualizer = true }
                 )
                 Spacer(Modifier.width(8.dp))
                 NowHeaderButton(

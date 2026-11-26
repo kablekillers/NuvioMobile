@@ -171,7 +171,21 @@ object MusicPlayer {
             }
         }
 
-        val exoPlayer = ExoPlayer.Builder(app)
+        // Kable Killers equalizer + volume boost run inside the player's audio path.
+        MusicEq.init(app)
+        val renderers = object : androidx.media3.exoplayer.DefaultRenderersFactory(app) {
+            override fun buildAudioSink(
+                context: android.content.Context,
+                enableFloatOutput: Boolean,
+                enableAudioTrackPlaybackParams: Boolean,
+            ): androidx.media3.exoplayer.audio.AudioSink =
+                androidx.media3.exoplayer.audio.DefaultAudioSink.Builder(context)
+                    .setEnableFloatOutput(enableFloatOutput)
+                    .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
+                    .setAudioProcessors(arrayOf(MusicEqProcessor()))
+                    .build()
+        }
+        val exoPlayer = ExoPlayer.Builder(app, renderers)
             .setTrackSelector(selector)
             .setMediaSourceFactory(
                 DefaultMediaSourceFactory(
@@ -221,8 +235,6 @@ object MusicPlayer {
         session = MediaSession.Builder(app, sessionPlayer)
             .setCallback(mediaSessionCallback)
             .build()
-        MusicEqualizer.attach(audioSessionId)
-        MusicEqualizer.apply(MusicSettings.equalizerPreset.value)
         ensureTicker()
     }
 
@@ -502,10 +514,6 @@ object MusicPlayer {
         player?.volume = 1f
     }
 
-    fun setEqualizerPreset(preset: MusicEqualizerPreset) {
-        MusicSettings.setEqualizerPreset(preset)
-        MusicEqualizer.apply(preset)
-    }
 
     /** [minutes] null or zero clears the timer; otherwise playback pauses when it expires. */
     fun setSleepTimer(minutes: Int?) {
@@ -628,7 +636,6 @@ object MusicPlayer {
         fadeJob?.cancel()
         tickerJob = null
         sleepTimerEndsAt = null
-        MusicEqualizer.release()
         runCatching { session?.release() }
         session = null
         runCatching { player?.release() }
@@ -876,7 +883,6 @@ object MusicPlayer {
             when (playbackState) {
                 Player.STATE_BUFFERING -> _state.update { it.copy(isBuffering = true) }
                 Player.STATE_READY -> {
-                    player?.audioSessionId?.takeIf { it > 0 }?.let { MusicEqualizer.attach(it) }
                     val duration = player?.duration?.takeIf { it > 0L }
                         ?: _state.value.song?.durationMillis()
                         ?: 0L

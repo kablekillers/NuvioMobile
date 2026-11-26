@@ -106,8 +106,8 @@ internal fun MusicSettingsScreen(onClose: () -> Unit) {
     val skipSilence by MusicSettings.skipSilence.collectAsState()
     val playbackSpeed by MusicSettings.playbackSpeed.collectAsState()
     val fadeSeconds by MusicSettings.fadeSeconds.collectAsState()
-    val equalizerPreset by MusicSettings.equalizerPreset.collectAsState()
-    val equalizerAvailable by MusicEqualizer.available.collectAsState()
+    var showEqualizer by remember { mutableStateOf(false) }
+    if (showEqualizer) MusicEqualizerScreen(onClose = { showEqualizer = false })
     val downloadQuality by MusicSettings.downloadQuality.collectAsState()
     val wifiOnlyDownloads by MusicSettings.wifiOnlyDownloads.collectAsState()
     val playback by MusicPlayer.state.collectAsState()
@@ -247,16 +247,7 @@ internal fun MusicSettingsScreen(onClose: () -> Unit) {
                     )
                 }
                 item(key = "equalizer") {
-                    SettingsSelector(
-                        title = stringResource(Res.string.music_settings_equalizer),
-                        detail = stringResource(
-                            if (equalizerAvailable) Res.string.music_settings_equalizer_detail
-                            else Res.string.music_settings_equalizer_unavailable
-                        ),
-                        options = MusicEqualizerPreset.entries.map { stringResource(it.labelRes) },
-                        selectedIndex = MusicEqualizerPreset.entries.indexOf(equalizerPreset),
-                        onSelect = { MusicPlayer.setEqualizerPreset(MusicEqualizerPreset.entries[it]) }
-                    )
+                    MusicEqSettingsRow(onClick = { showEqualizer = true })
                 }
 
                 item(key = "downloads-label") { SettingsSection(stringResource(Res.string.music_settings_section_downloads)) }

@@ -278,6 +278,23 @@ internal fun SportsHubScreen(
     }
     val addToMultiview: (SportsCatalogMatch) -> Unit = { source -> multiviewPending = source }
     val events = shownBoard?.events.orEmpty()
+    // Start looking for links to the games on now (and about to start) in the background, so
+    // opening one usually finds its links already there. Two at a time, after the board settles.
+    LaunchedEffect(events.map { it.id to it.status }, activeAddons) {
+        if (activeAddons.isEmpty() || events.isEmpty()) return@LaunchedEffect
+        delay(1_500)
+        val soon = SportsEventSections.live(events) + SportsEventSections.upcoming(events).take(2)
+        soon.distinctBy { it.id }.take(6).chunked(2).forEach { pair ->
+            coroutineScope {
+                pair.forEach { game ->
+                    launch {
+                        runCatching { SportsAddonDiscovery.find(game.league, listOf(game), activeAddons, replays = false) }
+                            .onFailure { if (it is CancellationException) throw it }
+                    }
+                }
+            }
+        }
+    }
     // My Teams: games across every league that has a favorite team.
     var myTeamGames by remember { mutableStateOf<List<SportsEvent>?>(null) }
     LaunchedEffect(section, prefs.favoriteTeams, refresh) {
@@ -1157,8 +1174,16 @@ private fun SportsGameDetail(
     var statsError by remember(event.id) { mutableStateOf(false) }
     var teamIndex by remember(event.id) { mutableStateOf(0) }
     val owner = LocalLifecycleOwner.current
+    var searching by remember(event.id, event.status, addons) { mutableStateOf(sources == null) }
     LaunchedEffect(event.id, event.status, addons) {
-        sources = gameSources(event, SportsAddonDiscovery.find(event.league, listOf(event), addons, replays))
+        if (sources == null) searching = true
+        // Links appear as each add-on answers; the slowest one no longer holds up the rest.
+        val found = SportsAddonDiscovery.find(event.league, listOf(event), addons, replays) { partial ->
+            val shown = gameSources(event, partial)
+            if (shown.isNotEmpty()) sources = shown
+        }
+        sources = gameSources(event, found)
+        searching = false
     }
     LaunchedEffect(event.id, event.status, owner) {
         if (!event.league.usesTeamStats) return@LaunchedEffect
@@ -1207,6 +1232,7 @@ private fun SportsGameDetail(
             }
             when {
                 sources == null -> item { HubMessage("Checking enabled sports add-ons…") }
+                sources.orEmpty().isEmpty() && searching -> item { HubMessage("Checking enabled sports add-ons…") }
                 sources.orEmpty().isEmpty() -> item { HubMessage("No matching stream found in enabled sports add-ons.") }
                 event.status == SportsEventStatus.FINAL -> {
                     // Full games first, then the short highlight clips, each under its own heading.
@@ -1227,6 +1253,9 @@ private fun SportsGameDetail(
                         AddToMultiviewButton { onAddToMultiview(source) }
                     }
                 }
+            }
+            if (searching && !sources.isNullOrEmpty()) {
+                item { HubMessage("Still checking more add-ons…") }
             }
             if (event.league.usesTeamStats || event.league == SportsLeague.UFC) {
                 item { HubHeading("Player stats") }

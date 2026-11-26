@@ -6,6 +6,12 @@ import com.nuvio.app.features.addons.supportsResource
 import com.nuvio.app.features.catalog.CatalogPage
 import com.nuvio.app.features.catalog.fetchCatalogPage
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -20,17 +26,17 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
 internal object SportsAddonDiscovery {
-    private val catalogRequests = Semaphore(4)
+    private val catalogRequests = Semaphore(10)
     // Premium add-ons (Sports Streams, Flix-Streams, StremVerse, Nebula) get their own lane,
     // so a pile of slow live TV lists can never crowd them out.
-    private val premiumRequests = Semaphore(4)
+    private val premiumRequests = Semaphore(6)
 
     /** One page with the right lane, a timeout, and (premium) one retry after a failure. */
     private suspend fun fetchPage(premium: Boolean, block: suspend () -> CatalogPage): CatalogPage? {
         val attempts = if (premium) 2 else 1
         repeat(attempts) { attempt ->
             val page = (if (premium) premiumRequests else catalogRequests).withPermit {
-                withTimeoutOrNull(if (premium) 20_000L else 15_000L) {
+                withTimeoutOrNull(if (premium) 10_000L else 8_000L) {
                     runCatching { block() }.getOrElse { if (it is CancellationException) throw it; null }
                 }
             }
@@ -82,19 +88,63 @@ internal object SportsAddonDiscovery {
         listOf(league.name, replays.toString(), events.map { it.id }.sorted().joinToString(","), addonKey(addons))
             .joinToString("|")
 
+    /** A search in progress: what has come in so far, and the finished result. */
+    private class Search(
+        val partial: MutableStateFlow<List<SportsCatalogMatch>>,
+        val result: Deferred<List<SportsCatalogMatch>>,
+    )
+
+    private val inFlight = HashMap<String, Search>()
+    private val inFlightLock = Mutex()
+    // Searches outlive the page that started them: leaving a game and coming back (or a
+    // background search started from the board) picks up the same search instead of a new one.
+    private val searchScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    /**
+     * Links for these games from every add-on. [onPartial] gets the list so far each time another
+     * add-on answers, so the page can show links straight away instead of waiting for the slowest.
+     */
     suspend fun find(
         league: SportsLeague,
         events: List<SportsEvent>,
         addons: List<ManagedAddon>,
         replays: Boolean,
+        onPartial: ((List<SportsCatalogMatch>) -> Unit)? = null,
     ): List<SportsCatalogMatch> {
         val key = findKey(league, events, addons, replays)
         cached(key)?.let { return it }
-        val (found, premiumMissed) = findUncached(league, events, addons, replays)
-        // Don't hold on to an empty result, or one where a premium add-on didn't answer
-        // (a network blip would otherwise hide its links for minutes); try again next time.
-        if (found.isNotEmpty() && !premiumMissed) store(key, found)
-        return found
+        val search = inFlightLock.withLock {
+            inFlight[key] ?: run {
+                val partial = MutableStateFlow<List<SportsCatalogMatch>>(emptyList())
+                val result = searchScope.async(start = CoroutineStart.LAZY) {
+                    try {
+                        val (found, premiumMissed) = findUncached(league, events, addons, replays, partial)
+                        // Don't hold on to an empty result, or one where a premium add-on didn't answer
+                        // (a network blip would otherwise hide its links for minutes); try again next time.
+                        if (found.isNotEmpty() && !premiumMissed) store(key, found)
+                        found
+                    } finally {
+                        inFlightLock.withLock { inFlight.remove(key) }
+                    }
+                }
+                Search(partial, result).also { inFlight[key] = it }
+            }
+        }
+        search.result.start()
+        if (onPartial == null) return search.result.await()
+        return coroutineScope {
+            val watcher = launch { search.partial.collect { if (it.isNotEmpty()) onPartial(it) } }
+            try { search.result.await() } finally { watcher.cancel() }
+        }
+    }
+
+    /** Best links first: premium add-ons, then the closest matches, at most 40 (per kind for replays). */
+    private fun ranked(all: List<SportsCatalogMatch>, useRecordingMetadata: Boolean): List<SportsCatalogMatch> {
+        val matches = all
+            .sortedWith(compareBy({ SportsAddonPriority.rank(it.addonName) }, { -it.score }))
+            .distinctBy { Triple(it.addonName, it.item.type, it.item.id) }
+        return if (useRecordingMetadata) matches.groupBy { it.kind }.values.flatMap { it.take(40) }
+        else matches.take(40)
     }
 
     private suspend fun findUncached(
@@ -102,8 +152,11 @@ internal object SportsAddonDiscovery {
         events: List<SportsEvent>,
         addons: List<ManagedAddon>,
         replays: Boolean,
+        partial: MutableStateFlow<List<SportsCatalogMatch>>? = null,
     ): Pair<List<SportsCatalogMatch>, Boolean> = withContext(Dispatchers.Default) {
         var premiumMissed = false
+        val soFar = ArrayList<SportsCatalogMatch>()
+        val soFarLock = Mutex()
         val matcher = SportsEventMatcher.Prepared(events)
         val useRecordingMetadata = replays && !isIos && SportsRecordingClassifier.appliesTo(league)
         // Live channels (CNCBridge etc.) carrying these games: their items are channel names, not game titles.
@@ -115,7 +168,7 @@ internal object SportsAddonDiscovery {
             val premium = SportsAddonPriority.rank(addon.displayTitle, manifest.id, manifest.name) < 4
             SportsAddonCatalogs.routes(manifest, league, replays, expanded = !isIos).map { catalog ->
                 async {
-                    try {
+                    val answer = try {
                         val required = catalog.extra.filter { it.isRequired }
                         if (required.any { it.name !in setOf("search", "genre", "skip") }) return@async emptyList()
                         val genres = SportsAddonCatalogs.genreValues(catalog, league)
@@ -204,16 +257,19 @@ internal object SportsAddonDiscovery {
                         if (premium) premiumMissed = true
                         emptyList()
                     }
+                    // Show what this add-on found right away.
+                    if (partial != null && answer.isNotEmpty()) {
+                        soFarLock.withLock {
+                            soFar += answer
+                            partial.value = ranked(soFar, useRecordingMetadata)
+                        }
+                    }
+                    answer
                 }
             }
         }
         // Premium add-ons first (Sports Streams, Flix-Streams, StremVerse, Nebula), best match first within each.
-        val matches = requests.awaitAll().flatten()
-            .sortedWith(compareBy({ SportsAddonPriority.rank(it.addonName) }, { -it.score }))
-            .distinctBy { Triple(it.addonName, it.item.type, it.item.id) }
-        val kept = if (useRecordingMetadata) matches.groupBy { it.kind }.values.flatMap { it.take(40) }
-        else matches.take(40)
-        kept to premiumMissed
+        ranked(requests.awaitAll().flatten(), useRecordingMetadata) to premiumMissed
     }
 
     /**

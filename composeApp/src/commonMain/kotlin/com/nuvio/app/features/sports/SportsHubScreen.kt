@@ -109,6 +109,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.async
+import kotlinx.coroutines.withTimeoutOrNull
 
 private val HubAccent = CinemaGold.Base
 private val HubBackground = Color(0xFF08080A)
@@ -309,11 +310,23 @@ internal fun SportsHubScreen(
     }
     // My Teams: games across every league that has a favorite team.
     var myTeamGames by remember { mutableStateOf<List<SportsEvent>?>(null) }
+    var myTeamsKey by remember { mutableStateOf<Set<String>?>(null) }
     LaunchedEffect(section, prefs.favoriteTeams, refresh) {
         if (section != SportsSection.MyTeams) return@LaunchedEffect
-        myTeamGames = null
-        val found = SportsPreferences.favoriteLeagues(prefs).flatMap { lg ->
-            runCatching { repository.scoreboard(lg).events }.getOrDefault(emptyList())
+        // Spinner only when the teams changed; a score refresh keeps the games on screen.
+        if (myTeamsKey != prefs.favoriteTeams) myTeamGames = null
+        myTeamsKey = prefs.favoriteTeams
+        // All leagues at once, and a slow one can't hold the page (12 seconds each at most).
+        val found = coroutineScope {
+            SportsPreferences.favoriteLeagues(prefs).filter { it.scoreboardPath != null }.map { lg ->
+                async {
+                    withTimeoutOrNull(12_000) {
+                        runCatching { repository.scoreboard(lg).events }
+                            .onFailure { if (it is CancellationException) throw it }
+                            .getOrDefault(emptyList())
+                    }.orEmpty()
+                }
+            }.awaitAll().flatten()
         }.filter { SportsPreferences.involvesFavorite(it, prefs) }
         myTeamGames = SportsEventSections.live(found) + SportsEventSections.upcoming(found) + SportsEventSections.final(found)
     }

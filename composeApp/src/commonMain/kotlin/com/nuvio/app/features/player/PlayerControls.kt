@@ -502,6 +502,17 @@ private fun PlayerHeader(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    // Picture-in-picture first, so it's never pushed off a narrow screen.
+                    val enterPip = rememberEnterPictureInPicture()
+                    if (enterPip != null) {
+                        PlayerHeaderIconButton(
+                            icon = Icons.Rounded.PictureInPictureAlt,
+                            contentDescription = "Picture-in-picture",
+                            buttonSize = metrics.headerIconSize + 16.dp,
+                            iconSize = metrics.headerIconSize,
+                            onClick = enterPip,
+                        )
+                    }
                     if (onSubmitIntroClick != null) {
                         PlayerHeaderIconButton(
                             icon = Icons.Rounded.Flag,
@@ -537,16 +548,6 @@ private fun PlayerHeader(
                             buttonSize = metrics.headerIconSize + 16.dp,
                             iconSize = metrics.headerIconSize,
                             onClick = onPartySyncClick,
-                        )
-                    }
-                    val enterPip = rememberEnterPictureInPicture()
-                    if (enterPip != null) {
-                        PlayerHeaderIconButton(
-                            icon = Icons.Rounded.PictureInPictureAlt,
-                            contentDescription = "Picture-in-picture",
-                            buttonSize = metrics.headerIconSize + 16.dp,
-                            iconSize = metrics.headerIconSize,
-                            onClick = enterPip,
                         )
                     }
                     PlayerHeaderIconButton(

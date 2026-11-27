@@ -61,7 +61,9 @@ internal object MessageBoard {
     private val json = Json { ignoreUnknownKeys = true; isLenient = true; coerceInputValues = true }
 
     suspend fun fetch(): List<BoardMessage> {
-        val response = httpRequestRaw(method = "GET", url = URL, headers = mapOf("Cache-Control" to "no-cache"), body = "")
+        // A changing query skips GitHub's 5-minute cache, so a new note shows on the next open.
+        val minute = kotlin.time.Clock.System.now().toEpochMilliseconds() / 60_000L
+        val response = httpRequestRaw(method = "GET", url = "$URL?t=$minute", headers = mapOf("Cache-Control" to "no-cache"), body = "")
         if (response.status !in 200..299) return emptyList()
         val now = kotlin.time.Clock.System.now()
         return json.decodeFromString(BoardFile.serializer(), response.body).messages
@@ -77,13 +79,22 @@ internal object MessageBoard {
 @Composable
 fun MessageBoardHost() {
     var showing by remember { mutableStateOf<List<BoardMessage>>(emptyList()) }
-    LaunchedEffect(Unit) {
+    val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+    LaunchedEffect(lifecycle) {
         delay(2_500)
-        while (true) {
+        var lastCheck = 0L
+        // Every time the app comes back to the screen (at most once a minute), and every 30 minutes.
+        kotlinx.coroutines.flow.merge(
+            lifecycle.currentStateFlow,
+            kotlinx.coroutines.flow.flow { while (true) { delay(30 * 60_000L); emit(androidx.lifecycle.Lifecycle.State.RESUMED) } },
+        ).collect { state ->
+            if (state != androidx.lifecycle.Lifecycle.State.RESUMED) return@collect
+            val now = kotlin.time.Clock.System.now().toEpochMilliseconds()
+            if (now - lastCheck < 60_000L) return@collect
+            lastCheck = now
             val dismissed = runCatching { WhatsNewStorage.dismissedMessages() }.getOrDefault(emptySet())
             val fresh = runCatching { MessageBoard.fetch() }.getOrDefault(emptyList()).filter { it.id !in dismissed }
             if (fresh.isNotEmpty() && showing.isEmpty()) showing = fresh
-            delay(30 * 60_000L)
         }
     }
     if (showing.isEmpty()) return

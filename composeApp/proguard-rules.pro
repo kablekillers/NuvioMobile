@@ -94,3 +94,8 @@
 -dontwarn jcifs.**
 -keep class org.bouncycastle.** { *; }
 -dontwarn org.bouncycastle.**
+
+# Built-in Kable Killers VPN (WireGuard): native code calls back into these classes.
+-keep class com.wireguard.android.backend.** { *; }
+-keep class com.wireguard.crypto.** { *; }
+-keep class com.wireguard.config.** { *; }

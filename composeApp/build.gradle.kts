@@ -358,6 +358,9 @@ kotlin {
                 implementation("com.squareup.okhttp3:okhttp:4.12.0")
                 implementation("com.google.code.gson:gson:2.11.0")
                 implementation("com.google.zxing:core:3.5.3")
+                // Built-in Kable Killers VPN (WireGuard tunnel for IPVanish configs) + QR import
+                implementation("com.wireguard.android:tunnel:1.0.20230706")
+                implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
                 // Music (ported from Nuvio One M): party server, secure prefs, sign-in tabs, YouTube engine
                 implementation("org.nanohttpd:nanohttpd:2.3.1")
                 // Live TV (ported from Nuvio One M): settings store, SMB recordings

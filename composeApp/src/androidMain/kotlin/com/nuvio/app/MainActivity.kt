@@ -129,6 +129,8 @@ open class MainActivity : AppCompatActivity() {
         com.nuvio.app.features.music.MusicAudioEngine.initialize(applicationContext)
         com.nuvio.app.features.youtube.YouTubeTabStorage.initialize(applicationContext)
         com.nuvio.app.features.updater.WhatsNewStorage.initialize(applicationContext)
+        com.nuvio.app.features.vpn.KableKillersVpn.initialize(applicationContext)
+        com.nuvio.app.features.vpn.KableKillersVpn.autoConnectIfEnabled()
         DebridSettingsStorage.initialize(applicationContext)
         TmdbSettingsStorage.initialize(applicationContext)
         MdbListSettingsStorage.initialize(applicationContext)

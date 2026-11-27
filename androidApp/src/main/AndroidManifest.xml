@@ -25,6 +25,16 @@
             android:name="io.sentry.auto-init"
             android:value="false" />
 
+        <!-- Built-in Kable Killers VPN (WireGuard) -->
+        <service
+            android:name="com.wireguard.android.backend.GoBackend$VpnService"
+            android:exported="false"
+            android:permission="android.permission.BIND_VPN_SERVICE">
+            <intent-filter>
+                <action android:name="android.net.VpnService" />
+            </intent-filter>
+        </service>
+
         <activity
             android:name="com.nuvio.app.features.music.YouTubeVideoActivity"
             android:exported="false"

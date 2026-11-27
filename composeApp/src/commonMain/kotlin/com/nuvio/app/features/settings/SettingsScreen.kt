@@ -705,6 +705,7 @@ private fun MobileSettingsScreen(
                     rememberLastProfileEnabled = rememberLastProfileEnabled,
                 )
                 SettingsPage.InstallApps -> installAppsSettingsContent(isTablet = false)
+                SettingsPage.Vpn -> vpnSettingsContent(isTablet = false)
                 SettingsPage.Notifications -> notificationsSettingsContent(
                     isTablet = false,
                     uiState = episodeReleaseNotificationsUiState,
@@ -1108,6 +1109,7 @@ private fun TabletSettingsScreen(
                         rememberLastProfileEnabled = rememberLastProfileEnabled,
                     )
                     SettingsPage.InstallApps -> installAppsSettingsContent(isTablet = true)
+                    SettingsPage.Vpn -> vpnSettingsContent(isTablet = true)
                     SettingsPage.Notifications -> notificationsSettingsContent(
                         isTablet = true,
                         uiState = episodeReleaseNotificationsUiState,

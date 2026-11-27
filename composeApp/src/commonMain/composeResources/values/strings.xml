@@ -2477,6 +2477,8 @@
     <string name="install_apps_permission_title">Allow app installs</string>
     <string name="install_apps_permission_body">Kable Killers needs permission to install apps. Turn on &quot;Allow from this source&quot; on the next screen, then come back and the install will continue.</string>
     <string name="install_apps_open_settings">Open settings</string>
+    <string name="kk_vpn_title">VPN</string>
+    <string name="kk_vpn_root_description">Built-in IPVanish VPN for this device</string>
     <!-- Music (from Nuvio One M) -->
     <string name="live_tv_connect">Connect</string>
     <string name="live_tv_disconnect">Disconnect</string>

@@ -117,6 +117,15 @@ internal fun LazyListScope.settingsRootContent(
                                 onPageClick = onPageClick,
                             )
                         }
+                        if (isVpnSupported) {
+                            SettingsGroupDivider(isTablet = isTablet)
+                            SettingsPageRow(
+                                page = SettingsPage.Vpn,
+                                description = Res.string.kk_vpn_root_description,
+                                isTablet = isTablet,
+                                onPageClick = onPageClick,
+                            )
+                        }
                         SettingsGroupDivider(isTablet = isTablet)
                         SettingsPageRow(
                             page = SettingsPage.About,

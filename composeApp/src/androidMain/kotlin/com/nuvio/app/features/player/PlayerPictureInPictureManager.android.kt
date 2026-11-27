@@ -117,6 +117,15 @@ internal object PlayerPictureInPictureManager {
         }
     }
 
+    fun isSupported(activity: Activity): Boolean = activity.canUsePictureInPicture()
+
+    /** The picture-in-picture button: shrink now, playing or paused. */
+    fun enterNow(activity: Activity): Boolean {
+        if (!activity.canUsePictureInPicture() || !sessionState.isActive) return false
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && activity.isInPictureInPictureMode) return false
+        return runCatching { activity.enterPictureInPictureMode(buildParams(activity)) }.getOrDefault(false)
+    }
+
     private fun enterIfEligible(activity: Activity): Boolean {
         if (!activity.canUsePictureInPicture()) return false
         if (!sessionState.isActive || !sessionState.isPlaying) return false

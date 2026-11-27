@@ -20,6 +20,8 @@ data class SportsPrefs(
     val scoreDelaySeconds: Int = 0,
     /** Event ids with a start reminder scheduled. */
     val reminders: Set<String> = emptySet(),
+    /** Phone alerts for My Teams games: starting, close late, final. */
+    val gameAlerts: Boolean = true,
 )
 
 object SportsPreferences {
@@ -50,6 +52,8 @@ object SportsPreferences {
     fun toggleFavoriteKey(key: String) = update { prefs ->
         prefs.copy(favoriteTeams = if (key in prefs.favoriteTeams) prefs.favoriteTeams - key else prefs.favoriteTeams + key)
     }
+
+    fun setGameAlerts(on: Boolean) = update { it.copy(gameAlerts = on) }
 
     fun setScoreDelay(seconds: Int) = update { it.copy(scoreDelaySeconds = seconds.coerceIn(0, 600)) }
 

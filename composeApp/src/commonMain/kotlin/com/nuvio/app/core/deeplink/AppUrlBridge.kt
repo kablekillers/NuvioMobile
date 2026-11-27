@@ -26,6 +26,12 @@ internal sealed interface AppDeepLink {
     data class Party(
         val code: String,
     ) : AppDeepLink
+
+    /** A game alert tapped: open that game in the Sports Hub (or just the hub). */
+    data class SportsGame(
+        val league: String?,
+        val eventId: String?,
+    ) : AppDeepLink
 }
 
 internal object AppDeepLinkRepository {
@@ -101,6 +107,11 @@ internal fun parseAppDeepLink(url: String): AppDeepLink? {
         "imdb", "tmdb" -> parseProviderMetaDeepLink(host, pathSegments, parsedUrl)
 
         "downloads" -> AppDeepLink.Downloads
+
+        "sports" -> AppDeepLink.SportsGame(
+            league = firstParameter(parsedUrl, "league"),
+            eventId = firstParameter(parsedUrl, "event"),
+        )
 
         "party" -> partyDeepLink(pathSegments.firstOrNull() ?: firstParameter(parsedUrl, "code"))
 

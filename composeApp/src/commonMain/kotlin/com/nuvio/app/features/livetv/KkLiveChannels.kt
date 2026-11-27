@@ -333,6 +333,8 @@ object KkLiveChannels {
                 KkResolvedStream(url, sanitizePlaybackHeaders(stream.behaviorHints.proxyHeaders?.request), stream.addonName)
             }
             .distinctBy { it.url }
+            // Remember what works: the add-on that played this channel before goes first.
+            .sortedByDescending { com.nuvio.app.features.streams.LinkMemory.score(null, channel.name, it.addonName) }
         if (candidates.isEmpty()) return@withContext null
         // Check the first few quickly; the first one that answers wins (unknown counts as fine).
         for (candidate in candidates.take(5)) {

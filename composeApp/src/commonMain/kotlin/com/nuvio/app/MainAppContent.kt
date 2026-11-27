@@ -782,6 +782,15 @@ internal fun MainAppContent(
                         AppDeepLinkRepository.markConsumed(deepLink)
                     }
 
+                    is AppDeepLink.SportsGame -> {
+                        appGateController?.appReady?.first { it }
+                        com.nuvio.app.features.sports.SportsHubOpenRequest.request(deepLink.league, deepLink.eventId)
+                        // Back to the tabs (out of a player or details page) so the game shows.
+                        repeat(12) { if (navController.currentRoute !is TabsRoute) navController.popBackStack() }
+                        activateTab(AppScreenTab.Sports)
+                        AppDeepLinkRepository.markConsumed(deepLink)
+                    }
+
                     is AppDeepLink.Party -> {
                         appGateController?.appReady?.first { it }
                         navController.navigate(PartyRoute(code = deepLink.code, title = watchPartyTitle)) {

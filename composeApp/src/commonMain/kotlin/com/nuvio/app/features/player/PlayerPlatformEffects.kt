@@ -41,6 +41,10 @@ expect fun ManagePlayerPictureInPicture(
 @Composable
 expect fun rememberIsInPictureInPicture(): Boolean
 
+/** Shrinks the playing video into a small floating window now, or null when the phone can't. */
+@Composable
+expect fun rememberEnterPictureInPicture(): (() -> Unit)?
+
 /**
  * Key of the output media audio plays on (speaker, wired or Bluetooth headphones…), updated when
  * the output changes. Null while [enabled] is false or when the platform cannot tell.

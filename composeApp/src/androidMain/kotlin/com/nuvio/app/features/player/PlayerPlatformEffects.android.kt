@@ -103,6 +103,13 @@ actual fun ManagePlayerPictureInPicture(
 }
 
 @Composable
+actual fun rememberEnterPictureInPicture(): (() -> Unit)? {
+    val activity = LocalContext.current.findActivity() ?: return null
+    if (!PlayerPictureInPictureManager.isSupported(activity)) return null
+    return remember(activity) { { PlayerPictureInPictureManager.enterNow(activity) } }
+}
+
+@Composable
 actual fun rememberIsInPictureInPicture(): Boolean {
     val context = LocalContext.current
     val activity = context.findActivity() ?: return false

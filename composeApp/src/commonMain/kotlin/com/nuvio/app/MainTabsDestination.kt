@@ -292,6 +292,8 @@ internal fun MainTabsDestination(
 
                 // One-time "What's new" box after an update.
                 com.nuvio.app.features.updater.WhatsNewHost()
+                // Notes from Kable Killers to every customer (the message board).
+                com.nuvio.app.features.updater.MessageBoardHost()
             }
         }
     }

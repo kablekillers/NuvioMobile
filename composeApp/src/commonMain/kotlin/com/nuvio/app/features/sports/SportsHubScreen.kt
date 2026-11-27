@@ -256,6 +256,18 @@ internal fun SportsHubScreen(
         history.lastOrNull { it.fetchedAtEpochMillis <= cutoff } ?: history.firstOrNull() ?: board
     }
     PlatformBackHandler(enabled = selectedEvent != null) { selectedEvent = null }
+    // A game alert was tapped: open that game.
+    val openRequest by SportsHubOpenRequest.pending.collectAsStateWithLifecycle()
+    LaunchedEffect(openRequest) {
+        val request = openRequest ?: return@LaunchedEffect
+        SportsHubOpenRequest.consume(request)
+        val target = SportsLeague.entries.firstOrNull { it.name == request.league } ?: return@LaunchedEffect
+        HubSports.list.firstOrNull { target in it.members }?.let { hubKey = it.key }
+        section = SportsSection.AllSports
+        val game = runCatching { repository.scoreboard(target).events }.getOrDefault(emptyList())
+            .firstOrNull { it.id == request.eventId }
+        if (game != null) selectedEvent = game
+    }
     val currentEvent = selectedEvent?.let { selected ->
         (shownBoard?.events.orEmpty() + combinedBoards.flatMap { it.events }).firstOrNull { it.id == selected.id && it.league == selected.league } ?: selected
     }
@@ -316,8 +328,8 @@ internal fun SportsHubScreen(
     var nflChannels by remember { mutableStateOf<List<SportsCatalogMatch>?>(null) }
     LaunchedEffect(section, league, activeAddons, refresh) {
         if (league == SportsLeague.NFL && section == SportsSection.Channels) {
-            nflChannels = SportsAddonDiscovery.peekNflChannels(activeAddons)
-            nflChannels = SportsAddonDiscovery.findNflChannels(activeAddons)
+            nflChannels = SportsAddonDiscovery.peekNflChannels(activeAddons)?.let(::rememberedFirst)
+            nflChannels = rememberedFirst(SportsAddonDiscovery.findNflChannels(activeAddons))
         }
     }
     // Search: teams ("packers", "brewers"), channels ("espn2"), events ("ufc").
@@ -479,7 +491,7 @@ internal fun SportsHubScreen(
                     SportsSection.Final -> SportsEventSections.final(events)
                     else -> emptyList()
                 }
-                val clips = recordings.orEmpty().filter {
+                val clips = rememberedFirst(recordings.orEmpty()).filter {
                     it.kind == when (section) {
                         SportsSection.Events -> SportsContentKind.EVENT
                         SportsSection.Highlights -> SportsContentKind.HIGHLIGHT
@@ -491,6 +503,9 @@ internal fun SportsHubScreen(
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 120.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
+                    if (section == SportsSection.MyTeams && prefs.favoriteTeams.isNotEmpty()) {
+                        item(key = "game_alerts") { GameAlertsToggle(prefs.gameAlerts) }
+                    }
                     when {
                         section == SportsSection.AllSports -> {
                             if (combinedLoading && combinedBoards.isEmpty()) {
@@ -696,14 +711,21 @@ internal fun SportsHubScreen(
     if (SportsMultiviewSession.open && SportsMultiviewSession.tiles.isNotEmpty() && !isIos) {
         LockPlayerToLandscape()
         FullscreenPlayerDialog(onDismiss = { SportsMultiviewSession.open = false }) {
-            Box(Modifier.fillMaxSize().background(Color.Black).safeDrawingPadding()) {
+            // Multi-View shrinks into a floating window too (home button, or the PiP button).
+            com.nuvio.app.features.player.ManagePlayerPictureInPicture(
+                isPlaying = true,
+                videoSize = androidx.compose.ui.unit.IntSize(16, 9),
+            )
+            val inPip = com.nuvio.app.features.player.rememberIsInPictureInPicture()
+            val enterPip = com.nuvio.app.features.player.rememberEnterPictureInPicture()
+            Box(Modifier.fillMaxSize().background(Color.Black).then(if (inPip) Modifier else Modifier.safeDrawingPadding())) {
                 SportsMultiviewSurface(
                     tiles = SportsMultiviewSession.tiles.toList(),
                     focusedId = SportsMultiviewSession.focusedId,
                     onFocus = { SportsMultiviewSession.focusedId = it },
-                    modifier = Modifier.fillMaxSize().padding(top = 44.dp),
+                    modifier = Modifier.fillMaxSize().padding(top = if (inPip) 0.dp else 44.dp),
                 )
-                Row(
+                if (!inPip) Row(
                     Modifier.fillMaxWidth().height(44.dp).padding(horizontal = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -725,6 +747,9 @@ internal fun SportsHubScreen(
                     }
                     TextButton(onClick = { SportsMultiviewSession.remove(SportsMultiviewSession.focusedId) }) {
                         Text("Remove", color = HubAccent)
+                    }
+                    if (enterPip != null) {
+                        TextButton(onClick = enterPip) { Text("PiP", color = HubAccent) }
                     }
                 }
             }
@@ -1132,9 +1157,13 @@ private fun teamLogoUrl(league: SportsLeague, abbreviation: String?): String? {
 }
 
 private fun gameSources(event: SportsEvent, found: List<SportsCatalogMatch>): List<SportsCatalogMatch> =
-    found.filter { it.score > 0 }
+    rememberedFirst(found.filter { it.score > 0 })
         // Finished games: full replays before highlights.
         .sortedBy { if (event.status == SportsEventStatus.FINAL && it.kind != SportsContentKind.REPLAY) 1 else 0 }
+
+/** Links that played before go first; ones that just failed go last (order kept otherwise). */
+internal fun rememberedFirst(list: List<SportsCatalogMatch>): List<SportsCatalogMatch> =
+    list.sortedByDescending { com.nuvio.app.features.streams.LinkMemory.score(it.item.id, it.item.name, it.addonName) }
 
 @Composable
 private fun AddToMultiviewButton(onClick: () -> Unit) {
@@ -1330,6 +1359,9 @@ private fun SourceCard(source: SportsCatalogMatch, onOpenStream: (MetaPreview) -
         Column(Modifier.weight(1f)) {
             Text(source.item.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(source.addonName, color = HubMuted, fontSize = 12.sp, maxLines = 1)
+            if (com.nuvio.app.features.streams.LinkMemory.workedBefore(source.item.id, source.item.name, source.addonName)) {
+                Text("✓ Worked last time", color = HubAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            }
         }
     }
 }
@@ -1431,6 +1463,8 @@ private fun GroupedSources(
     onOpenStream: (MetaPreview) -> Unit,
     onAddToMultiview: (SportsCatalogMatch) -> Unit,
 ) {
+    @Suppress("NAME_SHADOWING")
+    val sources = remember(sources) { rememberedFirst(sources) }
     if (sources.size == 1) {
         Column {
             SourceCard(sources.first(), onOpenStream)
@@ -1652,5 +1686,54 @@ private fun StandingsTable(league: SportsLeague, group: SportsStandingsGroup, pr
                 }
             }
         }
+    }
+}
+
+/** Set when a game alert is tapped; the hub opens that game. */
+internal object SportsHubOpenRequest {
+    data class Request(val league: String?, val eventId: String?)
+
+    private val _pending = kotlinx.coroutines.flow.MutableStateFlow<Request?>(null)
+    val pending: kotlinx.coroutines.flow.StateFlow<Request?> = _pending
+
+    fun request(league: String?, eventId: String?) { _pending.value = Request(league, eventId) }
+
+    fun consume(request: Request) { if (_pending.value == request) _pending.value = null }
+}
+
+/** My Teams: game alerts on or off (asks for notification permission when turned on). */
+@Composable
+private fun GameAlertsToggle(on: Boolean) {
+    val scope = rememberCoroutineScope()
+    var allowed by remember { mutableStateOf(true) }
+    LaunchedEffect(on) {
+        allowed = runCatching { com.nuvio.app.features.notifications.EpisodeReleaseNotificationPlatform.notificationsAuthorized() }.getOrDefault(true)
+    }
+    Row(
+        Modifier.fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color.White.copy(alpha = 0.06f))
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text("🔔 Game alerts", color = Color.White, fontWeight = FontWeight.Bold)
+            Text("Starting soon, close late, and final scores for your teams", color = HubMuted, fontSize = 12.sp)
+            if (on && !allowed) {
+                TextButton(onClick = {
+                    scope.launch {
+                        allowed = runCatching { com.nuvio.app.features.notifications.EpisodeReleaseNotificationPlatform.requestAuthorization() }.getOrDefault(false)
+                    }
+                }) { Text("Allow notifications", color = HubAccent) }
+            }
+        }
+        androidx.compose.material3.Switch(
+            checked = on,
+            onCheckedChange = { value ->
+                SportsPreferences.setGameAlerts(value)
+                if (value) scope.launch { runCatching { com.nuvio.app.features.notifications.EpisodeReleaseNotificationPlatform.requestAuthorization() } }
+            },
+            colors = androidx.compose.material3.SwitchDefaults.colors(checkedTrackColor = HubAccent, checkedThumbColor = Color.Black),
+        )
     }
 }

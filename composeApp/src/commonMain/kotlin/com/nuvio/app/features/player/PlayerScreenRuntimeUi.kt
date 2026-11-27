@@ -253,6 +253,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi(
                     onSnapshot = { snapshot ->
                         if (!active.value || !updatePlaybackSnapshot(snapshot, playbackKey)) return@PlatformPlayerSurface
                         refreshAudioTracksIfChanged()
+                        trackLinkMemory(snapshot, playbackKey)
                         if (!snapshot.isLoading) initialLoadCompleted = true
                         if (snapshot.isEnded) {
                             shouldPlay = false
@@ -269,6 +270,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi(
                         if (message != null && maybeFailoverPlaybackEngine(resolvedAutoEngine)) {
                             return@PlatformPlayerSurface
                         }
+                        if (message != null) recordLinkFailure()
                         if (message != null && tryFallbackToNextSourceAfterError(message)) {
                             return@PlatformPlayerSurface
                         }

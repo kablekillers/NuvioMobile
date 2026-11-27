@@ -1,5 +1,10 @@
 package com.nuvio.app
 
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import android.content.Intent
 import android.content.res.Configuration
 import com.nuvio.app.features.autosync.AutoSyncPreferencesAndroid
@@ -143,6 +148,7 @@ open class MainActivity : AppCompatActivity() {
         EpisodeReleaseNotificationsStorage.initialize(applicationContext)
         WatchProgressStorage.initialize(applicationContext)
         StreamLinkCacheStorage.initialize(applicationContext)
+        com.nuvio.app.features.streams.LinkMemoryStorage.initialize(applicationContext)
         StreamBadgeSettingsStorage.initialize(applicationContext)
         BingeGroupCacheStorage.initialize(applicationContext)
         PluginStorage.initialize(applicationContext)
@@ -150,6 +156,15 @@ open class MainActivity : AppCompatActivity() {
         CollectionStorage.initialize(applicationContext)
         com.nuvio.app.features.sports.SportsPreferencesStorage.initialize(applicationContext)
         com.nuvio.app.features.sports.SportsReminderPlatform.initialize(applicationContext)
+        // Game alerts for My Teams: check now, every 15 minutes, and again whenever teams change.
+        com.nuvio.app.features.sports.SportsGameAlertsWorker.ensureScheduled(applicationContext)
+        lifecycleScope.launch {
+            com.nuvio.app.features.sports.SportsPreferences.state
+                .map { it.favoriteTeams to it.gameAlerts }
+                .distinctUntilChanged()
+                .drop(1)
+                .collect { com.nuvio.app.features.sports.SportsGameAlertsWorker.checkNow(applicationContext) }
+        }
         DownloadsStorage.initialize(applicationContext)
         DownloadsPlatformDownloader.initialize(applicationContext)
         DownloadsLiveStatusPlatform.initialize(applicationContext)

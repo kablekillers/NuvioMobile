@@ -91,6 +91,9 @@ internal object WhatsNewNotes {
 }
 
 internal expect object WhatsNewStorage {
+    /** Message board notes the user already closed. */
+    fun dismissedMessages(): Set<String>
+    fun setDismissedMessages(ids: Set<String>)
     fun lastSeenVersion(): String?
     fun setLastSeenVersion(version: String)
     /** True when this install has been updated at least once (not a fresh install). */

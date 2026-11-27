@@ -33,6 +33,7 @@ import androidx.compose.material.icons.rounded.Flag
 import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.Forward10
 import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.PictureInPictureAlt
 import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.Replay10
 import com.nuvio.app.core.ui.NuvioLoadingIndicator
@@ -536,6 +537,16 @@ private fun PlayerHeader(
                             buttonSize = metrics.headerIconSize + 16.dp,
                             iconSize = metrics.headerIconSize,
                             onClick = onPartySyncClick,
+                        )
+                    }
+                    val enterPip = rememberEnterPictureInPicture()
+                    if (enterPip != null) {
+                        PlayerHeaderIconButton(
+                            icon = Icons.Rounded.PictureInPictureAlt,
+                            contentDescription = "Picture-in-picture",
+                            buttonSize = metrics.headerIconSize + 16.dp,
+                            iconSize = metrics.headerIconSize,
+                            onClick = enterPip,
                         )
                     }
                     PlayerHeaderIconButton(

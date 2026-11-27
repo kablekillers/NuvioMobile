@@ -33,7 +33,7 @@ jobs:
           printf 'NUVIO_SUPABASE_URL=https://api.nuvio.tv\n' >> local.properties
           printf 'NUVIO_SUPABASE_ANON_KEY=sb_publishable_1Clq8rlTVACkdcZuqr6_AD__xUUC_EN\n' >> local.properties
       - name: Sports channel tests
-        run: ./gradlew :composeApp:testAndroidHostTest --tests 'com.nuvio.app.features.sports.SportsLiveTvTest' --no-daemon
+        run: ./gradlew :composeApp:testAndroidHostTest --tests 'com.nuvio.app.features.sports.SportsLiveTvTest' --tests 'com.nuvio.app.features.sports.SportsGameAlertsTest' --no-daemon
       - name: Build integrated full debug APK
         run: ./gradlew :androidApp:assembleFullDebug --stacktrace --no-daemon "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1536m"
       - name: Upload test APK

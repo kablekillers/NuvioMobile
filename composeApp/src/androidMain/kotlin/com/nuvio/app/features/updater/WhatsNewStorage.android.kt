@@ -14,6 +14,12 @@ internal actual object WhatsNewStorage {
         preferences = context.getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
     }
 
+    actual fun dismissedMessages(): Set<String> = preferences?.getStringSet("dismissed_messages", null)?.toSet().orEmpty()
+
+    actual fun setDismissedMessages(ids: Set<String>) {
+        preferences?.edit()?.putStringSet("dismissed_messages", ids)?.apply()
+    }
+
     actual fun lastSeenVersion(): String? = preferences?.getString(lastSeenKey, null)
 
     actual fun setLastSeenVersion(version: String) {

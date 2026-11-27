@@ -132,6 +132,8 @@ fun StreamsScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Links that played before for this channel/game are listed first (and broken ones last).
+    androidx.compose.runtime.SideEffect { LinkMemory.viewing = parentMetaId to title }
     val useNativeNavigation = LocalUseNativeNavigation.current
     val uiState by StreamsRepository.uiState.collectAsStateWithLifecycle()
     val streamDisplaySettings by remember {
@@ -718,7 +720,17 @@ internal fun StreamList(
             }
             // Sports: Sports Streams first, then Flix-Streams, StremVerse, Nebula Sports, then the rest.
             .sortedBy { SportsAddonPriority.rank(it.addonName, it.addonId) },
-    )
+    ).let { state ->
+        // Remember what works: the link that played last time first, recently broken ones last.
+        val (memoryId, memoryTitle) = LinkMemory.viewing ?: return@let state
+        state.copy(
+            groups = state.groups
+                .map { group ->
+                    group.copy(streams = group.streams.sortedByDescending { LinkMemory.score(memoryId, memoryTitle, it.addonName, it.streamLabel) })
+                }
+                .sortedByDescending { group -> if (group.streams.any { LinkMemory.score(memoryId, memoryTitle, it.addonName, it.streamLabel) >= 2 }) 1 else 0 },
+        )
+    }
     val filteredGroups = uiState.filteredGroups
     val hasGroups = filteredGroups.isNotEmpty()
     val hasAnyStreams = filteredGroups.any { it.streams.isNotEmpty() }

@@ -39,6 +39,20 @@ object KableKillersAccountPolicy {
         state: AuthState = AuthRepository.state.value,
     ): Boolean = profileIndex != PRIMARY_PROFILE_INDEX && isHouseholdAccount(state)
 
+    /**
+     * Continue Watching, watch progress, watched marks and Library stay on this phone.
+     *
+     * On the customer login that is every profile, Profile 1 included: Profile 1 is the same
+     * cloud profile in every customer's house, so syncing its history showed one house's shows
+     * in everyone's Continue Watching. Profile 1's setup (add-ons, rows, settings) still syncs.
+     * The owner's login keeps every profile's watch data in the cloud.
+     */
+    @Suppress("UNUSED_PARAMETER")
+    fun keepsWatchDataOnDevice(
+        profileIndex: Int = ProfileRepository.activeProfileId,
+        state: AuthState = AuthRepository.state.value,
+    ): Boolean = isHouseholdAccount(state)
+
     /** True when [profileIndex] mirrors Profile 1's whole setup (any signed-in account). */
     fun inheritsPrimaryConfig(
         profileIndex: Int = ProfileRepository.activeProfileId,

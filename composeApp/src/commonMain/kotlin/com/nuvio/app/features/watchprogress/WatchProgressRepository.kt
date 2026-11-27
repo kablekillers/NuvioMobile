@@ -559,10 +559,10 @@ object WatchProgressRepository {
     ): Boolean {
         val authState = AuthRepository.state.value
         if (authState !is AuthState.Authenticated || authState.isAnonymous ||
-            KableKillersAccountPolicy.isHouseholdProfile(profileId, authState)
+            KableKillersAccountPolicy.keepsWatchDataOnDevice(profileId, authState)
         ) {
             // There is no upstream source for this account, so local state is authoritative.
-            // Kable Killers: household profiles on the customer login stay on this phone.
+            // Kable Killers: every customer-login profile (Profile 1 too) stays on this phone.
             hasLoadedNuvioRemoteProgress = true
             publish()
             return true
@@ -1469,7 +1469,7 @@ object WatchProgressRepository {
 
     private fun pushScrobbleToServer(entry: WatchProgressEntry, profileId: Int) {
         if (ServerItemRef.isServerId(entry.parentMetaId)) return
-        if (KableKillersAccountPolicy.isHouseholdProfile(profileId)) return
+        if (KableKillersAccountPolicy.keepsWatchDataOnDevice(profileId)) return
         val operationGeneration = profileGeneration.takeIf { profileId == currentProfileId }
         accountScopeSnapshot().launch {
             runCatching {
@@ -1489,7 +1489,7 @@ object WatchProgressRepository {
         if (activeSource.providerId != null) return
         val entries = entries.filterNot { ServerItemRef.isServerId(it.parentMetaId) }
         val profileId = currentProfileId
-        if (KableKillersAccountPolicy.isHouseholdProfile(profileId)) return
+        if (KableKillersAccountPolicy.keepsWatchDataOnDevice(profileId)) return
         accountScopeSnapshot().launch {
             runCatching {
                 if (entries.isEmpty()) return@runCatching

@@ -220,9 +220,9 @@ object LibraryRepository {
             return
         }
 
-        // Kable Killers: household profiles on the customer login keep their
-        // Library on this phone only.
-        if (KableKillersAccountPolicy.isHouseholdProfile(profileId)) {
+        // Kable Killers: every profile on the customer login (Profile 1 too) keeps
+        // its Library on this phone only.
+        if (KableKillersAccountPolicy.keepsWatchDataOnDevice(profileId)) {
             publish()
             return
         }
@@ -606,7 +606,7 @@ object LibraryRepository {
             log.w { "Skipping library push: anonymous auth user=${authState.userId} profile=$profileId" }
             return
         }
-        if (KableKillersAccountPolicy.isHouseholdProfile(profileId, authState)) return
+        if (KableKillersAccountPolicy.keepsWatchDataOnDevice(profileId, authState)) return
         val pushJob = syncScope.launch(start = CoroutineStart.LAZY) {
             delay(delayMs)
             nuvioSyncMutex.withLock {

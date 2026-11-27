@@ -45,4 +45,12 @@ class KableKillersAccountPolicyTest {
         (2..6).forEach { assertTrue(KableKillersAccountPolicy.isHouseholdProfile(it, customer)) }
         (1..6).forEach { assertFalse(KableKillersAccountPolicy.isHouseholdProfile(it, owner)) }
     }
+
+    @Test
+    fun customerLoginKeepsEveryProfilesWatchDataOnDevice() {
+        val customer = account("kablekillers6@gmail.com")
+        val owner = account("millertime42085@gmail.com")
+        (1..6).forEach { assertTrue(KableKillersAccountPolicy.keepsWatchDataOnDevice(it, customer)) }
+        (1..6).forEach { assertFalse(KableKillersAccountPolicy.keepsWatchDataOnDevice(it, owner)) }
+    }
 }

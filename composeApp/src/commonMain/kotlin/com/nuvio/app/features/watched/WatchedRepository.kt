@@ -390,10 +390,10 @@ object WatchedRepository {
         if (effectiveSource.providerId == null) {
             val authState = AuthRepository.state.value
             if (authState !is AuthState.Authenticated || authState.isAnonymous ||
-                KableKillersAccountPolicy.isHouseholdProfile(profileId, authState)
+                KableKillersAccountPolicy.keepsWatchDataOnDevice(profileId, authState)
             ) {
                 // Local watched state is authoritative when this account has no Nuvio upstream.
-                // Kable Killers: household profiles on the customer login stay on this phone.
+                // Kable Killers: every customer-login profile (Profile 1 too) stays on this phone.
                 nuvioHasLoaded = true
                 nuvioHasLoadedRemote = true
                 publish()
@@ -1327,7 +1327,7 @@ object WatchedRepository {
         if (items.isEmpty()) return WatchedPushOutcome(nuvioSyncSucceeded = true)
         var nuvioSyncSucceeded = false
         val succeededTrackerProviderIds = linkedSetOf<TrackingProviderId>()
-        if (source.providerId == null && KableKillersAccountPolicy.isHouseholdProfile(profileId)) {
+        if (source.providerId == null && KableKillersAccountPolicy.keepsWatchDataOnDevice(profileId)) {
             // Kept on this phone only; nothing to upload.
             nuvioSyncSucceeded = true
         } else if (source.providerId == null) {
@@ -1367,7 +1367,7 @@ object WatchedRepository {
         val (serverItems, items) = items.partition(ServerWatched::isServerItem)
         ServerWatched.apply(serverItems, played = false)
         if (items.isEmpty()) return
-        if (source.providerId == null && !KableKillersAccountPolicy.isHouseholdProfile(profileId)) {
+        if (source.providerId == null && !KableKillersAccountPolicy.keepsWatchDataOnDevice(profileId)) {
             try {
                 syncAdapter.delete(profileId = profileId, items = items)
             } catch (error: CancellationException) {

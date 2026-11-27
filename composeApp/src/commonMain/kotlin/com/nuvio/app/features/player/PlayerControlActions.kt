@@ -18,6 +18,7 @@ import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.automirrored.rounded.Toc
+import androidx.compose.material.icons.rounded.PictureInPictureAlt
 import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material.icons.rounded.Flag
 import androidx.compose.material.icons.rounded.Groups
@@ -70,6 +71,15 @@ internal fun PlayerToolbar(
 ) {
     Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Spacer(Modifier.weight(1f))
+        // Picture-in-picture: keep watching in a small window.
+        val enterPip = rememberEnterPictureInPicture()
+        if (enterPip != null) {
+            PlayerAction(
+                description = "Picture-in-picture",
+                icon = Icons.Rounded.PictureInPictureAlt,
+                onClick = enterPip,
+            )
+        }
         if (onSwitchEngineClick != null) {
             PlayerAction(
                 description = stringResource(Res.string.cd_switch_player_engine),

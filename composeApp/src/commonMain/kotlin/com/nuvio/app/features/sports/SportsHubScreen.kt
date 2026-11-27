@@ -110,6 +110,8 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 
 private val HubAccent = CinemaGold.Base
 private val HubBackground = Color(0xFF08080A)
@@ -273,7 +275,7 @@ internal fun SportsHubScreen(
         (shownBoard?.events.orEmpty() + combinedBoards.flatMap { it.events }).firstOrNull { it.id == selected.id && it.league == selected.league } ?: selected
     }
     val activeAddons = remember(addons.addons) {
-        addons.addons.filter { it.isActive }.map { it.copy(isRefreshing = false, errorMessage = null) }
+        addons.addons.filter { it.isActive && !SportsAddonPriority.excludedFromHub(it) }.map { it.copy(isRefreshing = false, errorMessage = null) }
     }
     LaunchedEffect(multiviewPending) {
         val source = multiviewPending ?: return@LaunchedEffect
@@ -320,16 +322,24 @@ internal fun SportsHubScreen(
         val found = coroutineScope {
             SportsPreferences.favoriteLeagues(prefs).filter { it.scoreboardPath != null }.map { lg ->
                 async {
-                    withTimeoutOrNull(12_000) {
-                        runCatching { repository.scoreboard(lg).events }
-                            .onFailure { if (it is CancellationException) throw it }
-                            .getOrDefault(emptyList())
-                    }.orEmpty()
+                    // Any failure (including a network call that reports itself as "cancelled")
+                    // just means no games from that league; only a real page close stops this.
+                    try {
+                        withTimeoutOrNull(12_000) { repository.scoreboard(lg).events }.orEmpty()
+                    } catch (e: Exception) {
+                        currentCoroutineContext().ensureActive()
+                        repository.cached(lg)?.events.orEmpty()
+                    }
                 }
             }.awaitAll().flatten()
         }.filter { SportsPreferences.involvesFavorite(it, prefs) }
         myTeamGames = SportsEventSections.live(found) + SportsEventSections.upcoming(found) + SportsEventSections.final(found)
     }
+    // My Teams straight from the board on screen (All has every league) while its own load runs.
+    val myTeamsShown: List<SportsEvent>? = myTeamGames ?: shownBoard?.events
+        ?.filter { SportsPreferences.involvesFavorite(it, prefs) }
+        ?.takeIf { it.isNotEmpty() }
+        ?.let { SportsEventSections.live(it) + SportsEventSections.upcoming(it) + SportsEventSections.final(it) }
     // Standings for the selected league.
     var standings by remember(hubKey) { mutableStateOf<SportsStandings?>(null) }
     var standingsLoaded by remember(hubKey) { mutableStateOf(false) }
@@ -499,7 +509,7 @@ internal fun SportsHubScreen(
                 val games = when (section) {
                     SportsSection.AllSports -> combinedFeed.live + combinedFeed.upcoming
                     SportsSection.Live -> liveGames
-                    SportsSection.MyTeams -> myTeamGames.orEmpty()
+                    SportsSection.MyTeams -> myTeamsShown.orEmpty()
                     SportsSection.Upcoming -> SportsEventSections.upcoming(events)
                     SportsSection.Final -> SportsEventSections.final(events)
                     else -> emptyList()
@@ -597,7 +607,7 @@ internal fun SportsHubScreen(
                         }
                         section == SportsSection.MyTeams && prefs.favoriteTeams.isEmpty() ->
                             item { HubMessage("Tap the star next to a team in any game or in Standings to follow it. Its games will show up here, across every league.") }
-                        section == SportsSection.MyTeams && myTeamGames == null ->
+                        section == SportsSection.MyTeams && myTeamsShown == null ->
                             item { CircularProgressIndicator(color = HubAccent) }
                         section == SportsSection.MyTeams && games.isEmpty() ->
                             item { HubMessage("No games for your teams on the current schedule.") }

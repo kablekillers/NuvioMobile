@@ -48,6 +48,14 @@ import kotlinx.serialization.json.jsonPrimitive
  */
 internal object WhatsNewNotes {
     val byVersion: Map<String, List<String>> = mapOf(
+        "0.9.5" to listOf(
+            "Sports links load much faster: links appear as each add-on answers, and live games are searched before you tap them.",
+            "Game alerts: follow a team and get a notification when its game is about to start, starts, is close late, and the final score.",
+            "Picture-in-picture: tap the new button at the top of the player (or press Home) to keep watching in a small window. Works in Multi-View too.",
+            "Links that worked before are listed first, marked \"Worked last time\".",
+            "Messages from Kable Killers now pop up in the app when there's news.",
+            "Continue Watching now stays private to each household, including Profile 1.",
+        ),
         "0.9.4" to listOf(
             "New Music equalizer: tap the equalizer button on the Now Playing screen.",
             "10 bands, 31 presets for every genre (Bass Boost, Hip-Hop, Rock, Country, EDM, Podcast and more) and your own Custom setting.",

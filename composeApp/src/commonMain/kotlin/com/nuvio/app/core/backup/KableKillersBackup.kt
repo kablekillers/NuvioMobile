@@ -86,6 +86,15 @@ sealed interface KableKillersBackupQrStatus {
     data class Approved(val accountEmail: String?) : KableKillersBackupQrStatus
 }
 
+/** Result of asking the backup for this device's built-in VPN config. */
+sealed interface KableKillersVpnClaim {
+    data class Assigned(val configId: Long, val label: String?, val config: String) : KableKillersVpnClaim
+    /** The owner hasn't uploaded enough configs; try again later. */
+    data object PoolEmpty : KableKillersVpnClaim
+    /** This device isn't registered with the backup (yet), or the owner blocked it. */
+    data object NotRegistered : KableKillersVpnClaim
+}
+
 /**
  * Keeps this login's Profile 1 setup copied to the Kable Killers backup on
  * Cloudflare, and restores it from there when Nuvio can't. Same rules as the TV:
@@ -381,6 +390,25 @@ object KableKillersBackup {
         } catch (error: KableKillersBackupException) {
             if (error.status == 401) forgetDeviceKey()
             throw error
+        }
+    }
+
+    /** This device's own VPN config from the owner's pool (each device keeps the one it got). */
+    suspend fun claimVpnConfig(): Result<KableKillersVpnClaim> = runCatchingNonCancel {
+        if (!enabled) return@runCatchingNonCancel KableKillersVpnClaim.NotRegistered
+        val key = KableKillersBackupStorage.load(KEY_DEVICE_KEY)
+        if (key.isNullOrBlank()) return@runCatchingNonCancel KableKillersVpnClaim.NotRegistered
+        try {
+            val response = post("/v1/vpn/claim", buildJsonObject { }, bearer = key, deviceId = SyncClientIdentity.currentClientId())
+            val config = response.string("config") ?: error("Backup returned no VPN config")
+            val id = (response["config_id"] as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull?.toLongOrNull() ?: 0L
+            KableKillersVpnClaim.Assigned(configId = id, label = response.string("label"), config = config)
+        } catch (error: KableKillersBackupException) {
+            when (error.status) {
+                404 -> KableKillersVpnClaim.PoolEmpty
+                401 -> KableKillersVpnClaim.NotRegistered
+                else -> throw error
+            }
         }
     }
 

@@ -14,6 +14,7 @@ import androidx.compose.material.icons.rounded.ContentPaste
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.FileOpen
 import androidx.compose.material.icons.rounded.QrCodeScanner
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -118,6 +119,21 @@ internal actual fun VpnSettingsBody(isTablet: Boolean) {
                     isTablet = isTablet,
                     onCheckedChange = { on -> if (on) turnOn() else KableKillersVpn.setEnabled(false) },
                 )
+                if (!state.hasConfig) {
+                    SettingsGroupDivider(isTablet = isTablet)
+                    SettingsNavigationRow(
+                        title = "Get VPN setup",
+                        description = when {
+                            state.checkingPool -> "Checking with Kable Killers…"
+                            state.poolEmpty -> "No VPN spots are free right now. Message Kable Killers, then tap to try again."
+                            else -> "Sets up the VPN for this device automatically."
+                        },
+                        icon = Icons.Rounded.Refresh,
+                        enabled = !state.checkingPool,
+                        isTablet = isTablet,
+                        onClick = KableKillersVpn::syncFromPool,
+                    )
+                }
                 if (state.enabled && state.status == KkVpnStatus.NeedsPermission) {
                     SettingsGroupDivider(isTablet = isTablet)
                     SettingsNavigationRow(
@@ -147,7 +163,7 @@ internal actual fun VpnSettingsBody(isTablet: Boolean) {
         Spacer(Modifier.height(16.dp))
 
         SettingsSection(
-            title = if (state.hasConfig) "Change config" else "Add your IPVanish config",
+            title = "Use your own IPVanish config (optional)",
             isTablet = isTablet,
         ) {
             SettingsGroup(isTablet = isTablet) {
@@ -174,7 +190,7 @@ internal actual fun VpnSettingsBody(isTablet: Boolean) {
                     isTablet = isTablet,
                     onClick = { showPasteDialog = true },
                 )
-                if (state.hasConfig) {
+                if (state.hasConfig && !state.fromPool) {
                     SettingsGroupDivider(isTablet = isTablet)
                     SettingsNavigationRow(
                         title = "Remove config",
@@ -188,9 +204,13 @@ internal actual fun VpnSettingsBody(isTablet: Boolean) {
         }
 
         Text(
-            text = "In your IPVanish account, open WireGuard configuration, pick a server and generate a config. " +
-                "Use a new config for each device so every device has its own key. " +
-                "The config stays on this device only and is never synced to your login or profiles.",
+            text = if (state.fromPool) {
+                "This device's VPN was set up automatically by Kable Killers. It stays on this device only."
+            } else {
+                "Kable Killers sets up the VPN automatically after you sign in. Only use the options above if you " +
+                    "have your own IPVanish account: generate a WireGuard config for this device and import it. " +
+                    "The config stays on this device only."
+            },
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier
@@ -231,7 +251,7 @@ internal actual fun VpnSettingsBody(isTablet: Boolean) {
 }
 
 private fun statusText(state: KkVpnState): String {
-    if (!state.hasConfig) return "Add an IPVanish config below to turn this on."
+    if (!state.hasConfig) return if (state.checkingPool) "Setting up…" else "Not set up on this device yet"
     val server = state.serverLabel?.let { " · $it" }.orEmpty()
     return when (state.status) {
         KkVpnStatus.Connected -> "Connected$server"

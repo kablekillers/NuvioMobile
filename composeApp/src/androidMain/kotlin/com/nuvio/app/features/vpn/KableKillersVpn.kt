@@ -7,6 +7,8 @@ import android.net.VpnService
 import android.util.Log
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import com.nuvio.app.core.backup.KableKillersBackup
+import com.nuvio.app.core.backup.KableKillersVpnClaim
 import com.wireguard.android.backend.GoBackend
 import com.wireguard.android.backend.Tunnel
 import com.wireguard.config.Config
@@ -16,6 +18,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -34,6 +39,11 @@ data class KkVpnState(
     /** IPVanish server the config points at, e.g. "atl-a01.wg.ipvanish.com". */
     val serverLabel: String? = null,
     val errorMessage: String? = null,
+    /** The config came from the Kable Killers pool (handed out automatically), not imported by hand. */
+    val fromPool: Boolean = false,
+    /** Asked the pool for a config and none were free. */
+    val poolEmpty: Boolean = false,
+    val checkingPool: Boolean = false,
 )
 
 /**
@@ -49,6 +59,9 @@ object KableKillersVpn {
     private const val KEY_CONFIG = "wg_config"
     private const val KEY_ENABLED = "enabled"
     private const val KEY_WHOLE_DEVICE = "whole_device"
+    private const val KEY_SOURCE = "config_source"
+    private const val SOURCE_POOL = "pool"
+    private const val SOURCE_MANUAL = "manual"
     private const val TUNNEL_NAME = "kablekillers"
 
     private var appContext: Context? = null
@@ -85,7 +98,50 @@ object KableKillersVpn {
             enabled = store.getBoolean(KEY_ENABLED, false),
             wholeDevice = store.getBoolean(KEY_WHOLE_DEVICE, false),
             serverLabel = config?.let(::serverLabelOf),
+            fromPool = config != null && store.getString(KEY_SOURCE, null) == SOURCE_POOL,
         )
+        // Every time this device is (or becomes) registered with the Kable Killers backup,
+        // make sure it has its own config from the pool: right after QR sign-in, and on each app start.
+        scope.launch {
+            KableKillersBackup.status
+                .map { it.hasDeviceKey }
+                .distinctUntilChanged()
+                .filter { it }
+                .collect { syncFromPool() }
+        }
+    }
+
+    /**
+     * Gets (or re-checks) this device's config from the owner's pool. A config imported by hand is
+     * never replaced. If the owner took the config back, it is removed from this device.
+     */
+    fun syncFromPool() {
+        if (appContext == null) return
+        val current = _state.value
+        if (current.hasConfig && !current.fromPool) return
+        if (current.checkingPool) return
+        _state.update { it.copy(checkingPool = true) }
+        scope.launch {
+            val claim = KableKillersBackup.claimVpnConfig().getOrNull()
+            _state.update { it.copy(checkingPool = false) }
+            when (claim) {
+                is KableKillersVpnClaim.Assigned -> {
+                    _state.update { it.copy(poolEmpty = false) }
+                    val stored = prefs?.getString(KEY_CONFIG, null)
+                    if (stored != claim.config.trim().replace("\r\n", "\n")) {
+                        storeConfig(claim.config, SOURCE_POOL)
+                    }
+                }
+                KableKillersVpnClaim.PoolEmpty -> {
+                    _state.update { it.copy(poolEmpty = true) }
+                    if (_state.value.fromPool) removeConfig()
+                }
+                KableKillersVpnClaim.NotRegistered -> {
+                    if (_state.value.fromPool) removeConfig()
+                }
+                null -> Unit // offline: keep what we have
+            }
+        }
     }
 
     /** Called when the app opens: reconnects if the VPN was left on. */
@@ -122,21 +178,31 @@ object KableKillersVpn {
     fun permissionIntent(): Intent? = appContext?.let { VpnService.prepare(it) }
 
     /** Checks and saves an IPVanish WireGuard config. Returns an error message if it isn't a valid config. */
-    fun saveConfig(rawText: String): Result<Unit> {
+    fun saveConfig(rawText: String): Result<Unit> = storeConfig(rawText, SOURCE_MANUAL)
+
+    private fun storeConfig(rawText: String, source: String): Result<Unit> {
         val text = rawText.trim().replace("\r\n", "\n")
         val parsed = runCatching { parse(text) }
         if (parsed.isFailure) {
             return Result.failure(IllegalArgumentException("That isn't a valid WireGuard config."))
         }
-        prefs?.edit()?.putString(KEY_CONFIG, text)?.apply()
-        _state.update { it.copy(hasConfig = true, serverLabel = serverLabelOf(text), errorMessage = null) }
+        prefs?.edit()?.putString(KEY_CONFIG, text)?.putString(KEY_SOURCE, source)?.apply()
+        _state.update {
+            it.copy(
+                hasConfig = true,
+                serverLabel = serverLabelOf(text),
+                errorMessage = null,
+                fromPool = source == SOURCE_POOL,
+                poolEmpty = false,
+            )
+        }
         if (_state.value.enabled) reconnect()
         return Result.success(Unit)
     }
 
     fun removeConfig() {
-        prefs?.edit()?.remove(KEY_CONFIG)?.putBoolean(KEY_ENABLED, false)?.apply()
-        _state.update { it.copy(hasConfig = false, enabled = false, serverLabel = null, errorMessage = null) }
+        prefs?.edit()?.remove(KEY_CONFIG)?.remove(KEY_SOURCE)?.putBoolean(KEY_ENABLED, false)?.apply()
+        _state.update { it.copy(hasConfig = false, enabled = false, serverLabel = null, errorMessage = null, fromPool = false) }
         disconnect()
     }
 
